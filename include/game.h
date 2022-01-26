@@ -33,7 +33,7 @@ class Game {
 
         void renderBoard();
 
-        void resizeWindow(int const width, int const height);
+        void resizeWindow(int const height, int const width);
 };
 
 #endif
