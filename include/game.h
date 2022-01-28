@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include "state.h"
+
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
 
@@ -31,7 +33,11 @@ class Game {
 
         bool running;
 
+        State* state;
+
         void renderBoard();
+
+        void renderState();
 
         void resizeWindow(int const height, int const width);
 };

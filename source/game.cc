@@ -1,11 +1,12 @@
 #include "../include/game.h"
 
 Game::Game() {
-    running = false;
     window = nullptr;
     renderer = nullptr;
     screenWidth = 600;
     screenHeight = 600;
+    running = false;
+    state = new State;
 }
 
 Game::~Game() {
@@ -52,7 +53,6 @@ void Game::renderBoard() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
-    // Takes the smallest of screenHeight and screenWidth
     int rectEdge = screenHeight * (screenHeight < screenWidth) 
                    + screenWidth * (screenHeight >= screenWidth);
 
@@ -76,11 +76,18 @@ void Game::renderBoard() {
             SDL_RenderFillRect(renderer, &rect);
         }
     }
+
+    renderState();
+
     SDL_RenderPresent(renderer);
 }
 
+void Game::renderState() {
+    std::string FEN = state->getFEN();
+    std::cout << FEN << std::endl;
+}
+
 void Game::resizeWindow(int const height, int const width) {
-    // Takes height/width if it is larger than the minimum, else it takes the minimum
     screenHeight = height * (height > MIN_SCREEN_HEIGHT) 
                    + MIN_SCREEN_HEIGHT * (height <= MIN_SCREEN_HEIGHT);
     screenWidth = width * (width > MIN_SCREEN_WIDTH) 
