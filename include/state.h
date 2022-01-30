@@ -24,8 +24,13 @@ class State {
 
         std::string getFEN();
 
+        bool getTurn();
+
     private:
         uint8_t bitBoard[8][8]; 
+
+        // true for white's turn, false for black's turn
+        bool turn;
 };
 
 #endif

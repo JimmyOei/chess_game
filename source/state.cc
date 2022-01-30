@@ -3,6 +3,8 @@
 #include <iostream>
 
 State::State() {
+    turn = true;
+
     bitBoard[0][0] = 0b01001000;
     bitBoard[0][1] = 0b01000100;
     bitBoard[0][2] = 0b01000010;
@@ -93,4 +95,8 @@ std::string State::getFEN() {
         FEN += '/';
     }
     return FEN;
+}
+
+bool State::getTurn() {
+    return turn;
 }
