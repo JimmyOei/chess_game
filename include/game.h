@@ -56,7 +56,7 @@ class Game {
 
         void renderBoard();
 
-        void renderState();
+        void renderState(int const rectEdge, int const boardStartingX, int const boardStartingY);
 
         void resizeWindow(int const height, int const width);
 };

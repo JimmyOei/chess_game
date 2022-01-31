@@ -44,12 +44,12 @@ void Game::init() {
         std::cout << "Succesfully initiated IMG" << std::endl;
     }
 
-    Game::loadPieces();
-
     window = SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
                                      screenWidth, screenHeight, SDL_WINDOW_RESIZABLE);
     SDL_SetWindowMinimumSize(window, MIN_SCREEN_WIDTH, MIN_SCREEN_HEIGHT);
     renderer = SDL_CreateRenderer(window, -1, 0);
+
+    Game::loadPieces();
 
     Game::renderBoard();
     
@@ -95,6 +95,9 @@ void Game::loadPieces() {
             std::cerr << "Failed to load image from: " << PNGLocations[i] << std::endl;
         }
         pieces[i] = SDL_CreateTextureFromSurface(renderer, image);
+        if(pieces[i] == NULL) {
+            std::cerr << "Failed to create texture from image: " << SDL_GetError() << std::endl;
+        }
         SDL_FreeSurface(image);
     }
 }
@@ -103,12 +106,11 @@ void Game::renderBoard() {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 
-    int rectEdge = screenHeight * (screenHeight < screenWidth) 
-                   + screenWidth * (screenHeight >= screenWidth);
+    int const rectEdge = (screenHeight * (screenHeight < screenWidth) 
+                         + screenWidth * (screenHeight >= screenWidth)) / 8;
 
-    int const boardStartingX = ((screenWidth - rectEdge) / 2) * (screenWidth > rectEdge);
-    int const boardStartingY = ((screenHeight - rectEdge) / 2) * (screenHeight > rectEdge);
-    rectEdge /= 8; // 8 squares per edge
+    int const boardStartingX = ((screenWidth - (rectEdge * 8)) / 2) * (screenWidth > rectEdge);
+    int const boardStartingY = ((screenHeight - (rectEdge * 8)) / 2) * (screenHeight > rectEdge);
 
     for(int x = 0; x < 8; x++) {
         for(int y = 0; y < 8; y++) {
@@ -118,23 +120,60 @@ void Game::renderBoard() {
             rect.x = boardStartingX + x*rectEdge;
             rect.y = boardStartingY + y*rectEdge;
             if((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1)) {
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_SetRenderDrawColor(renderer, 238, 238, 210, 255);
             } // white plane
             else {
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+                SDL_SetRenderDrawColor(renderer, 118, 150, 86, 255);
             } // black plane
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 
-    renderState();
+    renderState(rectEdge, boardStartingX, boardStartingY);
 
     SDL_RenderPresent(renderer);
 }
 
-void Game::renderState() {
-    std::string FEN = state->getFEN();
-    std::cout << FEN << std::endl;
+void Game::renderState(int const rectEdge, int const boardStartingX, int const boardStartingY) {
+    for(int i = 0; i < 8; i++) {
+        for(int j = 0; j < 8; j++) {
+            uint8_t bitFromBitBoard = state->getBitFromBitBoard(i, j);
+
+            if(bitFromBitBoard == 0b00000000) {
+                continue;
+            }
+
+            // Mapping the bit for a piece to its corresponding index in the 'pieces' array
+            int texturePiecesIndex = 1 * ((bitFromBitBoard & 0b10000000) > 0);
+            switch(bitFromBitBoard & 0b00111111) {
+                case 0b00000001:
+                    texturePiecesIndex += 0;
+                    break;
+                case 0b00000010:
+                    texturePiecesIndex += 2;
+                    break;
+                case 0b00000100:
+                    texturePiecesIndex += 4;
+                    break;
+                case 0b00001000:
+                    texturePiecesIndex += 6;
+                    break;
+                case 0b00010000:
+                    texturePiecesIndex += 8;
+                    break;
+                case 0b00100000:
+                    texturePiecesIndex += 10;
+                    break;
+            }
+            
+            SDL_Rect rect;
+            rect.w = rectEdge;
+            rect.h = rectEdge;
+            rect.x = boardStartingX + j*rectEdge;
+            rect.y = boardStartingY + i*rectEdge;
+            SDL_RenderCopy(renderer, pieces[texturePiecesIndex], NULL, &rect);
+        }
+    }
 }
 
 void Game::resizeWindow(int const height, int const width) {

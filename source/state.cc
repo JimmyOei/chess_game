@@ -6,12 +6,12 @@ State::State() {
     turn = true;
 
     bitBoard[0][0] = 0b01001000;
-    bitBoard[0][1] = 0b01000100;
-    bitBoard[0][2] = 0b01000010;
+    bitBoard[0][1] = 0b01000010;
+    bitBoard[0][2] = 0b01000100;
     bitBoard[0][3] = 0b01010000;
     bitBoard[0][4] = 0b01100000;
-    bitBoard[0][5] = 0b01000010;
-    bitBoard[0][6] = 0b01000100;
+    bitBoard[0][5] = 0b01000100;
+    bitBoard[0][6] = 0b01000010;
     bitBoard[0][7] = 0b01001000;
     for(int m = 0; m < 8; m++) {
         bitBoard[1][m] = 0b01000001;
@@ -24,16 +24,20 @@ State::State() {
     } // empty squares
 
     bitBoard[7][0] = 0b10001000;
-    bitBoard[7][1] = 0b10000100;
-    bitBoard[7][2] = 0b10000010;
+    bitBoard[7][1] = 0b10000010;
+    bitBoard[7][2] = 0b10000100;
     bitBoard[7][3] = 0b10010000;
     bitBoard[7][4] = 0b10100000;
-    bitBoard[7][5] = 0b10000010;
-    bitBoard[7][6] = 0b10000100;
+    bitBoard[7][5] = 0b10000100;
+    bitBoard[7][6] = 0b10000010;
     bitBoard[7][7] = 0b10001000;
     for(int m = 0; m < 8; m++) {
         bitBoard[6][m] = 0b10000001;
     } // white pawns
+}
+
+uint8_t State::getBitFromBitBoard(int const x, int const y) {
+    return bitBoard[x][y];
 }
 
 std::string State::getFEN() {

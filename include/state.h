@@ -22,6 +22,8 @@ class State {
     public: 
         State();
 
+        uint8_t getBitFromBitBoard(int const x, int const y);
+
         std::string getFEN();
 
         bool getTurn();
