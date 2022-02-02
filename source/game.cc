@@ -8,7 +8,13 @@ Game::Game() {
     }
     screenWidth = 600;
     screenHeight = 600;
+    squareEdge = 0;
+    boardStartingX = 0;
+    boardStartingY = 0;
     running = false;
+    dragPieceByte = 0b00000000;
+    dragPieceTextureMouseX = 0;
+    dragPieceTextureMouseY = 0;
     state = new State;
 }
 
@@ -66,12 +72,44 @@ void Game::eventHandler() {
                 Game::resizeWindow(event.window.data2, event.window.data1);
             }
             break;
+        case SDL_MOUSEBUTTONDOWN:
+            if(event.button.button == SDL_BUTTON_LEFT) {
+                if(dragPieceByte == 0b00000000) {
+                    int mouseX, mouseY;
+                    SDL_GetMouseState(&mouseX, &mouseY);
+                    Game::pickupDragPiece(mouseX, mouseY);
+                }
+            }
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if(dragPieceByte != 0b00000000) {
+                int mouseX, mouseY;
+                SDL_GetMouseState(&mouseX, &mouseY);
+                Game::releaseDragPiece(mouseX, mouseY);
+            }
+            break;
         case SDL_QUIT:
             running = false;
             break;
         default:
             break;
     }
+}
+
+void Game::render() {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderClear(renderer);
+    
+    Game::renderBoard();
+    Game::renderState();
+
+    if(dragPieceByte != 0b00000000) {
+        int mouseX, mouseY;
+        SDL_GetMouseState(&mouseX, &mouseY);
+        Game::renderDragPiece(mouseX, mouseY);
+    }
+
+    SDL_RenderPresent(renderer);
 }
 
 void Game::loadPieces() {
@@ -102,23 +140,47 @@ void Game::loadPieces() {
     }
 }
 
-void Game::renderBoard() {
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
+SDL_Texture* Game::getTexturePieceFromByte(uint8_t byte) {
 
-    int const rectEdge = (screenHeight * (screenHeight < screenWidth) 
+    // Mapping the byte for a piece to its corresponding index in the 'pieces' array
+    int texturePiecesIndex = 1 * ((byte & 0b10000000) > 0);
+    switch(byte & 0b00111111) {
+        case 0b00000001:
+            texturePiecesIndex += 0;
+            break;
+        case 0b00000010:
+            texturePiecesIndex += 2;
+            break;
+        case 0b00000100:
+            texturePiecesIndex += 4;
+            break;
+        case 0b00001000:
+            texturePiecesIndex += 6;
+            break;
+        case 0b00010000:
+            texturePiecesIndex += 8;
+            break;
+        case 0b00100000:
+            texturePiecesIndex += 10;
+            break;
+    }
+    return pieces[texturePiecesIndex];
+}
+
+void Game::renderBoard() {
+    squareEdge = (screenHeight * (screenHeight < screenWidth) 
                          + screenWidth * (screenHeight >= screenWidth)) / 8;
 
-    int const boardStartingX = ((screenWidth - (rectEdge * 8)) / 2) * (screenWidth > rectEdge);
-    int const boardStartingY = ((screenHeight - (rectEdge * 8)) / 2) * (screenHeight > rectEdge);
+    boardStartingX = ((screenWidth - (squareEdge * 8)) / 2) * (screenWidth > squareEdge);
+    boardStartingY = ((screenHeight - (squareEdge * 8)) / 2) * (screenHeight > squareEdge);
 
-    for(int x = 0; x < 8; x++) {
-        for(int y = 0; y < 8; y++) {
+    for(int y = 0; y < 8; y++) {
+        for(int x = 0; x < 8; x++) {
             SDL_Rect rect;
-            rect.w = rectEdge;
-            rect.h = rectEdge;
-            rect.x = boardStartingX + x*rectEdge;
-            rect.y = boardStartingY + y*rectEdge;
+            rect.w = squareEdge;
+            rect.h = squareEdge;
+            rect.x = boardStartingX + x*squareEdge;
+            rect.y = boardStartingY + y*squareEdge;
             if((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1)) {
                 SDL_SetRenderDrawColor(renderer, 238, 238, 210, 255);
             } // white plane
@@ -128,50 +190,23 @@ void Game::renderBoard() {
             SDL_RenderFillRect(renderer, &rect);
         }
     }
-
-    renderState(rectEdge, boardStartingX, boardStartingY);
-
-    SDL_RenderPresent(renderer);
 }
 
-void Game::renderState(int const rectEdge, int const boardStartingX, int const boardStartingY) {
-    for(int i = 0; i < 8; i++) {
-        for(int j = 0; j < 8; j++) {
-            uint8_t bitFromBitBoard = state->getBitFromBitBoard(i, j);
+void Game::renderState() {
+    for(int y = 0; y < 8; y++) {
+        for(int x = 0; x < 8; x++) {
+            uint8_t byteFromByteBoard = state->getByteFromByteBoard(x, y);
 
-            if(bitFromBitBoard == 0b00000000) {
+            if(byteFromByteBoard == 0b00000000) {
                 continue;
-            }
-
-            // Mapping the bit for a piece to its corresponding index in the 'pieces' array
-            int texturePiecesIndex = 1 * ((bitFromBitBoard & 0b10000000) > 0);
-            switch(bitFromBitBoard & 0b00111111) {
-                case 0b00000001:
-                    texturePiecesIndex += 0;
-                    break;
-                case 0b00000010:
-                    texturePiecesIndex += 2;
-                    break;
-                case 0b00000100:
-                    texturePiecesIndex += 4;
-                    break;
-                case 0b00001000:
-                    texturePiecesIndex += 6;
-                    break;
-                case 0b00010000:
-                    texturePiecesIndex += 8;
-                    break;
-                case 0b00100000:
-                    texturePiecesIndex += 10;
-                    break;
             }
             
             SDL_Rect rect;
-            rect.w = rectEdge;
-            rect.h = rectEdge;
-            rect.x = boardStartingX + j*rectEdge;
-            rect.y = boardStartingY + i*rectEdge;
-            SDL_RenderCopy(renderer, pieces[texturePiecesIndex], NULL, &rect);
+            rect.w = squareEdge;
+            rect.h = squareEdge;
+            rect.x = boardStartingX + x*squareEdge;
+            rect.y = boardStartingY + y*squareEdge;
+            SDL_RenderCopy(renderer, Game::getTexturePieceFromByte(byteFromByteBoard), NULL, &rect);
         }
     }
 }
@@ -181,5 +216,69 @@ void Game::resizeWindow(int const height, int const width) {
                    + MIN_SCREEN_HEIGHT * (height <= MIN_SCREEN_HEIGHT);
     screenWidth = width * (width > MIN_SCREEN_WIDTH) 
                   + MIN_SCREEN_WIDTH * (width <= MIN_SCREEN_WIDTH);
-    Game::renderBoard();
+}
+
+void Game::pickupDragPiece(int const mouseX, int const mouseY) {
+    int const squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
+    int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
+
+    // if mouse coords are inside chess board, try to pick up a piece
+    if((squareXOfMouse >= 0 && squareXOfMouse < 8) && (squareYOfMouse >= 0 && squareYOfMouse < 8)) {
+        dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdge;
+        dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
+        dragPieceByte = state->getByteFromByteBoard(squareXOfMouse, squareYOfMouse);
+
+        if(!((dragPieceByte == 0b00000000) || (dragPieceByte & 0b01000000))) {
+            state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, 0b00000000);
+            dragPieceInitialSquareX = squareXOfMouse;
+            dragPieceInitialSquareY = squareYOfMouse;
+        } // there is a piece and its of the user's side
+        else {
+            dragPieceByte = 0b00000000;
+        }
+    }
+}
+
+void Game::renderDragPiece(int const mouseX, int const mouseY) {
+    SDL_Rect rect;
+    rect.w = squareEdge;
+    rect.h = squareEdge;
+    rect.x = mouseX - dragPieceTextureMouseX;
+    rect.y = mouseY - dragPieceTextureMouseY;
+
+    // Conditions for preventing dragging outside of chess board
+    if(rect.x < boardStartingX - (squareEdge / 2)) {
+        rect.x = boardStartingX - (squareEdge / 2);
+    }
+    else if(rect.x > (boardStartingX + 8*squareEdge - (squareEdge / 2))) {
+        rect.x = boardStartingX + 8*squareEdge - (squareEdge / 2);
+    }
+    if(rect.y < boardStartingY - (squareEdge / 2)) {
+        rect.y = boardStartingY - (squareEdge / 2);
+    }
+    else if(rect.y > (boardStartingY + 8*squareEdge - (squareEdge / 2))) {
+        rect.y = boardStartingY + 8*squareEdge - (squareEdge / 2);
+    }
+
+    SDL_RenderCopy(renderer, Game::getTexturePieceFromByte(dragPieceByte), NULL, &rect);
+}
+
+void Game::releaseDragPiece(int const mouseX, int const mouseY) {
+    int squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
+    int squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
+
+    if(!((squareXOfMouse >= 0 && squareXOfMouse < 8) && (squareYOfMouse >= 0 && squareYOfMouse < 8))) {
+        squareXOfMouse = dragPieceTextureMouseX;
+        squareYOfMouse = dragPieceTextureMouseY;
+    }
+
+    switch(state->getByteFromByteBoard(squareXOfMouse, squareYOfMouse)) {
+        case 0b00000000:
+            state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, dragPieceByte);
+            break;
+        default:
+            state->setByteInByteBoard(dragPieceInitialSquareX, dragPieceInitialSquareY, dragPieceByte);
+            break;
+    }
+    dragPieceByte = 0b00000000;
 }

@@ -5,6 +5,7 @@
 #include <SDL2/SDL_image.h>
 
 #include <iostream>
+#include <stdint.h>
 
 #include "state.h"
 
@@ -39,6 +40,8 @@ class Game {
 
         void eventHandler();
 
+        void render();
+
     private:
         SDL_Window* window;
         SDL_Renderer* renderer;
@@ -48,17 +51,36 @@ class Game {
         int screenWidth;
         int screenHeight;
 
+        int squareEdge;
+        int boardStartingX;
+        int boardStartingY;
+
         bool running;
+
+        uint8_t dragPieceByte;
+        int dragPieceTextureMouseX;
+        int dragPieceTextureMouseY;
+
+        int dragPieceInitialSquareX;
+        int dragPieceInitialSquareY;
 
         State* state;
 
         void loadPieces();
 
+        SDL_Texture* getTexturePieceFromByte(uint8_t byte);
+
         void renderBoard();
 
-        void renderState(int const rectEdge, int const boardStartingX, int const boardStartingY);
+        void renderState();
 
         void resizeWindow(int const height, int const width);
+
+        void pickupDragPiece(int const mouseX, int const mouseY);
+
+        void renderDragPiece(int const mouseX, int const mouseY);
+
+        void releaseDragPiece(int const mouseX, int const mouseY);
 };
 
 #endif

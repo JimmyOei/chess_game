@@ -5,39 +5,39 @@
 State::State() {
     turn = true;
 
-    bitBoard[0][0] = 0b01001000;
-    bitBoard[0][1] = 0b01000010;
-    bitBoard[0][2] = 0b01000100;
-    bitBoard[0][3] = 0b01010000;
-    bitBoard[0][4] = 0b01100000;
-    bitBoard[0][5] = 0b01000100;
-    bitBoard[0][6] = 0b01000010;
-    bitBoard[0][7] = 0b01001000;
+    byteBoard[0][0] = 0b01001000;
+    byteBoard[0][1] = 0b01000010;
+    byteBoard[0][2] = 0b01000100;
+    byteBoard[0][3] = 0b01010000;
+    byteBoard[0][4] = 0b01100000;
+    byteBoard[0][5] = 0b01000100;
+    byteBoard[0][6] = 0b01000010;
+    byteBoard[0][7] = 0b01001000;
     for(int m = 0; m < 8; m++) {
-        bitBoard[1][m] = 0b01000001;
+        byteBoard[1][m] = 0b01000001;
     } // black pawns
     
     for(int i = 2; i < 6; i++) {
         for(int j = 0; j < 8; j++) {
-            bitBoard[i][j] = 0b00000000;
+            byteBoard[i][j] = 0b00000000;
         }
     } // empty squares
 
-    bitBoard[7][0] = 0b10001000;
-    bitBoard[7][1] = 0b10000010;
-    bitBoard[7][2] = 0b10000100;
-    bitBoard[7][3] = 0b10010000;
-    bitBoard[7][4] = 0b10100000;
-    bitBoard[7][5] = 0b10000100;
-    bitBoard[7][6] = 0b10000010;
-    bitBoard[7][7] = 0b10001000;
+    byteBoard[7][0] = 0b10001000;
+    byteBoard[7][1] = 0b10000010;
+    byteBoard[7][2] = 0b10000100;
+    byteBoard[7][3] = 0b10010000;
+    byteBoard[7][4] = 0b10100000;
+    byteBoard[7][5] = 0b10000100;
+    byteBoard[7][6] = 0b10000010;
+    byteBoard[7][7] = 0b10001000;
     for(int m = 0; m < 8; m++) {
-        bitBoard[6][m] = 0b10000001;
+        byteBoard[6][m] = 0b10000001;
     } // white pawns
 }
 
-uint8_t State::getBitFromBitBoard(int const x, int const y) {
-    return bitBoard[x][y];
+uint8_t State::getByteFromByteBoard(int const x, int const y) {
+    return byteBoard[y][x];
 }
 
 std::string State::getFEN() {
@@ -46,11 +46,11 @@ std::string State::getFEN() {
     
     for(int i = 0; i < 8; i++) {
         for(int j = 0; j < 8; j++) {
-            switch(bitBoard[i][j]) {
+            switch(byteBoard[i][j]) {
                 case 0b00000000:
                     countEmptySquares = 1;
                     j++;
-                    while(bitBoard[i][j] == 0b00000000 && j < 8) {
+                    while(byteBoard[i][j] == 0b00000000 && j < 8) {
                         countEmptySquares++;
                         j++;
                     }
@@ -103,4 +103,8 @@ std::string State::getFEN() {
 
 bool State::getTurn() {
     return turn;
+}
+
+void State::setByteInByteBoard(int const x, int const y, uint8_t const bit) {
+    byteBoard[y][x] = bit;
 }

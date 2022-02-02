@@ -1,5 +1,5 @@
-#ifndef STATE_H 
-#define STATE_H
+#ifndef PIECES_H 
+#define PIECES_H
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>

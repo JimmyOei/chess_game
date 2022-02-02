@@ -22,14 +22,16 @@ class State {
     public: 
         State();
 
-        uint8_t getBitFromBitBoard(int const x, int const y);
+        uint8_t getByteFromByteBoard(int const x, int const y);
 
         std::string getFEN();
 
         bool getTurn();
 
+        void setByteInByteBoard(int const x, int const y, uint8_t const bit);
+
     private:
-        uint8_t bitBoard[8][8]; 
+        uint8_t byteBoard[8][8]; 
 
         // true for white's turn, false for black's turn
         bool turn;
