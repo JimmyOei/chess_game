@@ -60,7 +60,6 @@ class Game {
         uint8_t dragPieceByte;
         int dragPieceTextureMouseX;
         int dragPieceTextureMouseY;
-
         int dragPieceInitialSquareX;
         int dragPieceInitialSquareY;
 

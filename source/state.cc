@@ -108,3 +108,61 @@ bool State::getTurn() {
 void State::setByteInByteBoard(int const x, int const y, uint8_t const bit) {
     byteBoard[y][x] = bit;
 }
+
+bool State::isLegalMove(uint8_t const pieceByte, 
+                        int const prevX, int const prevY, 
+                        int const newX, int const newY) {
+    
+    uint8_t pieceOfCapture = getByteFromByteBoard(newX, newY);
+    if(pieceByte & 0b10000000) {
+        switch(pieceByte) {
+            case 0b10000001:
+                if(((newY < prevY && (prevY - newY <= (1 + (prevY == 6)))))
+                     && ((newX == prevX && pieceOfCapture == 0b00000000)
+                         || (((newX - prevX == 1) || (prevX - newX == 1)) 
+                             && !(pieceOfCapture == 0b00000000 || pieceOfCapture == 0b10000000)))) {
+                    return true;
+                }
+                break;
+            case 0b10000010:
+
+                break;
+            case 0b10000100:
+
+                break;
+            case 0b10001000:
+
+                break;
+            case 0b10010000:
+
+                break;
+            case 0b10100000:
+
+                break;
+        }
+    }
+    else {
+        switch(pieceByte) {
+            case 0b01000001:
+
+                break;
+            case 0b01000010:
+
+                break;
+            case 0b01000100:
+
+                break;
+            case 0b01001000:
+
+                break;
+            case 0b01010000:
+
+                break;
+            case 0b01100000:
+
+                break;
+        }
+    }
+
+    return false;
+}

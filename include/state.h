@@ -30,6 +30,10 @@ class State {
 
         void setByteInByteBoard(int const x, int const y, uint8_t const bit);
 
+        bool isLegalMove(uint8_t const pieceByte, 
+                         int const prevX, int const prevY, 
+                         int const newX, int const newY);
+
     private:
         uint8_t byteBoard[8][8]; 
 
