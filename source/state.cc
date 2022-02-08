@@ -112,23 +112,46 @@ void State::setByteInByteBoard(int const x, int const y, uint8_t const bit) {
 bool State::isLegalMove(uint8_t const pieceByte, 
                         int const prevX, int const prevY, 
                         int const newX, int const newY) {
+
+    if(newX == prevX && newY == prevY) {
+        return false;
+    }
     
     uint8_t pieceOfCapture = getByteFromByteBoard(newX, newY);
     if(pieceByte & 0b10000000) {
         switch(pieceByte) {
             case 0b10000001:
-                if(((newY < prevY && (prevY - newY <= (1 + (prevY == 6)))))
+                if(((newY < prevY && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == 0b00000000)))))
                      && ((newX == prevX && pieceOfCapture == 0b00000000)
                          || (((newX - prevX == 1) || (prevX - newX == 1)) 
-                             && !(pieceOfCapture == 0b00000000 || pieceOfCapture == 0b10000000)))) {
+                             && !(pieceOfCapture == 0b00000000 || pieceOfCapture & 0b10000000)))) {
                     return true;
                 }
                 break;
             case 0b10000010:
-
+                if((((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
+                    || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2)))
+                   && !(pieceOfCapture & 0b10000000)) {
+                       return true;
+                   }
                 break;
             case 0b10000100:
+                if((newY - prevY) == (newX - prevX) || (newY - prevY) == (prevX - newX)) {       
+                    bool const upwardsDiagonal = (newY - prevY) < 0;
+                    bool const leftsideDiagonal = (newX - prevX) < 0;
+                    int const diagonalSteps = (prevY - newY) * upwardsDiagonal + (newY - prevY) * !upwardsDiagonal; 
 
+                    // Checks if diagonal from previous square till new square is empty
+                    for(int i = 1; i < diagonalSteps; i++) {
+                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideDiagonal) + i*!leftsideDiagonal), (prevY+(i*(-1 * upwardsDiagonal) + i*!upwardsDiagonal))) != 0b00000000) {
+                            return false;
+                        }
+                    }
+
+                    if(!(pieceOfCapture & 0b10000000)) {
+                        return true;
+                    }
+                }
                 break;
             case 0b10001000:
 
