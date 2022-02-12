@@ -38,7 +38,7 @@ class Game {
 
         void init();
 
-        void eventHandler();
+        void eventHandler(SDL_Event event);
 
         void render();
 

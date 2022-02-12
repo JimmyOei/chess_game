@@ -62,10 +62,7 @@ void Game::init() {
     running = true;
 }
 
-void Game::eventHandler() {
-    SDL_Event event;
-    SDL_PollEvent(&event);
-    
+void Game::eventHandler(SDL_Event event) {
     switch(event.type) {
         case SDL_WINDOWEVENT:
             if(event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {

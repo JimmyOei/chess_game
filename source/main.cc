@@ -6,8 +6,9 @@
 
 int main(int argc, char *argv[]) {
     int const frameDelay = 1000 / 60;
-    Uint32 frameStart = Uint32();
-    int frameTime = int();
+    Uint32 frameStart;
+    int frameTime;
+    SDL_Event event;
 
     Game* game = new Game;
 
@@ -15,9 +16,11 @@ int main(int argc, char *argv[]) {
     while(game->isRunning()) {
         frameStart = SDL_GetTicks();
 
-        game->eventHandler();
-        game->render();
-        
+        if(SDL_WaitEvent(&event) != 0) {
+            game->eventHandler(event);
+            game->render();
+        }
+
         frameTime = SDL_GetTicks() - frameStart;
 
         if(frameDelay > frameStart) {
