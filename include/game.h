@@ -7,7 +7,7 @@
 #include <iostream>
 #include <stdint.h>
 
-#include "state.h"
+#include "../include/state.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -36,7 +36,7 @@ class Game {
 
         bool isRunning();
 
-        void init();
+        void init(State* state);
 
         void eventHandler(SDL_Event event);
 

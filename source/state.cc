@@ -1,39 +1,77 @@
 #include "../include/state.h"
 
-#include <iostream>
 
 State::State() {
     turn = true;
+}
 
-    byteBoard[0][0] = 0b01001000;
-    byteBoard[0][1] = 0b01000010;
-    byteBoard[0][2] = 0b01000100;
-    byteBoard[0][3] = 0b01010000;
-    byteBoard[0][4] = 0b01100000;
-    byteBoard[0][5] = 0b01000100;
-    byteBoard[0][6] = 0b01000010;
-    byteBoard[0][7] = 0b01001000;
-    for(int m = 0; m < 8; m++) {
-        byteBoard[1][m] = 0b01000001;
-    } // black pawns
-    
-    for(int i = 2; i < 6; i++) {
-        for(int j = 0; j < 8; j++) {
-            byteBoard[i][j] = 0b00000000;
+bool State::setByteBoardFromFEN(std::string FEN) {
+    int byteBoardX = 0;
+    int byteBoardY = 0;
+
+    for(int i = 0; i < FEN.length(); i++) {
+        switch(FEN[i]) {
+            case '/':
+                if(byteBoardY >= 7) {
+                    return false;
+                } 
+                byteBoardY++;
+                byteBoardX = -1; // reset to -1, increment at the end to 0
+                break;
+            case 'p':
+                byteBoard[byteBoardY][byteBoardX] = 0b01000001;
+                break;
+            case 'P':
+                byteBoard[byteBoardY][byteBoardX] = 0b10000001;
+                break;
+            case 'n':
+                byteBoard[byteBoardY][byteBoardX] = 0b01000010;
+                break;
+            case 'N':
+                byteBoard[byteBoardY][byteBoardX] = 0b10000010;
+                break;
+            case 'b':
+                byteBoard[byteBoardY][byteBoardX] = 0b01000100;
+                break;
+            case 'B':
+                byteBoard[byteBoardY][byteBoardX] = 0b10000100;
+                break;
+            case 'r':
+                byteBoard[byteBoardY][byteBoardX] = 0b01001000;
+                break;
+            case 'R':
+                byteBoard[byteBoardY][byteBoardX] = 0b10001000;
+                break;
+            case 'q':
+                byteBoard[byteBoardY][byteBoardX] = 0b01010000;
+                break;
+            case 'Q':
+                byteBoard[byteBoardY][byteBoardX] = 0b10010000;
+                break;
+            case 'k':
+                byteBoard[byteBoardY][byteBoardX] = 0b01100000;
+                break;
+            case 'K':
+                byteBoard[byteBoardY][byteBoardX] = 0b10100000;
+                break;
+            default:
+                int const nrEmptySquares = FEN[i] - '0';
+                if(byteBoardX + nrEmptySquares > 8) {
+                    return false;
+                }
+                for(int i = 0; i < nrEmptySquares; i++) {
+                    byteBoard[byteBoardY][byteBoardX] = 0b00000000;
+                    byteBoardX++;
+                }
+                byteBoardX--;
+                break;
         }
-    } // empty squares
-
-    byteBoard[7][0] = 0b10001000;
-    byteBoard[7][1] = 0b10000010;
-    byteBoard[7][2] = 0b10000100;
-    byteBoard[7][3] = 0b10010000;
-    byteBoard[7][4] = 0b10100000;
-    byteBoard[7][5] = 0b10000100;
-    byteBoard[7][6] = 0b10000010;
-    byteBoard[7][7] = 0b10001000;
-    for(int m = 0; m < 8; m++) {
-        byteBoard[6][m] = 0b10000001;
-    } // white pawns
+        if(byteBoardX > 7) {
+            return false;
+        }
+        byteBoardX++;
+    }
+    return true;
 }
 
 uint8_t State::getByteFromByteBoard(int const x, int const y) {
@@ -99,6 +137,10 @@ std::string State::getFEN() {
         FEN += '/';
     }
     return FEN;
+}
+
+void State::setTurn(bool turn) {
+    this->turn = turn;
 }
 
 bool State::getTurn() {

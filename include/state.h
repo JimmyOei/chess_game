@@ -22,9 +22,13 @@ class State {
     public: 
         State();
 
+        bool setByteBoardFromFEN(std::string FEN);
+
         uint8_t getByteFromByteBoard(int const x, int const y);
 
         std::string getFEN();
+
+        void setTurn(bool turn);
 
         bool getTurn();
 

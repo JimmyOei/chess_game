@@ -1,5 +1,6 @@
 #include "../include/game.h"
 
+
 Game::Game() {
     window = nullptr;
     renderer = nullptr;
@@ -15,25 +16,26 @@ Game::Game() {
     dragPieceByte = 0b00000000;
     dragPieceTextureMouseX = 0;
     dragPieceTextureMouseY = 0;
-    state = new State;
+    state = nullptr;
 }
 
 Game::~Game() {
-    state->~State();
-    state = nullptr;
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer);
     for(int i = 0; i < 12; i++) {
         SDL_DestroyTexture(pieces[i]);
     }
     IMG_Quit();
+    SDL_Quit();
 };
 
 bool Game::isRunning() {
     return running;
 }
 
-void Game::init() {
+void Game::init(State* state) {
+    this->state = state;
+
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "Failed to initiate SDL: " << SDL_GetError() << std::endl;
         return;
