@@ -33,8 +33,9 @@ bool Game::isRunning() {
     return running;
 }
 
-void Game::init(State* state) {
+void Game::init(State* state, int const gamemode) {
     this->state = state;
+    this->gamemode = gamemode;
 
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         std::cerr << "Failed to initiate SDL: " << SDL_GetError() << std::endl;
@@ -231,7 +232,7 @@ void Game::pickupDragPiece(int const mouseX, int const mouseY) {
             state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, 0b00000000);
             dragPieceInitialSquareX = squareXOfMouse;
             dragPieceInitialSquareY = squareYOfMouse;
-        } // there is a piece and its of the user's side
+        } // there is a piece and it's of the current player's side
         else {
             dragPieceByte = 0b00000000;
         }
@@ -274,6 +275,15 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
                               dragPieceInitialSquareX, dragPieceInitialSquareY, 
                               squareXOfMouse, squareYOfMouse)) {
         state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, dragPieceByte);
+        state->passTurn();
+        if(dragPieceByte & 0b00000001) {
+            if(dragPieceInitialSquareY == 1 && squareYOfMouse == 3) {
+                state->setEnPassantSquare(squareXOfMouse, 2);
+            }
+            else if(dragPieceInitialSquareY = 6 && squareYOfMouse == 4) {
+                state->setEnPassantSquare(squareXOfMouse, 5);
+            }
+        }
     }
     else {
         state->setByteInByteBoard(dragPieceInitialSquareX, dragPieceInitialSquareY, dragPieceByte);

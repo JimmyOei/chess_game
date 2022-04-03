@@ -1,21 +1,29 @@
 #include "../include/state.h"
 
+#include <iostream>
 
 State::State() {
+    enPassant = false;
+    whiteCastlingQueenside = false;
+    whiteCastlingKingside = false;
+    blackCastlingQueenside = false;
+    blackCastlingKingside = false;
     turn = true;
 }
 
 bool State::setByteBoardFromFEN(std::string FEN) {
+    int const lengthFEN = FEN.length();
     int byteBoardX = 0;
     int byteBoardY = 0;
 
-    for(int i = 0; i < FEN.length(); i++) {
+    int i = 0;
+    while(i < lengthFEN && (byteBoardY < 7 || byteBoardX < 8)) {
         switch(FEN[i]) {
             case '/':
-                if(byteBoardY >= 7) {
+                byteBoardY++;
+                if(byteBoardY > 7) {
                     return false;
                 } 
-                byteBoardY++;
                 byteBoardX = -1; // reset to -1, increment at the end to 0
                 break;
             case 'p':
@@ -70,7 +78,74 @@ bool State::setByteBoardFromFEN(std::string FEN) {
             return false;
         }
         byteBoardX++;
+        i++;
     }
+
+    i++;
+    if(i < lengthFEN && FEN[i-1] == ' ') {
+        if(FEN[i] == 'w') {
+            turn = true;
+        }
+        else if(FEN[i] == 'b') {
+            turn = false;
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+
+    i += 2;
+    if(i < lengthFEN && FEN[i-1] == ' ') {
+        if(FEN[i] == '-') {
+            i++;
+        }
+        else if(FEN[i] == 'K' || FEN[i] == 'Q' || FEN[i] == 'k' || FEN[i] == 'q') {
+            if(FEN[i] == 'K') {
+                whiteCastlingKingside = true;
+                i++;
+            }
+            if(i < lengthFEN && FEN[i] == 'Q') {
+                whiteCastlingQueenside = true;
+                i++;
+            }
+            if(i < lengthFEN && FEN[i] == 'k') {
+                blackCastlingKingside = true;
+                i++;
+            }
+            if(i < lengthFEN && FEN[i] == 'q') {
+                blackCastlingQueenside = true;
+                i++;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    else {
+        return false;
+    }
+    
+    i++;
+    if(i < lengthFEN && FEN[i-1] == ' ') {
+        if(FEN[i] != '-') {
+            xEnPassantSquare = FEN[i] - 'a';
+            if(xEnPassantSquare < 0 || xEnPassantSquare > 7) {
+                return false;
+            }
+            i++;
+            if(i < lengthFEN && !((FEN[i] - '0') < 0 || (FEN[i] - '0') > 7)) {
+                yEnPassantSquare = FEN[i] - '0';
+                enPassant = true;
+            }
+            else {
+                return false;
+            }
+        }
+    }
+
     return true;
 }
 
@@ -93,7 +168,7 @@ std::string State::getFEN() {
                         j++;
                     }
                     j--;
-                    FEN += std::to_string(countEmptySquares);
+                    FEN += char('0' + countEmptySquares);
                     break;
                 case 0b01000001:
                     FEN += 'p';
@@ -136,11 +211,49 @@ std::string State::getFEN() {
         }
         FEN += '/';
     }
+
+    FEN += ' ';
+    if(turn) {
+        FEN += 'w';
+    }
+    else {
+        FEN += 'b';
+    }
+
+    FEN += ' ';
+    if(whiteCastlingKingside || whiteCastlingQueenside || blackCastlingKingside || blackCastlingQueenside) {
+        if(whiteCastlingKingside) {
+            FEN += 'K';
+        }
+        if(whiteCastlingQueenside) {
+            FEN += 'Q';
+        }
+        if(blackCastlingKingside) {
+            FEN += 'k';
+        }
+        if(blackCastlingQueenside) {
+            FEN += 'q';
+        }
+    }
+    else {
+        FEN += '-';
+    }
+
+    FEN += ' ';
+    if(enPassant) {
+        FEN += char('a' + xEnPassantSquare);
+        FEN += char('0' + yEnPassantSquare);
+    }
+    else {
+        FEN += '-';
+    }
+
     return FEN;
 }
 
-void State::setTurn(bool turn) {
-    this->turn = turn;
+void State::passTurn() {
+    turn = !turn;
+    enPassant = false;
 }
 
 bool State::getTurn() {
@@ -149,6 +262,12 @@ bool State::getTurn() {
 
 void State::setByteInByteBoard(int const x, int const y, uint8_t const bit) {
     byteBoard[y][x] = bit;
+}
+
+void State::setEnPassantSquare(int const x, int const y) {
+    xEnPassantSquare = x;
+    yEnPassantSquare = y;
+    enPassant = true;
 }
 
 bool State::isLegalMove(uint8_t const pieceByte, 

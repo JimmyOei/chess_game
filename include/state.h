@@ -28,18 +28,29 @@ class State {
 
         std::string getFEN();
 
-        void setTurn(bool turn);
+        void passTurn();
 
         bool getTurn();
 
         void setByteInByteBoard(int const x, int const y, uint8_t const bit);
+
+        void setEnPassantSquare(int const x, int const y);
 
         bool isLegalMove(uint8_t const pieceByte, 
                          int const prevX, int const prevY, 
                          int const newX, int const newY);
 
     private:
-        uint8_t byteBoard[8][8]; 
+        uint8_t byteBoard[8][8];
+
+        bool enPassant;
+        int xEnPassantSquare;
+        int yEnPassantSquare; 
+
+        bool whiteCastlingQueenside;
+        bool whiteCastlingKingside;
+        bool blackCastlingQueenside;
+        bool blackCastlingKingside;
 
         // true for white's turn, false for black's turn
         bool turn;

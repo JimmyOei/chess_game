@@ -36,7 +36,7 @@ class Game {
 
         bool isRunning();
 
-        void init(State* state);
+        void init(State* state, int const gamemode);
 
         void eventHandler(SDL_Event event);
 
@@ -64,6 +64,8 @@ class Game {
         int dragPieceInitialSquareY;
 
         State* state;
+
+        int gamemode;
 
         void loadPieces();
 
