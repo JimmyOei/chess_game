@@ -38,7 +38,8 @@ class State {
 
         bool isLegalMove(uint8_t const pieceByte, 
                          int const prevX, int const prevY, 
-                         int const newX, int const newY);
+                         int const newX, int const newY,
+                         bool& enPassantMove, bool& castlingMove);
 
     private:
         uint8_t byteBoard[8][8];

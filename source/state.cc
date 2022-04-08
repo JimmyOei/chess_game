@@ -137,7 +137,7 @@ bool State::setByteBoardFromFEN(std::string FEN) {
             }
             i++;
             if(i < lengthFEN && !((FEN[i] - '0') < 0 || (FEN[i] - '0') > 7)) {
-                yEnPassantSquare = FEN[i] - '0';
+                yEnPassantSquare = 8 - (FEN[i] - '0'); // array (size 8) starts counting y from top to bottom
                 enPassant = true;
             }
             else {
@@ -272,7 +272,8 @@ void State::setEnPassantSquare(int const x, int const y) {
 
 bool State::isLegalMove(uint8_t const pieceByte, 
                         int const prevX, int const prevY, 
-                        int const newX, int const newY) {
+                        int const newX, int const newY,
+                        bool& enPassantMove, bool& castlingMove) {
 
     if(newX == prevX && newY == prevY) {
         return false;
@@ -282,10 +283,15 @@ bool State::isLegalMove(uint8_t const pieceByte,
     if(pieceByte & 0b10000000) {
         switch(pieceByte) {
             case 0b10000001:
-                if(((newY < prevY && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == 0b00000000)))))
-                     && ((newX == prevX && pieceOfCapture == 0b00000000)
-                         || (((newX - prevX == 1) || (prevX - newX == 1)) 
-                             && !(pieceOfCapture == 0b00000000 || pieceOfCapture & 0b10000000)))) {
+                if(enPassant && xEnPassantSquare == newX && yEnPassantSquare == newY) {
+                    enPassantMove = true;
+                    return true;
+                }
+
+                else if(((newY < prevY && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == 0b00000000)))))
+                        && ((newX == prevX && pieceOfCapture == 0b00000000)
+                            || (((newX - prevX == 1) || (prevX - newX == 1)) 
+                                && !(pieceOfCapture == 0b00000000 || pieceOfCapture & 0b10000000)))) {
                     return true;
                 }
                 break;

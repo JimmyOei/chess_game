@@ -266,6 +266,8 @@ void Game::renderDragPiece(int const mouseX, int const mouseY) {
 void Game::releaseDragPiece(int const mouseX, int const mouseY) {
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
+    bool enPassantMove = false;
+    bool castlingMove = false;
 
     // Checks if mouse is inside board, it's the user's turn and it's a legal move, 
     // else the piece goes back to initial square
@@ -273,8 +275,12 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
         && state->getTurn() 
         && state->isLegalMove(dragPieceByte, 
                               dragPieceInitialSquareX, dragPieceInitialSquareY, 
-                              squareXOfMouse, squareYOfMouse)) {
+                              squareXOfMouse, squareYOfMouse,
+                              enPassantMove, castlingMove)) {
         state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, dragPieceByte);
+        if(enPassantMove) {
+            state->setByteInByteBoard(squareXOfMouse, (squareYOfMouse + state->getTurn()), 0b00000000);
+        }
         state->passTurn();
         if(dragPieceByte & 0b00000001) {
             if(dragPieceInitialSquareY == 1 && squareYOfMouse == 3) {
