@@ -228,7 +228,7 @@ void Game::pickupDragPiece(int const mouseX, int const mouseY) {
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
         dragPieceByte = state->getByteFromByteBoard(squareXOfMouse, squareYOfMouse);
 
-        if(!((dragPieceByte == 0b00000000) || (dragPieceByte & 0b01000000))) {
+        if(dragPieceByte != 0b00000000 && (state->getTurn() ? dragPieceByte & 0b10000000 : dragPieceByte & 0b01000000)) {
             state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, 0b00000000);
             dragPieceInitialSquareX = squareXOfMouse;
             dragPieceInitialSquareY = squareYOfMouse;
@@ -272,14 +272,13 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
     // Checks if mouse is inside board, it's the user's turn and it's a legal move, 
     // else the piece goes back to initial square
     if(((squareXOfMouse >= 0 && squareXOfMouse < 8) && (squareYOfMouse >= 0 && squareYOfMouse < 8))
-        && state->getTurn() 
         && state->isLegalMove(dragPieceByte, 
                               dragPieceInitialSquareX, dragPieceInitialSquareY, 
                               squareXOfMouse, squareYOfMouse,
                               enPassantMove, castlingMove)) {
         state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, dragPieceByte);
         if(enPassantMove) {
-            state->setByteInByteBoard(squareXOfMouse, (squareYOfMouse + state->getTurn()), 0b00000000);
+            state->setByteInByteBoard(squareXOfMouse, state->getTurn() ? squareYOfMouse + 1 : squareYOfMouse - 1, 0b00000000);
         }
         state->passTurn();
         if(dragPieceByte & 0b00000001) {

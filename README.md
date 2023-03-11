@@ -1,6 +1,15 @@
-## Chess Engine
+## Chess Game
 
-This is a personal project. I am creating a chess game and a chess engine in C++ with SDL 2.0.
+This is a personal project. I am creating a chess game in C++ with SDL 2.0.
+
+
+## TODO
+- implement checks and mate
+- start and end interface
+
+*Ideas*
+- random move opponent
+
 
 ## License
 

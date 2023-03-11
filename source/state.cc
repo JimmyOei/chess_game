@@ -281,6 +281,9 @@ bool State::isLegalMove(uint8_t const pieceByte,
     
     uint8_t pieceOfCapture = getByteFromByteBoard(newX, newY);
     if(pieceByte & 0b10000000) {
+        if(pieceOfCapture & 0b10000000) {
+            return false;
+        }
         switch(pieceByte) {
             case 0b10000001:
                 if(enPassant && xEnPassantSquare == newX && yEnPassantSquare == newY) {
@@ -288,26 +291,26 @@ bool State::isLegalMove(uint8_t const pieceByte,
                     return true;
                 }
 
-                else if(((newY < prevY && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == 0b00000000)))))
+                else if(newY < prevY 
+                        && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == 0b00000000)))
                         && ((newX == prevX && pieceOfCapture == 0b00000000)
                             || (((newX - prevX == 1) || (prevX - newX == 1)) 
-                                && !(pieceOfCapture == 0b00000000 || pieceOfCapture & 0b10000000)))) {
+                                && pieceOfCapture != 0b00000000))) {
                     return true;
                 }
                 break;
             case 0b10000010:
-                if((((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
-                    || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2)))
-                   && !(pieceOfCapture & 0b10000000)) {
-                       return true;
-                   }
+                if(((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
+                    || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2))) {
+                    return true;
+                }
                 break;
             case 0b10010000: // queen is same as bishop + rook
             case 0b10000100:
                 if((newY - prevY) == (newX - prevX) || (newY - prevY) == (prevX - newX)) {       
                     bool const upwardsDiagonal = (newY - prevY) < 0;
                     bool const leftsideDiagonal = (newX - prevX) < 0;
-                    int const diagonalSteps = (prevY - newY) * upwardsDiagonal + (newY - prevY) * !upwardsDiagonal; 
+                    int const diagonalSteps = upwardsDiagonal ? prevY - newY : newY - prevY; 
 
                     // Checks if diagonal from previous square till new square is empty
                     for(int i = 1; i < diagonalSteps; i++) {
@@ -317,9 +320,7 @@ bool State::isLegalMove(uint8_t const pieceByte,
                         }
                     }
 
-                    if(!(pieceOfCapture & 0b10000000)) {
-                        return true;
-                    }
+                    return true;
                 }
                 if(pieceByte != 0b10010000) {
                     break;
@@ -327,7 +328,7 @@ bool State::isLegalMove(uint8_t const pieceByte,
             case 0b10001000:
                 if(newX == prevX && newY != prevY) {
                     bool const upwardsMove = (newY - prevY) < 0;
-                    int const steps = (prevY - newY) * upwardsMove + (newY - prevY) * !upwardsMove;
+                    int const steps = upwardsMove ? prevY - newY : newY - prevY;
 
                     for(int i = 1; i < steps; i++) {
                         if(getByteFromByteBoard(newX, (prevY+(i*(-1 * upwardsMove) + i*!upwardsMove))) != 0b00000000) {
@@ -335,13 +336,11 @@ bool State::isLegalMove(uint8_t const pieceByte,
                         }
                     }
 
-                    if(!(pieceOfCapture & 0b10000000)) {
-                        return true;
-                    }
+                    return true;
                 }
                 else if(newX != prevX && newY == prevY) {
                     bool const leftsideMove = (newX - prevX) < 0;
-                    int const steps = (prevX - newX) * leftsideMove + (newX - prevX) * !leftsideMove;
+                    int const steps = leftsideMove ? prevY - newY : newY - prevY;
 
                     for(int i = 1; i < steps; i++) {
                         if(getByteFromByteBoard(prevX+(i*(-1 * leftsideMove) + i*!leftsideMove), newY) != 0b00000000) {
@@ -349,38 +348,89 @@ bool State::isLegalMove(uint8_t const pieceByte,
                         }
                     }
 
-                    if(!(pieceOfCapture & 0b10000000)) {
-                        return true;
-                    }
+                    return true;
                 }
                 break;
             case 0b10100000:
-                if((newX - prevX) < 2 && (newX - prevX) > -2 && (newY - prevY) < 2 && (newY - prevY) > -2
-                   && !(pieceOfCapture & 0b10000000)) {
+                if((newX - prevX) < 2 && (newX - prevX) > -2 && (newY - prevY) < 2 && (newY - prevY) > -2) {
                     return true;
                 }
                 break;
         }
     }
     else {
+        if(pieceOfCapture & 0b01000000) {
+            return false;
+        }
         switch(pieceByte) {
             case 0b01000001:
+                if(enPassant && xEnPassantSquare == newX && yEnPassantSquare == newY) {
+                    enPassantMove = true;
+                    return true;
+                }
 
+                else if(newY > prevY
+                        && (newY - prevY <= (1 + (prevY == 1 && getByteFromByteBoard(prevX, prevY+1) == 0b00000000)))
+                        && ((newX == prevX && pieceOfCapture == 0b00000000)
+                            || (((newX - prevX == 1) || (prevX - newX == 1)) 
+                                && pieceOfCapture != 0b00000000))) {
+                    return true;
+                }
                 break;
             case 0b01000010:
-
-                break;
+                if(((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
+                    || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2))) {
+                    return true;
+                }
+            case 0b01010000: // queen is same as bishop + rook
             case 0b01000100:
+                if((newY - prevY) == (newX - prevX) || (newY - prevY) == (prevX - newX)) {       
+                    bool const upwardsDiagonal = (newY - prevY) < 0;
+                    bool const leftsideDiagonal = (newX - prevX) < 0;
+                    int const diagonalSteps = upwardsDiagonal ? prevY - newY : newY - prevY;  
 
-                break;
+                    // Checks if diagonal from previous square till new square is empty
+                    for(int i = 1; i < diagonalSteps; i++) {
+                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideDiagonal) + i*!leftsideDiagonal), 
+                                                (prevY+(i*(-1 * upwardsDiagonal) + i*!upwardsDiagonal))) != 0b00000000) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+                if(pieceByte != 0b10010000) {
+                    break;
+                } // no break if the piece is a queen
             case 0b01001000:
+                if(newX == prevX && newY != prevY) {
+                    bool const upwardsMove = (newY - prevY) < 0;
+                    int const steps = upwardsMove ? prevY - newY : newY - prevY;
+                    for(int i = 1; i < steps; i++) {
+                        if(getByteFromByteBoard(newX, (prevY+(i*(-1 * upwardsMove) + i*!upwardsMove))) != 0b00000000) {
+                            return false;
+                        }
+                    }
 
-                break;
-            case 0b01010000:
+                    return true;
+                }
+                else if(newX != prevX && newY == prevY) {
+                    bool const leftsideMove = (newX - prevX) < 0;
+                    int const steps = leftsideMove ? prevY - newY : newY - prevY;
 
+                    for(int i = 1; i < steps; i++) {
+                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideMove) + i*!leftsideMove), newY) != 0b00000000) {
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
                 break;
             case 0b01100000:
-
+                if((newX - prevX) < 2 && (newX - prevX) > -2 && (newY - prevY) < 2 && (newY - prevY) > -2) {
+                    return true;
+                }
                 break;
         }
     }

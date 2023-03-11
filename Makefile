@@ -6,7 +6,7 @@ TARGET = Chess_engine
 CXX = g++
 CFLAGS = -fPIC -Wall -Wextra
 CPPFLAGS = -I$(INC_DIR)
-LFLAGS = -lmingw32 -lSDL2main -lSDL2 -lSDL2_image
+LFLAGS = -lSDL2main -lSDL2 -lSDL2_image
 
 all: $(TARGET)
 $(TARGET): $(OBJECTS)
