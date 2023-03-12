@@ -2,7 +2,7 @@ INC_DIR = include
 SRC_DIR = source
 SOURCES =  $(SRC_DIR)/main.cc $(SRC_DIR)/game.cc $(SRC_DIR)/state.cc
 OBJECTS = $(SOURCES:.cc=.o)
-TARGET = Chess_engine
+TARGET = Chess_game
 CXX = g++
 CFLAGS = -fPIC -Wall -Wextra
 CPPFLAGS = -I$(INC_DIR)

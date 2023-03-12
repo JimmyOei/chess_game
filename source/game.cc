@@ -13,7 +13,7 @@ Game::Game() {
     boardStartingX = 0;
     boardStartingY = 0;
     running = false;
-    dragPieceByte = 0b00000000;
+    dragPieceByte = NO_PIECE;
     dragPieceTextureMouseX = 0;
     dragPieceTextureMouseY = 0;
     state = nullptr;
@@ -74,7 +74,7 @@ void Game::eventHandler(SDL_Event event) {
             break;
         case SDL_MOUSEBUTTONDOWN:
             if(event.button.button == SDL_BUTTON_LEFT) {
-                if(dragPieceByte == 0b00000000) {
+                if(dragPieceByte == NO_PIECE) {
                     int mouseX, mouseY;
                     SDL_GetMouseState(&mouseX, &mouseY);
                     Game::pickupDragPiece(mouseX, mouseY);
@@ -82,7 +82,7 @@ void Game::eventHandler(SDL_Event event) {
             }
             break;
         case SDL_MOUSEBUTTONUP:
-            if(dragPieceByte != 0b00000000) {
+            if(dragPieceByte != NO_PIECE) {
                 int mouseX, mouseY;
                 SDL_GetMouseState(&mouseX, &mouseY);
                 Game::releaseDragPiece(mouseX, mouseY);
@@ -103,7 +103,7 @@ void Game::render() {
     Game::renderBoard();
     Game::renderState();
 
-    if(dragPieceByte != 0b00000000) {
+    if(dragPieceByte != NO_PIECE) {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
         Game::renderDragPiece(mouseX, mouseY);
@@ -143,7 +143,7 @@ void Game::loadPieces() {
 SDL_Texture* Game::getTexturePieceFromByte(uint8_t byte) {
 
     // Mapping the byte for a piece to its corresponding index in the 'pieces' array
-    int texturePiecesIndex = 1 * ((byte & 0b10000000) > 0);
+    int texturePiecesIndex = 1 * ((byte & WHITE_PIECE) > 0);
     switch(byte & 0b00111111) {
         case 0b00000001:
             texturePiecesIndex += 0;
@@ -197,7 +197,7 @@ void Game::renderState() {
         for(int x = 0; x < 8; x++) {
             uint8_t byteFromByteBoard = state->getByteFromByteBoard(x, y);
 
-            if(byteFromByteBoard == 0b00000000) {
+            if(byteFromByteBoard == NO_PIECE) {
                 continue;
             }
             
@@ -228,13 +228,13 @@ void Game::pickupDragPiece(int const mouseX, int const mouseY) {
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
         dragPieceByte = state->getByteFromByteBoard(squareXOfMouse, squareYOfMouse);
 
-        if(dragPieceByte != 0b00000000 && (state->getTurn() ? dragPieceByte & 0b10000000 : dragPieceByte & 0b01000000)) {
-            state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, 0b00000000);
+        if(dragPieceByte != NO_PIECE && (state->getTurn() ? dragPieceByte & WHITE_PIECE : dragPieceByte & BLACK_PIECE)) {
+            state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, NO_PIECE);
             dragPieceInitialSquareX = squareXOfMouse;
             dragPieceInitialSquareY = squareYOfMouse;
         } // there is a piece and it's of the current player's side
         else {
-            dragPieceByte = 0b00000000;
+            dragPieceByte = NO_PIECE;
         }
     }
 }
@@ -278,9 +278,10 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
                               enPassantMove, castlingMove)) {
         state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, dragPieceByte);
         if(enPassantMove) {
-            state->setByteInByteBoard(squareXOfMouse, state->getTurn() ? squareYOfMouse + 1 : squareYOfMouse - 1, 0b00000000);
+            state->setByteInByteBoard(squareXOfMouse, state->getTurn() ? squareYOfMouse + 1 : squareYOfMouse - 1, NO_PIECE);
         }
         state->passTurn();
+        state->isCheck(dragPieceByte, squareXOfMouse, squareYOfMouse);
         if(dragPieceByte & 0b00000001) {
             if(dragPieceInitialSquareY == 1 && squareYOfMouse == 3) {
                 state->setEnPassantSquare(squareXOfMouse, 2);
@@ -294,7 +295,7 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
         state->setByteInByteBoard(dragPieceInitialSquareX, dragPieceInitialSquareY, dragPieceByte);
     }
 
-    dragPieceByte = 0b00000000;
+    dragPieceByte = NO_PIECE;
     dragPieceInitialSquareX = 0;
     dragPieceInitialSquareY = 0;
     dragPieceTextureMouseX = 0;

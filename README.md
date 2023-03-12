@@ -6,6 +6,9 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 ## TODO
 - implement checks and mate
 - start and end interface
+- castling move
+- king legal move (cannot check himself)
+- pawn promotion
 
 *Ideas*
 - random move opponent

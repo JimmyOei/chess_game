@@ -8,6 +8,7 @@ State::State() {
     whiteCastlingKingside = false;
     blackCastlingQueenside = false;
     blackCastlingKingside = false;
+    check = false;
     turn = true;
 }
 
@@ -27,40 +28,40 @@ bool State::setByteBoardFromFEN(std::string FEN) {
                 byteBoardX = -1; // reset to -1, increment at the end to 0
                 break;
             case 'p':
-                byteBoard[byteBoardY][byteBoardX] = 0b01000001;
+                byteBoard[byteBoardY][byteBoardX] = BLACK_PAWN;
                 break;
             case 'P':
-                byteBoard[byteBoardY][byteBoardX] = 0b10000001;
+                byteBoard[byteBoardY][byteBoardX] = WHITE_PAWN;
                 break;
             case 'n':
-                byteBoard[byteBoardY][byteBoardX] = 0b01000010;
+                byteBoard[byteBoardY][byteBoardX] = BLACK_KNIGHT;
                 break;
             case 'N':
-                byteBoard[byteBoardY][byteBoardX] = 0b10000010;
+                byteBoard[byteBoardY][byteBoardX] = WHITE_KNIGHT;
                 break;
             case 'b':
-                byteBoard[byteBoardY][byteBoardX] = 0b01000100;
+                byteBoard[byteBoardY][byteBoardX] = BLACK_BISHOP;
                 break;
             case 'B':
-                byteBoard[byteBoardY][byteBoardX] = 0b10000100;
+                byteBoard[byteBoardY][byteBoardX] = WHITE_BISHOP;
                 break;
             case 'r':
-                byteBoard[byteBoardY][byteBoardX] = 0b01001000;
+                byteBoard[byteBoardY][byteBoardX] = BLACK_ROOK;
                 break;
             case 'R':
-                byteBoard[byteBoardY][byteBoardX] = 0b10001000;
+                byteBoard[byteBoardY][byteBoardX] = WHITE_ROOK;
                 break;
             case 'q':
-                byteBoard[byteBoardY][byteBoardX] = 0b01010000;
+                byteBoard[byteBoardY][byteBoardX] = BLACK_QUEEN;
                 break;
             case 'Q':
-                byteBoard[byteBoardY][byteBoardX] = 0b10010000;
+                byteBoard[byteBoardY][byteBoardX] = WHITE_QUEEN;
                 break;
             case 'k':
-                byteBoard[byteBoardY][byteBoardX] = 0b01100000;
+                byteBoard[byteBoardY][byteBoardX] = BLACK_KING;
                 break;
             case 'K':
-                byteBoard[byteBoardY][byteBoardX] = 0b10100000;
+                byteBoard[byteBoardY][byteBoardX] = WHITE_KING;
                 break;
             default:
                 int const nrEmptySquares = FEN[i] - '0';
@@ -68,7 +69,7 @@ bool State::setByteBoardFromFEN(std::string FEN) {
                     return false;
                 }
                 for(int i = 0; i < nrEmptySquares; i++) {
-                    byteBoard[byteBoardY][byteBoardX] = 0b00000000;
+                    byteBoard[byteBoardY][byteBoardX] = NO_PIECE;
                     byteBoardX++;
                 }
                 byteBoardX--;
@@ -160,50 +161,50 @@ std::string State::getFEN() {
     for(int i = 0; i < 8; i++) {
         for(int j = 0; j < 8; j++) {
             switch(byteBoard[i][j]) {
-                case 0b00000000:
+                case NO_PIECE:
                     countEmptySquares = 1;
                     j++;
-                    while(byteBoard[i][j] == 0b00000000 && j < 8) {
+                    while(byteBoard[i][j] == NO_PIECE && j < 8) {
                         countEmptySquares++;
                         j++;
                     }
                     j--;
                     FEN += char('0' + countEmptySquares);
                     break;
-                case 0b01000001:
+                case BLACK_PAWN:
                     FEN += 'p';
                     break;
-                case 0b10000001:
+                case WHITE_PAWN:
                     FEN += 'P';
                     break;
-                case 0b01000010:
+                case BLACK_KNIGHT:
                     FEN += 'n';
                     break;
-                case 0b10000010:
+                case WHITE_KNIGHT:
                     FEN += 'N';
                     break;
-                case 0b01000100:
+                case BLACK_BISHOP:
                     FEN += 'b';
                     break;
-                case 0b10000100:
+                case WHITE_BISHOP:
                     FEN += 'B';
                     break;
-                case 0b01001000:
+                case BLACK_ROOK:
                     FEN += 'r';
                     break;
-                case 0b10001000:
+                case WHITE_ROOK:
                     FEN += 'R';
                     break;
-                case 0b01010000:
+                case BLACK_QUEEN:
                     FEN += 'q';
                     break;
-                case 0b10010000:
+                case WHITE_QUEEN:
                     FEN += 'Q';
                     break;
-                case 0b01100000:
+                case BLACK_KING:
                     FEN += 'k';
                     break;
-                case 0b10100000:
+                case WHITE_KING:
                     FEN += 'K';
                     break;
             }
@@ -254,6 +255,8 @@ std::string State::getFEN() {
 void State::passTurn() {
     turn = !turn;
     enPassant = false;
+    std::cout << "check: " << check << std::endl;
+    check = false;
 }
 
 bool State::getTurn() {
@@ -270,6 +273,159 @@ void State::setEnPassantSquare(int const x, int const y) {
     enPassant = true;
 }
 
+void State::isCheck(uint8_t const pieceByte, 
+                     int const x, int const y) {
+    if(pieceByte == WHITE_KING || pieceByte == BLACK_KING) {
+        // kings cannot check
+        return;
+    }
+    uint8_t const kingToCheck = isWhitePiece(pieceByte) ? BLACK_KING : WHITE_KING;
+
+    switch(pieceByte) {
+        case WHITE_PAWN:
+            if(y > 0 && ((x > 0 && getByteFromByteBoard(x-1,y-1) == kingToCheck) 
+                         || (x < 7 && getByteFromByteBoard(x+1,y-1) == kingToCheck))) {
+                    check = true;
+            }
+            break;
+        case BLACK_PAWN:
+            if(y < 7 && ((x > 0 && getByteFromByteBoard(x-1,y+1) == kingToCheck) 
+                         || (x < 7 && getByteFromByteBoard(x+1,y+1) == kingToCheck))) {
+                check = true;
+            }
+            break;
+        case WHITE_KNIGHT:
+        case BLACK_KNIGHT:
+            if((y > 1 && ((x > 0 && getByteFromByteBoard(x-1, y-2) == kingToCheck) 
+                          || (x < 7 && getByteFromByteBoard(x+1, y-2) == kingToCheck)))
+               || (y < 6 && ((x > 0 && getByteFromByteBoard(x-1, y+2) == kingToCheck) 
+                             || (x < 7 && getByteFromByteBoard(x+1, y+2) == kingToCheck)))
+               || (x < 1 && ((y > 0 && getByteFromByteBoard(x-2, y-1) == kingToCheck) 
+                             || (y < 7 && getByteFromByteBoard(x-2, y+1) == kingToCheck)))
+               || (x < 6 && ((y > 0 && getByteFromByteBoard(x+2, y-1) == kingToCheck) 
+                             || (y < 7 && getByteFromByteBoard(x+2, y+1) == kingToCheck)))) {
+                check = true;
+            }
+            break;
+        case WHITE_QUEEN: // queen is same as bishop + rook
+        case BLACK_QUEEN:
+        case WHITE_BISHOP:
+        case BLACK_BISHOP: {
+            int tmpX = x;
+            int tmpY = y;
+            while(tmpX > 0 && tmpY > 0) {
+                tmpX--;
+                tmpY--;
+                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            tmpX = x;
+            tmpY = y;
+            while(tmpX > 0 && tmpY < 7) {
+                tmpX--;
+                tmpY++;
+                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            tmpX = x;
+            tmpY = y;
+            while(tmpX < 7 && tmpY > 0) {
+                tmpX++;
+                tmpY--;
+                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            tmpX = x;
+            tmpY = y;
+            while(tmpX < 7 && tmpY < 7) {
+                tmpX++;
+                tmpY++;
+                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+
+            if(pieceByte != WHITE_QUEEN && pieceByte != BLACK_QUEEN) {
+                break;
+            } // no break if the piece is a queen (queen can also do rook moves)
+        }
+        case WHITE_ROOK:
+        case BLACK_ROOK:
+            int tmpX = x;
+            while(tmpX > 0) {
+                tmpX--;
+                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, y);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            tmpX = x;
+            while(tmpX < 7) {
+                tmpX++;
+                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, y);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            int tmpY = y;
+            while(tmpY > 0) {
+                tmpY--;
+                uint8_t byteFromBoard = getByteFromByteBoard(x, tmpY);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            tmpY = y;
+            while(tmpY < 7) {
+                tmpY++;
+                uint8_t byteFromBoard = getByteFromByteBoard(x, tmpY);
+                if(byteFromBoard == kingToCheck) {
+                    check = true;
+                    return;
+                }
+                if(byteFromBoard != NO_PIECE) {
+                    break;
+                }
+            }
+            break;
+    }
+}
+
 bool State::isLegalMove(uint8_t const pieceByte, 
                         int const prevX, int const prevY, 
                         int const newX, int const newY,
@@ -280,159 +436,102 @@ bool State::isLegalMove(uint8_t const pieceByte,
     }
     
     uint8_t pieceOfCapture = getByteFromByteBoard(newX, newY);
-    if(pieceByte & 0b10000000) {
-        if(pieceOfCapture & 0b10000000) {
-            return false;
-        }
-        switch(pieceByte) {
-            case 0b10000001:
-                if(enPassant && xEnPassantSquare == newX && yEnPassantSquare == newY) {
-                    enPassantMove = true;
-                    return true;
-                }
-
-                else if(newY < prevY 
-                        && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == 0b00000000)))
-                        && ((newX == prevX && pieceOfCapture == 0b00000000)
-                            || (((newX - prevX == 1) || (prevX - newX == 1)) 
-                                && pieceOfCapture != 0b00000000))) {
-                    return true;
-                }
-                break;
-            case 0b10000010:
-                if(((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
-                    || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2))) {
-                    return true;
-                }
-                break;
-            case 0b10010000: // queen is same as bishop + rook
-            case 0b10000100:
-                if((newY - prevY) == (newX - prevX) || (newY - prevY) == (prevX - newX)) {       
-                    bool const upwardsDiagonal = (newY - prevY) < 0;
-                    bool const leftsideDiagonal = (newX - prevX) < 0;
-                    int const diagonalSteps = upwardsDiagonal ? prevY - newY : newY - prevY; 
-
-                    // Checks if diagonal from previous square till new square is empty
-                    for(int i = 1; i < diagonalSteps; i++) {
-                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideDiagonal) + i*!leftsideDiagonal), 
-                                                (prevY+(i*(-1 * upwardsDiagonal) + i*!upwardsDiagonal))) != 0b00000000) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-                if(pieceByte != 0b10010000) {
-                    break;
-                } // no break if the piece is a queen
-            case 0b10001000:
-                if(newX == prevX && newY != prevY) {
-                    bool const upwardsMove = (newY - prevY) < 0;
-                    int const steps = upwardsMove ? prevY - newY : newY - prevY;
-
-                    for(int i = 1; i < steps; i++) {
-                        if(getByteFromByteBoard(newX, (prevY+(i*(-1 * upwardsMove) + i*!upwardsMove))) != 0b00000000) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-                else if(newX != prevX && newY == prevY) {
-                    bool const leftsideMove = (newX - prevX) < 0;
-                    int const steps = leftsideMove ? prevY - newY : newY - prevY;
-
-                    for(int i = 1; i < steps; i++) {
-                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideMove) + i*!leftsideMove), newY) != 0b00000000) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
-                break;
-            case 0b10100000:
-                if((newX - prevX) < 2 && (newX - prevX) > -2 && (newY - prevY) < 2 && (newY - prevY) > -2) {
-                    return true;
-                }
-                break;
-        }
+    if(pieceOfCapture != NO_PIECE && isWhitePiece(pieceOfCapture) == isWhitePiece(pieceByte)) {
+        // can never capture similar colored piece
+        return false;
     }
-    else {
-        if(pieceOfCapture & 0b01000000) {
-            return false;
-        }
-        switch(pieceByte) {
-            case 0b01000001:
+
+    switch(pieceByte) {
+        case WHITE_PAWN:
+            if(enPassant && xEnPassantSquare == newX && yEnPassantSquare == newY) {
+                enPassantMove = true;
+                return true;
+            }
+
+            else if(newY < prevY 
+                    && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == NO_PIECE)))
+                    && ((newX == prevX && pieceOfCapture == NO_PIECE)
+                        || (((newX - prevX == 1) || (prevX - newX == 1)) 
+                            && pieceOfCapture != NO_PIECE))) {
+                return true;
+            }
+            break;
+        case BLACK_PAWN:
                 if(enPassant && xEnPassantSquare == newX && yEnPassantSquare == newY) {
                     enPassantMove = true;
                     return true;
                 }
 
                 else if(newY > prevY
-                        && (newY - prevY <= (1 + (prevY == 1 && getByteFromByteBoard(prevX, prevY+1) == 0b00000000)))
-                        && ((newX == prevX && pieceOfCapture == 0b00000000)
+                        && (newY - prevY <= (1 + (prevY == 1 && getByteFromByteBoard(prevX, prevY+1) == NO_PIECE)))
+                        && ((newX == prevX && pieceOfCapture == NO_PIECE)
                             || (((newX - prevX == 1) || (prevX - newX == 1)) 
-                                && pieceOfCapture != 0b00000000))) {
+                                && pieceOfCapture != NO_PIECE))) {
                     return true;
                 }
                 break;
-            case 0b01000010:
-                if(((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
-                    || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2))) {
-                    return true;
-                }
-            case 0b01010000: // queen is same as bishop + rook
-            case 0b01000100:
-                if((newY - prevY) == (newX - prevX) || (newY - prevY) == (prevX - newX)) {       
-                    bool const upwardsDiagonal = (newY - prevY) < 0;
-                    bool const leftsideDiagonal = (newX - prevX) < 0;
-                    int const diagonalSteps = upwardsDiagonal ? prevY - newY : newY - prevY;  
+        case WHITE_KNIGHT:
+        case BLACK_KNIGHT:
+            if(((newY == prevY-2 || newY == prevY+2) && (newX == prevX-1 || newX == prevX+1)) 
+                || ((newY == prevY-1 || newY == prevY+1) && (newX == prevX-2 || newX == prevX+2))) {
+                return true;
+            }
+            break;
+        case WHITE_QUEEN: // queen is same as bishop + rook
+        case BLACK_QUEEN:
+        case WHITE_BISHOP:
+        case BLACK_BISHOP:
+            if((newY - prevY) == (newX - prevX) || (newY - prevY) == (prevX - newX)) {       
+                bool const upwardsDiagonal = (newY - prevY) < 0;
+                bool const leftsideDiagonal = (newX - prevX) < 0;
+                int const diagonalSteps = upwardsDiagonal ? prevY - newY : newY - prevY; 
 
-                    // Checks if diagonal from previous square till new square is empty
-                    for(int i = 1; i < diagonalSteps; i++) {
-                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideDiagonal) + i*!leftsideDiagonal), 
-                                                (prevY+(i*(-1 * upwardsDiagonal) + i*!upwardsDiagonal))) != 0b00000000) {
-                            return false;
-                        }
+                // Checks if diagonal from previous square till new square is empty
+                for(int i = 1; i < diagonalSteps; i++) {
+                    if(getByteFromByteBoard(prevX+(i*(-1 * leftsideDiagonal) + i*!leftsideDiagonal), 
+                                            (prevY+(i*(-1 * upwardsDiagonal) + i*!upwardsDiagonal))) != NO_PIECE) {
+                        return false;
                     }
-
-                    return true;
                 }
-                if(pieceByte != 0b10010000) {
-                    break;
-                } // no break if the piece is a queen
-            case 0b01001000:
-                if(newX == prevX && newY != prevY) {
-                    bool const upwardsMove = (newY - prevY) < 0;
-                    int const steps = upwardsMove ? prevY - newY : newY - prevY;
-                    for(int i = 1; i < steps; i++) {
-                        if(getByteFromByteBoard(newX, (prevY+(i*(-1 * upwardsMove) + i*!upwardsMove))) != 0b00000000) {
-                            return false;
-                        }
-                    }
 
-                    return true;
-                }
-                else if(newX != prevX && newY == prevY) {
-                    bool const leftsideMove = (newX - prevX) < 0;
-                    int const steps = leftsideMove ? prevY - newY : newY - prevY;
-
-                    for(int i = 1; i < steps; i++) {
-                        if(getByteFromByteBoard(prevX+(i*(-1 * leftsideMove) + i*!leftsideMove), newY) != 0b00000000) {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
+                return true;
+            }
+            if(pieceByte != WHITE_QUEEN && pieceByte != BLACK_QUEEN) {
                 break;
-            case 0b01100000:
-                if((newX - prevX) < 2 && (newX - prevX) > -2 && (newY - prevY) < 2 && (newY - prevY) > -2) {
-                    return true;
+            } // no break if the piece is a queen (queen can also do rook moves)
+        case WHITE_ROOK:
+        case BLACK_ROOK:
+            if(newX == prevX && newY != prevY) {
+                bool const upwardsMove = (newY - prevY) < 0;
+                int const steps = upwardsMove ? prevY - newY : newY - prevY;
+
+                for(int i = 1; i < steps; i++) {
+                    if(getByteFromByteBoard(newX, (prevY+(i*(-1 * upwardsMove) + i*!upwardsMove))) != NO_PIECE) {
+                        return false;
+                    }
                 }
-                break;
-        }
+
+                return true;
+            }
+            else if(newX != prevX && newY == prevY) {
+                bool const leftsideMove = (newX - prevX) < 0;
+                int const steps = leftsideMove ? prevY - newY : newY - prevY;
+
+                for(int i = 1; i < steps; i++) {
+                    if(getByteFromByteBoard(prevX+(i*(-1 * leftsideMove) + i*!leftsideMove), newY) != NO_PIECE) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            break;
+        case WHITE_KING:
+        case BLACK_KING:
+            if((newX - prevX) < 2 && (newX - prevX) > -2 && (newY - prevY) < 2 && (newY - prevY) > -2) {
+                return true;
+            }
+            break;
     }
 
     return false;

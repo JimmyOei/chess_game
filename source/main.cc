@@ -7,7 +7,7 @@
 
 
 void menu(State* state, int& gamemode) {
-    std::cout << "---------------Chess Game & Engine---------------" << std::endl
+    std::cout << "-------------------Chess Game--------------------" << std::endl
               << "  Made By James Montyn at github.com/JamesMontyn " << std::endl
               << "  Programmed in C++, with SDL 2.0                " << std::endl
               << "-------------------------------------------------" << std::endl << std::endl;
