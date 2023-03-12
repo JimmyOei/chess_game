@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 /**
  * Chess board represented in uint8_t, 
@@ -121,7 +122,15 @@ class State {
         void isCheck(uint8_t const pieceByte, 
                      int const x, int const y);
 
-        void isMate();
+        // TODO: getAttack.. update.. could maybe be private
+
+        std::vector<std::pair<int, int>> getAttackFieldOfPiece(uint8_t const pieceByte,
+                                                               int const x, int const y);
+
+        void updateAttackFields();
+
+        std::vector<std::pair<int, int>> getLegalMovesOfPiece(uint8_t const pieceByte,
+                                                              int const x, int const y);
 
         /**
          * @brief checks if the piece of pieceByte at previous position
@@ -148,6 +157,15 @@ class State {
     private:
         uint8_t byteBoard[BOARD_LENGTH][BOARD_LENGTH];
 
+        bool attackFieldWhite[BOARD_LENGTH][BOARD_LENGTH];
+        bool attackFieldBlack[BOARD_LENGTH][BOARD_LENGTH];
+
+        // TODO: use for mate/check
+        int xWhiteKing;
+        int yWhiteKing;
+        int xBlackKing;
+        int yBlackKing;
+
         bool enPassant;
         int xEnPassantSquare;
         int yEnPassantSquare; 
@@ -166,6 +184,10 @@ class State {
         bool isWhitePiece(uint8_t const pieceByte) {
             return pieceByte & WHITE_PIECE;
         }
+
+        void clearByteBoard();
+        void clearAttackFieldWhite();
+        void clearAttackFieldBlack();
 
 };
 

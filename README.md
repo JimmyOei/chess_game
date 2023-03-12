@@ -11,6 +11,7 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 - pawn promotion
 - when check, only moves that remove check are legal
 - checks can also be done indirectly
+- highlight legal moves for drag piece
 
 *Ideas*
 - random move opponent

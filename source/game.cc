@@ -141,30 +141,21 @@ void Game::loadPieces() {
 }
 
 SDL_Texture* Game::getTexturePieceFromByte(uint8_t byte) {
-
     // Mapping the byte for a piece to its corresponding index in the 'pieces' array
-    int texturePiecesIndex = 1 * ((byte & WHITE_PIECE) > 0);
-    switch(byte & 0b00111111) {
-        case 0b00000001:
-            texturePiecesIndex += 0;
-            break;
-        case 0b00000010:
-            texturePiecesIndex += 2;
-            break;
-        case 0b00000100:
-            texturePiecesIndex += 4;
-            break;
-        case 0b00001000:
-            texturePiecesIndex += 6;
-            break;
-        case 0b00010000:
-            texturePiecesIndex += 8;
-            break;
-        case 0b00100000:
-            texturePiecesIndex += 10;
-            break;
+    switch(byte) {
+        case BLACK_PAWN: return pieces[0];
+        case WHITE_PAWN: return pieces[1];
+        case BLACK_KNIGHT: return pieces[2];
+        case WHITE_KNIGHT: return pieces[3];
+        case BLACK_BISHOP: return pieces[4];
+        case WHITE_BISHOP: return pieces[5];
+        case BLACK_ROOK: return pieces[6];
+        case WHITE_ROOK: return pieces[7];
+        case BLACK_QUEEN: return pieces[8];
+        case WHITE_QUEEN: return pieces[9];
+        case BLACK_KING: return pieces[10];
+        default: return pieces[11];
     }
-    return pieces[texturePiecesIndex];
 }
 
 void Game::renderBoard() {
@@ -295,6 +286,7 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
         state->setByteInByteBoard(dragPieceByte, dragPieceInitialSquareX, dragPieceInitialSquareY);
     }
 
+    // reset dragPiece variables
     dragPieceByte = NO_PIECE;
     dragPieceInitialSquareX = 0;
     dragPieceInitialSquareY = 0;
