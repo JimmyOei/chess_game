@@ -4,11 +4,13 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 
 
 ## TODO
-- implement checks and mate
+- implement mate
 - start and end interface
 - castling move
 - king legal move (cannot check himself)
 - pawn promotion
+- when check, only moves that remove check are legal
+- checks can also be done indirectly
 
 *Ideas*
 - random move opponent

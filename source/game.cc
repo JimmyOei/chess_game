@@ -169,13 +169,13 @@ SDL_Texture* Game::getTexturePieceFromByte(uint8_t byte) {
 
 void Game::renderBoard() {
     squareEdge = (screenHeight * (screenHeight < screenWidth) 
-                         + screenWidth * (screenHeight >= screenWidth)) / 8;
+                         + screenWidth * (screenHeight >= screenWidth)) / BOARD_LENGTH;
 
-    boardStartingX = ((screenWidth - (squareEdge * 8)) / 2) * (screenWidth > squareEdge);
-    boardStartingY = ((screenHeight - (squareEdge * 8)) / 2) * (screenHeight > squareEdge);
+    boardStartingX = ((screenWidth - (squareEdge * BOARD_LENGTH)) / 2) * (screenWidth > squareEdge);
+    boardStartingY = ((screenHeight - (squareEdge * BOARD_LENGTH)) / 2) * (screenHeight > squareEdge);
 
-    for(int y = 0; y < 8; y++) {
-        for(int x = 0; x < 8; x++) {
+    for(int y = 0; y < BOARD_LENGTH; y++) {
+        for(int x = 0; x < BOARD_LENGTH; x++) {
             SDL_Rect rect;
             rect.w = squareEdge;
             rect.h = squareEdge;
@@ -193,8 +193,8 @@ void Game::renderBoard() {
 }
 
 void Game::renderState() {
-    for(int y = 0; y < 8; y++) {
-        for(int x = 0; x < 8; x++) {
+    for(int y = 0; y < BOARD_LENGTH; y++) {
+        for(int x = 0; x < BOARD_LENGTH; x++) {
             uint8_t byteFromByteBoard = state->getByteFromByteBoard(x, y);
 
             if(byteFromByteBoard == NO_PIECE) {
@@ -223,13 +223,13 @@ void Game::pickupDragPiece(int const mouseX, int const mouseY) {
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
 
     // if mouse coords are inside chess board, try to pick up a piece
-    if((squareXOfMouse >= 0 && squareXOfMouse < 8) && (squareYOfMouse >= 0 && squareYOfMouse < 8)) {
+    if((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH)) {
         dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdge;
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
         dragPieceByte = state->getByteFromByteBoard(squareXOfMouse, squareYOfMouse);
 
         if(dragPieceByte != NO_PIECE && (state->getTurn() ? dragPieceByte & WHITE_PIECE : dragPieceByte & BLACK_PIECE)) {
-            state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, NO_PIECE);
+            state->setByteInByteBoard(NO_PIECE, squareXOfMouse, squareYOfMouse);
             dragPieceInitialSquareX = squareXOfMouse;
             dragPieceInitialSquareY = squareYOfMouse;
         } // there is a piece and it's of the current player's side
@@ -250,14 +250,14 @@ void Game::renderDragPiece(int const mouseX, int const mouseY) {
     if(rect.x < boardStartingX - (squareEdge / 2)) {
         rect.x = boardStartingX - (squareEdge / 2);
     }
-    else if(rect.x > (boardStartingX + 8*squareEdge - (squareEdge / 2))) {
-        rect.x = boardStartingX + 8*squareEdge - (squareEdge / 2);
+    else if(rect.x > (boardStartingX + BOARD_LENGTH*squareEdge - (squareEdge / 2))) {
+        rect.x = boardStartingX + BOARD_LENGTH*squareEdge - (squareEdge / 2);
     }
     if(rect.y < boardStartingY - (squareEdge / 2)) {
         rect.y = boardStartingY - (squareEdge / 2);
     }
-    else if(rect.y > (boardStartingY + 8*squareEdge - (squareEdge / 2))) {
-        rect.y = boardStartingY + 8*squareEdge - (squareEdge / 2);
+    else if(rect.y > (boardStartingY + BOARD_LENGTH*squareEdge - (squareEdge / 2))) {
+        rect.y = boardStartingY + BOARD_LENGTH*squareEdge - (squareEdge / 2);
     }
 
     SDL_RenderCopy(renderer, Game::getTexturePieceFromByte(dragPieceByte), NULL, &rect);
@@ -271,14 +271,14 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
 
     // Checks if mouse is inside board, it's the user's turn and it's a legal move, 
     // else the piece goes back to initial square
-    if(((squareXOfMouse >= 0 && squareXOfMouse < 8) && (squareYOfMouse >= 0 && squareYOfMouse < 8))
+    if(((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH))
         && state->isLegalMove(dragPieceByte, 
                               dragPieceInitialSquareX, dragPieceInitialSquareY, 
                               squareXOfMouse, squareYOfMouse,
                               enPassantMove, castlingMove)) {
-        state->setByteInByteBoard(squareXOfMouse, squareYOfMouse, dragPieceByte);
+        state->setByteInByteBoard(dragPieceByte, squareXOfMouse, squareYOfMouse);
         if(enPassantMove) {
-            state->setByteInByteBoard(squareXOfMouse, state->getTurn() ? squareYOfMouse + 1 : squareYOfMouse - 1, NO_PIECE);
+            state->setByteInByteBoard(NO_PIECE, squareXOfMouse, state->getTurn() ? squareYOfMouse + 1 : squareYOfMouse - 1);
         }
         state->passTurn();
         state->isCheck(dragPieceByte, squareXOfMouse, squareYOfMouse);
@@ -286,13 +286,13 @@ void Game::releaseDragPiece(int const mouseX, int const mouseY) {
             if(dragPieceInitialSquareY == 1 && squareYOfMouse == 3) {
                 state->setEnPassantSquare(squareXOfMouse, 2);
             }
-            else if(dragPieceInitialSquareY = 6 && squareYOfMouse == 4) {
-                state->setEnPassantSquare(squareXOfMouse, 5);
+            else if(dragPieceInitialSquareY = BOARD_LENGTH-2 && squareYOfMouse == BOARD_LENGTH-4) {
+                state->setEnPassantSquare(squareXOfMouse, BOARD_LENGTH-3);
             }
         }
     }
     else {
-        state->setByteInByteBoard(dragPieceInitialSquareX, dragPieceInitialSquareY, dragPieceByte);
+        state->setByteInByteBoard(dragPieceByte, dragPieceInitialSquareX, dragPieceInitialSquareY);
     }
 
     dragPieceByte = NO_PIECE;

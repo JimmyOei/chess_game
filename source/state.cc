@@ -27,42 +27,18 @@ bool State::setByteBoardFromFEN(std::string FEN) {
                 } 
                 byteBoardX = -1; // reset to -1, increment at the end to 0
                 break;
-            case 'p':
-                byteBoard[byteBoardY][byteBoardX] = BLACK_PAWN;
-                break;
-            case 'P':
-                byteBoard[byteBoardY][byteBoardX] = WHITE_PAWN;
-                break;
-            case 'n':
-                byteBoard[byteBoardY][byteBoardX] = BLACK_KNIGHT;
-                break;
-            case 'N':
-                byteBoard[byteBoardY][byteBoardX] = WHITE_KNIGHT;
-                break;
-            case 'b':
-                byteBoard[byteBoardY][byteBoardX] = BLACK_BISHOP;
-                break;
-            case 'B':
-                byteBoard[byteBoardY][byteBoardX] = WHITE_BISHOP;
-                break;
-            case 'r':
-                byteBoard[byteBoardY][byteBoardX] = BLACK_ROOK;
-                break;
-            case 'R':
-                byteBoard[byteBoardY][byteBoardX] = WHITE_ROOK;
-                break;
-            case 'q':
-                byteBoard[byteBoardY][byteBoardX] = BLACK_QUEEN;
-                break;
-            case 'Q':
-                byteBoard[byteBoardY][byteBoardX] = WHITE_QUEEN;
-                break;
-            case 'k':
-                byteBoard[byteBoardY][byteBoardX] = BLACK_KING;
-                break;
-            case 'K':
-                byteBoard[byteBoardY][byteBoardX] = WHITE_KING;
-                break;
+            case 'p': byteBoard[byteBoardY][byteBoardX] = BLACK_PAWN; break;
+            case 'P': byteBoard[byteBoardY][byteBoardX] = WHITE_PAWN; break;
+            case 'n': byteBoard[byteBoardY][byteBoardX] = BLACK_KNIGHT; break;
+            case 'N': byteBoard[byteBoardY][byteBoardX] = WHITE_KNIGHT; break;
+            case 'b': byteBoard[byteBoardY][byteBoardX] = BLACK_BISHOP; break;
+            case 'B': byteBoard[byteBoardY][byteBoardX] = WHITE_BISHOP; break;
+            case 'r': byteBoard[byteBoardY][byteBoardX] = BLACK_ROOK; break;
+            case 'R': byteBoard[byteBoardY][byteBoardX] = WHITE_ROOK; break;
+            case 'q': byteBoard[byteBoardY][byteBoardX] = BLACK_QUEEN; break;
+            case 'Q': byteBoard[byteBoardY][byteBoardX] = WHITE_QUEEN; break;
+            case 'k': byteBoard[byteBoardY][byteBoardX] = BLACK_KING; break;
+            case 'K': byteBoard[byteBoardY][byteBoardX] = WHITE_KING; break;
             default:
                 int const nrEmptySquares = FEN[i] - '0';
                 if(byteBoardX + nrEmptySquares > 8) {
@@ -138,7 +114,7 @@ bool State::setByteBoardFromFEN(std::string FEN) {
             }
             i++;
             if(i < lengthFEN && !((FEN[i] - '0') < 0 || (FEN[i] - '0') > 7)) {
-                yEnPassantSquare = 8 - (FEN[i] - '0'); // array (size 8) starts counting y from top to bottom
+                yEnPassantSquare = BOARD_LENGTH - (FEN[i] - '0');
                 enPassant = true;
             }
             else {
@@ -158,55 +134,31 @@ std::string State::getFEN() {
     std::string FEN = "";
     int countEmptySquares = 0;
     
-    for(int i = 0; i < 8; i++) {
-        for(int j = 0; j < 8; j++) {
+    for(int i = 0; i < BOARD_LENGTH; i++) {
+        for(int j = 0; j < BOARD_LENGTH; j++) {
             switch(byteBoard[i][j]) {
                 case NO_PIECE:
                     countEmptySquares = 1;
                     j++;
-                    while(byteBoard[i][j] == NO_PIECE && j < 8) {
+                    while(byteBoard[i][j] == NO_PIECE && j < BOARD_LENGTH-1) {
                         countEmptySquares++;
                         j++;
                     }
                     j--;
                     FEN += char('0' + countEmptySquares);
                     break;
-                case BLACK_PAWN:
-                    FEN += 'p';
-                    break;
-                case WHITE_PAWN:
-                    FEN += 'P';
-                    break;
-                case BLACK_KNIGHT:
-                    FEN += 'n';
-                    break;
-                case WHITE_KNIGHT:
-                    FEN += 'N';
-                    break;
-                case BLACK_BISHOP:
-                    FEN += 'b';
-                    break;
-                case WHITE_BISHOP:
-                    FEN += 'B';
-                    break;
-                case BLACK_ROOK:
-                    FEN += 'r';
-                    break;
-                case WHITE_ROOK:
-                    FEN += 'R';
-                    break;
-                case BLACK_QUEEN:
-                    FEN += 'q';
-                    break;
-                case WHITE_QUEEN:
-                    FEN += 'Q';
-                    break;
-                case BLACK_KING:
-                    FEN += 'k';
-                    break;
-                case WHITE_KING:
-                    FEN += 'K';
-                    break;
+                case BLACK_PAWN: FEN += 'p'; break;
+                case WHITE_PAWN: FEN += 'P'; break;
+                case BLACK_KNIGHT: FEN += 'n'; break;
+                case WHITE_KNIGHT: FEN += 'N'; break;
+                case BLACK_BISHOP: FEN += 'b'; break;
+                case WHITE_BISHOP: FEN += 'B'; break;
+                case BLACK_ROOK: FEN += 'r'; break;
+                case WHITE_ROOK: FEN += 'R'; break;
+                case BLACK_QUEEN: FEN += 'q'; break;
+                case WHITE_QUEEN: FEN += 'Q'; break;
+                case BLACK_KING: FEN += 'k'; break;
+                case WHITE_KING: FEN += 'K'; break;
             }
             countEmptySquares = 0;
         }
@@ -255,7 +207,6 @@ std::string State::getFEN() {
 void State::passTurn() {
     turn = !turn;
     enPassant = false;
-    std::cout << "check: " << check << std::endl;
     check = false;
 }
 
@@ -263,11 +214,19 @@ bool State::getTurn() {
     return turn;
 }
 
-void State::setByteInByteBoard(int const x, int const y, uint8_t const bit) {
-    byteBoard[y][x] = bit;
+void State::setByteInByteBoard(uint8_t const byte, int const x, int const y) {
+    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
+        std::cerr << "[setByteInByteBoard] out-of-bounds position." << std::endl;
+        exit(1);
+    }
+    byteBoard[y][x] = byte;
 }
 
 void State::setEnPassantSquare(int const x, int const y) {
+    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
+        std::cerr << "[setEnPassantSquare] out-of-bounds position." << std::endl;
+        exit(1);
+    }
     xEnPassantSquare = x;
     yEnPassantSquare = y;
     enPassant = true;
@@ -275,6 +234,11 @@ void State::setEnPassantSquare(int const x, int const y) {
 
 void State::isCheck(uint8_t const pieceByte, 
                      int const x, int const y) {
+    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
+        std::cerr << "[isCheck] out-of-bounds position." << std::endl;
+        exit(1);
+    }
+
     if(pieceByte == WHITE_KING || pieceByte == BLACK_KING) {
         // kings cannot check
         return;
@@ -284,12 +248,12 @@ void State::isCheck(uint8_t const pieceByte,
     switch(pieceByte) {
         case WHITE_PAWN:
             if(y > 0 && ((x > 0 && getByteFromByteBoard(x-1,y-1) == kingToCheck) 
-                         || (x < 7 && getByteFromByteBoard(x+1,y-1) == kingToCheck))) {
+                         || (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1,y-1) == kingToCheck))) {
                     check = true;
             }
             break;
         case BLACK_PAWN:
-            if(y < 7 && ((x > 0 && getByteFromByteBoard(x-1,y+1) == kingToCheck) 
+            if(y < BOARD_LENGTH-1 && ((x > 0 && getByteFromByteBoard(x-1,y+1) == kingToCheck) 
                          || (x < 7 && getByteFromByteBoard(x+1,y+1) == kingToCheck))) {
                 check = true;
             }
@@ -297,13 +261,13 @@ void State::isCheck(uint8_t const pieceByte,
         case WHITE_KNIGHT:
         case BLACK_KNIGHT:
             if((y > 1 && ((x > 0 && getByteFromByteBoard(x-1, y-2) == kingToCheck) 
-                          || (x < 7 && getByteFromByteBoard(x+1, y-2) == kingToCheck)))
-               || (y < 6 && ((x > 0 && getByteFromByteBoard(x-1, y+2) == kingToCheck) 
-                             || (x < 7 && getByteFromByteBoard(x+1, y+2) == kingToCheck)))
+                          || (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1, y-2) == kingToCheck)))
+               || (y < BOARD_LENGTH-2 && ((x > 0 && getByteFromByteBoard(x-1, y+2) == kingToCheck) 
+                             || (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1, y+2) == kingToCheck)))
                || (x < 1 && ((y > 0 && getByteFromByteBoard(x-2, y-1) == kingToCheck) 
-                             || (y < 7 && getByteFromByteBoard(x-2, y+1) == kingToCheck)))
-               || (x < 6 && ((y > 0 && getByteFromByteBoard(x+2, y-1) == kingToCheck) 
-                             || (y < 7 && getByteFromByteBoard(x+2, y+1) == kingToCheck)))) {
+                             || (y < BOARD_LENGTH-1 && getByteFromByteBoard(x-2, y+1) == kingToCheck)))
+               || (x < BOARD_LENGTH-2 && ((y > 0 && getByteFromByteBoard(x+2, y-1) == kingToCheck) 
+                             || (y < BOARD_LENGTH-1 && getByteFromByteBoard(x+2, y+1) == kingToCheck)))) {
                 check = true;
             }
             break;
@@ -327,7 +291,7 @@ void State::isCheck(uint8_t const pieceByte,
             }
             tmpX = x;
             tmpY = y;
-            while(tmpX > 0 && tmpY < 7) {
+            while(tmpX > 0 && tmpY < BOARD_LENGTH-1) {
                 tmpX--;
                 tmpY++;
                 uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
@@ -341,7 +305,7 @@ void State::isCheck(uint8_t const pieceByte,
             }
             tmpX = x;
             tmpY = y;
-            while(tmpX < 7 && tmpY > 0) {
+            while(tmpX < BOARD_LENGTH-1 && tmpY > 0) {
                 tmpX++;
                 tmpY--;
                 uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
@@ -355,7 +319,7 @@ void State::isCheck(uint8_t const pieceByte,
             }
             tmpX = x;
             tmpY = y;
-            while(tmpX < 7 && tmpY < 7) {
+            while(tmpX < BOARD_LENGTH-1 && tmpY < BOARD_LENGTH-1) {
                 tmpX++;
                 tmpY++;
                 uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
@@ -387,7 +351,7 @@ void State::isCheck(uint8_t const pieceByte,
                 }
             }
             tmpX = x;
-            while(tmpX < 7) {
+            while(tmpX < BOARD_LENGTH-1) {
                 tmpX++;
                 uint8_t byteFromBoard = getByteFromByteBoard(tmpX, y);
                 if(byteFromBoard == kingToCheck) {
@@ -411,7 +375,7 @@ void State::isCheck(uint8_t const pieceByte,
                 }
             }
             tmpY = y;
-            while(tmpY < 7) {
+            while(tmpY < BOARD_LENGTH-1) {
                 tmpY++;
                 uint8_t byteFromBoard = getByteFromByteBoard(x, tmpY);
                 if(byteFromBoard == kingToCheck) {
@@ -430,6 +394,11 @@ bool State::isLegalMove(uint8_t const pieceByte,
                         int const prevX, int const prevY, 
                         int const newX, int const newY,
                         bool& enPassantMove, bool& castlingMove) {
+    if(!(prevX >= 0 && prevX < BOARD_LENGTH && prevY >= 0 && prevY < BOARD_LENGTH)
+        || !(newX >= 0 && newX < BOARD_LENGTH && newY >= 0 && newY < BOARD_LENGTH)) {
+        std::cerr << "[isCheck] out-of-bounds position." << std::endl;
+        exit(1);
+    }
 
     if(newX == prevX && newY == prevY) {
         return false;
@@ -449,7 +418,7 @@ bool State::isLegalMove(uint8_t const pieceByte,
             }
 
             else if(newY < prevY 
-                    && (prevY - newY <= (1 + (prevY == 6 && getByteFromByteBoard(prevX, prevY-1) == NO_PIECE)))
+                    && (prevY - newY <= (1 + (prevY == BOARD_LENGTH-2 && getByteFromByteBoard(prevX, prevY-1) == NO_PIECE)))
                     && ((newX == prevX && pieceOfCapture == NO_PIECE)
                         || (((newX - prevX == 1) || (prevX - newX == 1)) 
                             && pieceOfCapture != NO_PIECE))) {
