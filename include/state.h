@@ -51,30 +51,9 @@ class State {
         */
         State();
 
-        /**
-         * @brief sets the byteBoard according to the given FEN-notation
-         * 
-         * @param FEN FEN-notation to set the byteBoard to
-         * @return true if FEN is a legal FEN-notation and byteBoard
-         *          is set succesfully, otherwise false
-        */
-        bool setByteBoardFromFEN(std::string FEN);
+        State(State* state);
 
-        /**
-         * @brief gets the byte from the ByteBoard at position (x, y)
-         * 
-         * @param x point on the horizontal axis of the board
-         * @param y point on the vertical axis of the board
-         * @return byte/uint8_t on position (x, y)
-        */
-        uint8_t getByteFromByteBoard(int const x, int const y);
-
-        /**
-         * @brief translates the byteBoard to FEN-notation and returns this
-         * 
-         * @return the FEN-notation of the current state
-        */
-        std::string getFEN();
+        bool withinBoardLimits(int const x, int const y);
 
         /**
          * @brief passes turn and resetting the booleans enPassant 
@@ -90,6 +69,17 @@ class State {
          *          false for black
         */
         bool getTurn();
+
+        void clearByteBoard();
+
+        /**
+         * @brief gets the byte from the ByteBoard at position (x, y)
+         * 
+         * @param x point on the horizontal axis of the board
+         * @param y point on the vertical axis of the board
+         * @return byte/uint8_t on position (x, y)
+        */
+        uint8_t getByteFromByteBoard(int const x, int const y);
 
         /**
          * @brief sets the byte in the byteBoard at 
@@ -109,62 +99,28 @@ class State {
          * @param y point on the vertical axis
         */
         void setEnPassantSquare(int const x, int const y);
-    
-        /**
-         * @brief checks if the piece pieceByte that just moved
-         *          to position (x, y) is checking the enemy king,
-         *          if so, set private boolean check to true
-         * 
-         * @param pieceByte byte of the piece that can create check
-         * @param x point on the horizontale axis
-         * @param y point on the vertical axis
-        */
-        void isCheck(uint8_t const pieceByte, 
-                     int const x, int const y);
-
-        // TODO: getAttack.. update.. could maybe be private
-
-        std::vector<std::pair<int, int>> getAttackFieldOfPiece(uint8_t const pieceByte,
-                                                               int const x, int const y);
-
-        void updateAttackFields();
-
-        std::vector<std::pair<int, int>> getLegalMovesOfPiece(uint8_t const pieceByte,
-                                                              int const x, int const y);
 
         /**
-         * @brief checks if the piece of pieceByte at previous position
-         *          (prevX, prevY) can move to the new position (newX, newY)
-         *          and returns if this is a legal move
+         * @brief sets the byteBoard according to the given FEN-notation
          * 
-         * @param pieceByte byte of piece that wants to move
-         * @param prevX x-position of current position of piece
-         * @param prevY y-position of current position of piece
-         * @param newX x-position the piece wants to move to
-         * @param newY y-position the piece wants to move to
-         * @param enPassantMove will be set to true to indicate that
-         *                      a pawn has moved two squares and may be
-         *                      capture En Passant by the opponent next move
-         * @param castlingMove will be set to true to indicate that the
-         *                      move is a castling move
-         * @return returns true if the move is a legal move, otherwise false
+         * @param FEN FEN-notation to set the byteBoard to
+         * @return true if FEN is a legal FEN-notation and byteBoard
+         *          is set succesfully, otherwise false
         */
-        bool isLegalMove(uint8_t const pieceByte, 
-                         int const prevX, int const prevY, 
-                         int const newX, int const newY,
-                         bool& enPassantMove, bool& castlingMove);
+        bool setByteBoardFromFEN(std::string FEN);
+
+        /**
+         * @brief translates the byteBoard to FEN-notation and returns this
+         * 
+         * @return the FEN-notation of the current state
+        */
+        std::string getFEN();
 
     private:
         uint8_t byteBoard[BOARD_LENGTH][BOARD_LENGTH];
 
-        bool attackFieldWhite[BOARD_LENGTH][BOARD_LENGTH];
-        bool attackFieldBlack[BOARD_LENGTH][BOARD_LENGTH];
-
-        // TODO: use for mate/check
-        int xWhiteKing;
-        int yWhiteKing;
-        int xBlackKing;
-        int yBlackKing;
+        // true for white's turn, false for black's turn
+        bool turn;
 
         bool enPassant;
         int xEnPassantSquare;
@@ -174,20 +130,6 @@ class State {
         bool whiteCastlingKingside;
         bool blackCastlingQueenside;
         bool blackCastlingKingside;
-
-        // true if the king of the color to move is under attack, else false
-        bool check;
-
-        // true for white's turn, false for black's turn
-        bool turn;
-
-        bool isWhitePiece(uint8_t const pieceByte) {
-            return pieceByte & WHITE_PIECE;
-        }
-
-        void clearByteBoard();
-        void clearAttackFieldWhite();
-        void clearAttackFieldBlack();
 
 };
 

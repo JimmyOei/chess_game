@@ -5,7 +5,7 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 
 ## TODO
 - implement mate
-- start and end interface
+- start and end interface (put menu inside interface class)
 - castling move
 - king legal move (cannot check himself)
 - pawn promotion

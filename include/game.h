@@ -9,23 +9,6 @@
 
 #include "../include/state.h"
 
-#define MIN_SCREEN_WIDTH 500
-#define MIN_SCREEN_HEIGHT 500
-
-#define NUM_OF_PIECES 12
-
-#define DARK_PAWN_IMG "./pieces/darkPawn.png"
-#define LIGHT_PAWN_IMG "./pieces/lightPawn.png"
-#define DARK_KNIGT_IMG "./pieces/darkKnight.png"
-#define LIGHT_KNIGHT_IMG "./pieces/lightKnight.png"
-#define DARK_BISHOP_IMG "./pieces/darkBishop.png"
-#define LIGHT_BISHOP_IMG "./pieces/lightBishop.png"
-#define DARK_ROOK_IMG "./pieces/darkRook.png"
-#define LIGHT_ROOK_IMG "./pieces/lightRook.png"
-#define DARK_QUEEN_IMG "./pieces/darkQueen.png"
-#define LIGHT_QUEEN_IMG "./pieces/lightQueen.png"
-#define DARK_KING_IMG "./pieces/darkKing.png"
-#define LIGHT_KING_IMG "./pieces/lightKing.png"
 
 
 class Game {
@@ -34,54 +17,64 @@ class Game {
 
         ~Game();
 
-        bool isRunning();
+        State* state;
 
-        void init(State* state, int const gamemode);
+        // TODO: getAttack.. update.. could maybe be private
 
-        void eventHandler(SDL_Event event);
+        std::vector<std::pair<int, int>> getAttackFieldOfPiece(uint8_t const pieceByte,
+                                                               int const x, int const y);
 
-        void render();
+        void updateWhiteAttackField();
+
+        void updateBlackAttackField();
+
+        bool isKingAttacked(State* state, uint8_t colorOfKing);
+
+        std::vector<std::pair<int, int>> getLegalMovesOfPiece(uint8_t const pieceByte,
+                                                              int const x, int const y);
+
+        /**
+         * @brief checks if the piece of pieceByte at previous position
+         *          (prevX, prevY) can move to the new position (newX, newY)
+         *          and returns if this is a legal move
+         * 
+         * @param pieceByte byte of piece that wants to move
+         * @param prevX x-position of current position of piece
+         * @param prevY y-position of current position of piece
+         * @param newX x-position the piece wants to move to
+         * @param newY y-position the piece wants to move to
+         * @param enPassantMove will be set to true to indicate that
+         *                      a pawn has moved two squares and may be
+         *                      capture En Passant by the opponent next move
+         * @param castlingMove will be set to true to indicate that the
+         *                      move is a castling move
+         * @return returns true if the move is a legal move, otherwise false
+        */
+        bool isLegalMove(uint8_t const pieceByte, 
+                         int const prevX, int const prevY, 
+                         int const newX, int const newY,
+                         bool& enPassantMove, bool& castlingMove);
+
 
     private:
-        SDL_Window* window;
-        SDL_Renderer* renderer;
-
-        SDL_Texture* pieces[NUM_OF_PIECES];
-
-        int screenWidth;
-        int screenHeight;
-
-        int squareEdge;
-        int boardStartingX;
-        int boardStartingY;
-
-        bool running;
-
-        uint8_t dragPieceByte;
-        int dragPieceTextureMouseX;
-        int dragPieceTextureMouseY;
-        int dragPieceInitialSquareX;
-        int dragPieceInitialSquareY;
-
-        State* state;
+        bool attackFieldWhite[BOARD_LENGTH][BOARD_LENGTH];
+        bool attackFieldBlack[BOARD_LENGTH][BOARD_LENGTH];
 
         int gamemode;
 
-        void loadPieces();
+        // TODO: use for mate/check
+        int xWhiteKing;
+        int yWhiteKing;
+        int xBlackKing;
+        int yBlackKing;
 
-        SDL_Texture* getTexturePieceFromByte(uint8_t byte);
+        bool isWhitePiece(uint8_t const pieceByte) {
+            return pieceByte & WHITE_PIECE;
+        }
 
-        void renderBoard();
+        void clearAttackFieldWhite();
+        void clearAttackFieldBlack();
 
-        void renderState();
-
-        void resizeWindow(int const height, int const width);
-
-        void pickupDragPiece(int const mouseX, int const mouseY);
-
-        void renderDragPiece(int const mouseX, int const mouseY);
-
-        void releaseDragPiece(int const mouseX, int const mouseY);
 };
 
 #endif

@@ -2,9 +2,9 @@
 
 #include <iostream>
 
+#include "../include/interface.h"
 #include "../include/game.h"
 #include "../include/state.h"
-
 
 void menu(State* state, int& gamemode) {
     std::cout << "-------------------Chess Game--------------------" << std::endl
@@ -66,18 +66,19 @@ int main(int argc, char *argv[]) {
     int frameTime;
     SDL_Event event;
 
+    Interface* interface = new Interface;
     Game* game = new Game;
     State* state = new State;
     int gamemode = 0;
     menu(state, gamemode);
-    game->init(state, gamemode);
+    interface->init(state, gamemode);
 
-    while(game->isRunning()) {
+    while(interface->isRunning()) {
         frameStart = SDL_GetTicks();
 
         if(SDL_WaitEvent(&event) != 0) {
-            game->eventHandler(event);
-            game->render();
+            interface->eventHandler(event);
+            interface->render();
         }
 
         frameTime = SDL_GetTicks() - frameStart;
@@ -87,6 +88,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    delete interface;
     delete game;
     delete state;
 

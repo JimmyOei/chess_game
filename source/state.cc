@@ -10,36 +10,63 @@ void State::clearByteBoard() {
     }
 }
 
-void State::clearAttackFieldBlack() {
-    for(int i = 0; i < BOARD_LENGTH; i++) {
-        for(int j = 0; j < BOARD_LENGTH; j++) {
-            attackFieldBlack[i][j] = false;
-        }
-    }
-}
-
-void State::clearAttackFieldWhite() {
-    for(int i = 0; i < BOARD_LENGTH; i++) {
-        for(int j = 0; j < BOARD_LENGTH; j++) {
-            attackFieldWhite[i][j] = false;
-        }
-    }
-}
-
 State::State() {
+    turn = false;
     enPassant = false;
-    whiteCastlingQueenside = false;
-    whiteCastlingKingside = false;
-    blackCastlingQueenside = false;
-    blackCastlingKingside = false;
-    check = false;
-    turn = true;
+    xEnPassantSquare = 0;
+    yEnPassantSquare = 0;
+    whiteCastlingQueenside = true;
+    whiteCastlingKingside = true;
+    blackCastlingQueenside = true;
+    blackCastlingKingside = true;
     clearByteBoard();
-    clearAttackFieldBlack();
-    clearAttackFieldWhite();
+}
+
+State::State(State* state) {
+    this->setByteBoardFromFEN(state->getFEN());
+}
+
+bool State::withinBoardLimits(int const x, int const y) {
+    return x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH;
+}
+
+void State::passTurn() {
+    turn = !turn;
+    enPassant = false;
+}
+
+bool State::getTurn() {
+    return turn;
+}
+
+uint8_t State::getByteFromByteBoard(int const x, int const y) {
+    // if(!withinBoardLimits(x, y)) {
+    //     std::cerr << "[getByteFromByteBoard] out-of-bounds position." << std::endl;
+    //     exit(1);
+    // }
+    return byteBoard[y][x];
+}
+
+void State::setByteInByteBoard(uint8_t const byte, int const x, int const y) {
+    // if(!withinBoardLimits(x, y)) {
+    //     std::cerr << "[setByteInByteBoard] out-of-bounds position." << std::endl;
+    //     exit(1);
+    // }
+    byteBoard[y][x] = byte;
+}
+
+void State::setEnPassantSquare(int const x, int const y) {
+    // if(!withinBoardLimits(x, y)) {
+    //     std::cerr << "[setEnPassantSquare] out-of-bounds position." << std::endl;
+    //     exit(1);
+    // }
+    xEnPassantSquare = x;
+    yEnPassantSquare = y;
+    enPassant = true;
 }
 
 bool State::setByteBoardFromFEN(std::string FEN) {
+    clearByteBoard();
     int const lengthFEN = FEN.length();
     int byteBoardX = 0;
     int byteBoardY = 0;
@@ -153,10 +180,6 @@ bool State::setByteBoardFromFEN(std::string FEN) {
     return true;
 }
 
-uint8_t State::getByteFromByteBoard(int const x, int const y) {
-    return byteBoard[y][x];
-}
-
 std::string State::getFEN() {
     std::string FEN = "";
     int countEmptySquares = 0;
@@ -229,403 +252,4 @@ std::string State::getFEN() {
     }
 
     return FEN;
-}
-
-void State::passTurn() {
-    turn = !turn;
-    enPassant = false;
-    check = false;
-}
-
-bool State::getTurn() {
-    return turn;
-}
-
-void State::setByteInByteBoard(uint8_t const byte, int const x, int const y) {
-    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
-        std::cerr << "[setByteInByteBoard] out-of-bounds position." << std::endl;
-        exit(1);
-    }
-    byteBoard[y][x] = byte;
-}
-
-void State::setEnPassantSquare(int const x, int const y) {
-    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
-        std::cerr << "[setEnPassantSquare] out-of-bounds position." << std::endl;
-        exit(1);
-    }
-    xEnPassantSquare = x;
-    yEnPassantSquare = y;
-    enPassant = true;
-}
-
-void State::isCheck(uint8_t const pieceByte, 
-                     int const x, int const y) {
-    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
-        std::cerr << "[isCheck] out-of-bounds position." << std::endl;
-        exit(1);
-    }
-
-    if(pieceByte == WHITE_KING || pieceByte == BLACK_KING) {
-        // kings cannot check
-        return;
-    }
-    uint8_t const kingToCheck = isWhitePiece(pieceByte) ? BLACK_KING : WHITE_KING;
-
-    switch(pieceByte) {
-        case WHITE_PAWN:
-            if(y > 0 && ((x > 0 && getByteFromByteBoard(x-1,y-1) == kingToCheck) 
-                         || (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1,y-1) == kingToCheck))) {
-                    check = true;
-            }
-            break;
-        case BLACK_PAWN:
-            if(y < BOARD_LENGTH-1 && ((x > 0 && getByteFromByteBoard(x-1,y+1) == kingToCheck) 
-                         || (x < 7 && getByteFromByteBoard(x+1,y+1) == kingToCheck))) {
-                check = true;
-            }
-            break;
-        case WHITE_KNIGHT:
-        case BLACK_KNIGHT:
-            if((y > 1 && ((x > 0 && getByteFromByteBoard(x-1, y-2) == kingToCheck) 
-                          || (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1, y-2) == kingToCheck)))
-               || (y < BOARD_LENGTH-2 && ((x > 0 && getByteFromByteBoard(x-1, y+2) == kingToCheck) 
-                             || (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1, y+2) == kingToCheck)))
-               || (x < 1 && ((y > 0 && getByteFromByteBoard(x-2, y-1) == kingToCheck) 
-                             || (y < BOARD_LENGTH-1 && getByteFromByteBoard(x-2, y+1) == kingToCheck)))
-               || (x < BOARD_LENGTH-2 && ((y > 0 && getByteFromByteBoard(x+2, y-1) == kingToCheck) 
-                             || (y < BOARD_LENGTH-1 && getByteFromByteBoard(x+2, y+1) == kingToCheck)))) {
-                check = true;
-            }
-            break;
-        case WHITE_QUEEN: // queen is same as bishop + rook
-        case BLACK_QUEEN:
-        case WHITE_BISHOP:
-        case BLACK_BISHOP: {
-            int tmpX = x;
-            int tmpY = y;
-            while(tmpX > 0 && tmpY > 0) {
-                tmpX--;
-                tmpY--;
-                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            tmpY = y;
-            while(tmpX > 0 && tmpY < BOARD_LENGTH-1) {
-                tmpX--;
-                tmpY++;
-                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            tmpY = y;
-            while(tmpX < BOARD_LENGTH-1 && tmpY > 0) {
-                tmpX++;
-                tmpY--;
-                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            tmpY = y;
-            while(tmpX < BOARD_LENGTH-1 && tmpY < BOARD_LENGTH-1) {
-                tmpX++;
-                tmpY++;
-                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, tmpY);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-
-            if(pieceByte != WHITE_QUEEN && pieceByte != BLACK_QUEEN) {
-                break;
-            } // no break if the piece is a queen (queen can also do rook moves)
-        }
-        case WHITE_ROOK:
-        case BLACK_ROOK:
-            int tmpX = x;
-            while(tmpX > 0) {
-                tmpX--;
-                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, y);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            while(tmpX < BOARD_LENGTH-1) {
-                tmpX++;
-                uint8_t byteFromBoard = getByteFromByteBoard(tmpX, y);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            int tmpY = y;
-            while(tmpY > 0) {
-                tmpY--;
-                uint8_t byteFromBoard = getByteFromByteBoard(x, tmpY);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpY = y;
-            while(tmpY < BOARD_LENGTH-1) {
-                tmpY++;
-                uint8_t byteFromBoard = getByteFromByteBoard(x, tmpY);
-                if(byteFromBoard == kingToCheck) {
-                    check = true;
-                    return;
-                }
-                if(byteFromBoard != NO_PIECE) {
-                    break;
-                }
-            }
-            break;
-    }
-}
-
-std::vector<std::pair<int, int>> State::getAttackFieldOfPiece(uint8_t const pieceByte,
-                                                              int const x, int const y) {
-    if(!(x >= 0 && x < BOARD_LENGTH && y >= 0 && y < BOARD_LENGTH)) {
-        std::cerr << "[getAttackFieldOfPiece] out-of-bounds position." << std::endl;
-        exit(1);
-    }
-
-    std::vector<std::pair<int, int>> attackField;
-    switch(pieceByte) {
-        case WHITE_PAWN:
-            if(y > 0) {
-                if(x > 0 && getByteFromByteBoard(x-1,y-1) != NO_PIECE) {
-                    attackField.push_back(std::pair(x-1, y-1));
-                }
-                if(x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1,y-1) != NO_PIECE) {
-                    attackField.push_back(std::pair(x+1, y-1));
-                }
-            }
-            break;
-        case BLACK_PAWN:
-            if(y < BOARD_LENGTH-1 && (x > 0 && getByteFromByteBoard(x-1,y+1) != NO_PIECE)) {
-                attackField.push_back(std::pair(x-1, y+1));
-            }
-            if(y < BOARD_LENGTH-1 && (x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1,y+1) != NO_PIECE)) {
-                attackField.push_back(std::pair(x+1, y+1));
-            }
-            break;
-        case WHITE_KNIGHT:
-        case BLACK_KNIGHT:
-            if(y > 1) {
-                if(x > 0 && getByteFromByteBoard(x-1, y-2) != NO_PIECE) {
-                    attackField.push_back(std::pair(x-1, y-2));
-                }
-                if(x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1, y-2) != NO_PIECE) {
-                    attackField.push_back(std::pair(x+1, y-2));
-                }
-            }
-            if(y < BOARD_LENGTH-2) {
-                if(x > 0 && getByteFromByteBoard(x-1, y+2) != NO_PIECE) {
-                    attackField.push_back(std::pair(x-1, y+2));
-                }
-                if(x < BOARD_LENGTH-1 && getByteFromByteBoard(x+1, y+2) != NO_PIECE) {
-                    attackField.push_back(std::pair(x+1, y+2));
-                }
-            }
-            if(x > 1) {
-                if(y > 0 && getByteFromByteBoard(x-2, y-1) != NO_PIECE) {
-                    attackField.push_back(std::pair(x-2, y-1));
-                }
-                if(y < BOARD_LENGTH-1 && getByteFromByteBoard(x-2, y+1) != NO_PIECE) {
-                    attackField.push_back(std::pair(x-2, y+1));
-                }
-            }
-            if(x < BOARD_LENGTH-2) {
-                if(y > 0 && getByteFromByteBoard(x+2, y-1) != NO_PIECE) {
-                    attackField.push_back(std::pair(x+2, y-1));
-                }
-                if(y < BOARD_LENGTH-1 && getByteFromByteBoard(x+2, y+1) != NO_PIECE) {
-                    attackField.push_back(std::pair(x+2, y+1));
-                }
-            }
-            break;
-        case WHITE_QUEEN: // queen is same as bishop + rook
-        case BLACK_QUEEN:
-        case WHITE_BISHOP:
-        case BLACK_BISHOP: {
-            int tmpX = x;
-            int tmpY = y;
-            while(tmpX > 0 && tmpY > 0) {
-                tmpX--;
-                tmpY--;
-                attackField.push_back(std::pair(tmpX, tmpY));
-                if(getByteFromByteBoard(tmpX, tmpY) != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            tmpY = y;
-            while(tmpX > 0 && tmpY < BOARD_LENGTH-1) {
-                tmpX--;
-                tmpY++;
-                attackField.push_back(std::pair(tmpX, tmpY));
-                if(getByteFromByteBoard(tmpX, tmpY) != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            tmpY = y;
-            while(tmpX < BOARD_LENGTH-1 && tmpY > 0) {
-                tmpX++;
-                tmpY--;
-                attackField.push_back(std::pair(tmpX, tmpY));
-                if(getByteFromByteBoard(tmpX, tmpY) != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            tmpY = y;
-            while(tmpX < BOARD_LENGTH-1 && tmpY < BOARD_LENGTH-1) {
-                tmpX++;
-                tmpY++;
-                attackField.push_back(std::pair(tmpX, tmpY));
-                if(getByteFromByteBoard(tmpX, tmpY) != NO_PIECE) {
-                    break;
-                }
-            }
-
-            if(pieceByte != WHITE_QUEEN && pieceByte != BLACK_QUEEN) {
-                break;
-            } // no break if the piece is a queen (queen can also do rook moves)
-        }
-        case WHITE_ROOK:
-        case BLACK_ROOK:
-            int tmpX = x;
-            while(tmpX > 0) {
-                tmpX--;
-                attackField.push_back(std::pair(tmpX, y));
-                if(getByteFromByteBoard(tmpX, y) != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpX = x;
-            while(tmpX < BOARD_LENGTH-1) {
-                tmpX++;
-                attackField.push_back(std::pair(tmpX, y));
-                if(getByteFromByteBoard(tmpX, y) != NO_PIECE) {
-                    break;
-                }
-            }
-            int tmpY = y;
-            while(tmpY > 0) {
-                tmpY--;
-                attackField.push_back(std::pair(x, tmpY));
-                if(getByteFromByteBoard(x, tmpY) != NO_PIECE) {
-                    break;
-                }
-            }
-            tmpY = y;
-            while(tmpY < BOARD_LENGTH-1) {
-                tmpY++;
-                attackField.push_back(std::pair(x, tmpY));
-                if(getByteFromByteBoard(x, tmpY) != NO_PIECE) {
-                    break;
-                }
-            }
-            break;
-    }
-
-    return attackField;                                                   
-}
-
-void State::updateAttackFields() {
-    clearAttackFieldBlack();
-    clearAttackFieldWhite();
-    for(int i = 0; i < BOARD_LENGTH; i++) {
-        for(int j = 0; j < BOARD_LENGTH; j++) {
-            if(byteBoard[i][j] != NO_PIECE) {
-                std::vector<std::pair<int, int>> attackField = getAttackFieldOfPiece(byteBoard[i][j], i, j);
-                if(isWhitePiece(byteBoard[i][j])) {
-                    for(int k = 0; k < attackField.size(); k++) {
-                        attackFieldWhite[attackField[k].first][attackField[k].second] = true;
-                    }
-                }
-                else {
-                    for(int k = 0; k < attackField.size(); k++) {
-                        attackFieldBlack[attackField[k].first][attackField[k].second] = true;
-                    }
-                }
-            }
-        }
-    }
-}
-
-std::vector<std::pair<int, int>> State::getLegalMovesOfPiece(uint8_t const pieceByte,
-                                                             int const x, int const y) {
-    //TODO
-    std::vector<std::pair<int, int>> legalMoves = getAttackFieldOfPiece(pieceByte, x, y);
-    
-    // add fields for pawn, because pawn can move to "non-attacking" fields
-    return legalMoves;
-}
-
-bool State::isLegalMove(uint8_t const pieceByte, 
-                        int const prevX, int const prevY, 
-                        int const newX, int const newY,
-                        bool& enPassantMove, bool& castlingMove) {
-    if(!(prevX >= 0 && prevX < BOARD_LENGTH && prevY >= 0 && prevY < BOARD_LENGTH)
-        || !(newX >= 0 && newX < BOARD_LENGTH && newY >= 0 && newY < BOARD_LENGTH)) {
-        std::cerr << "[isLegalMove] out-of-bounds position." << std::endl;
-        exit(1);
-    }
-
-    if(newX == prevX && newY == prevY) {
-        return false;
-    }
-    
-    uint8_t pieceOfCapture = getByteFromByteBoard(newX, newY);
-    if(pieceOfCapture != NO_PIECE && isWhitePiece(pieceOfCapture) == isWhitePiece(pieceByte)) {
-        // can never capture similar colored piece
-        return false;
-    }
-    std::vector<std::pair<int, int>> attackField = getAttackFieldOfPiece(pieceByte, prevX, prevY);
-
-    for(int i = 0; i < attackField.size(); i++) {
-        std::cout << "attacking: " << attackField[i].first << " " << attackField[i].second << std::endl;
-        if(newX == attackField[i].first && newY == attackField[i].second) {
-            return true;
-        }
-    }
-
-    return false;
 }
