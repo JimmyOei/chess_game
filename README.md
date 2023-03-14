@@ -6,12 +6,21 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 ## TODO
 - implement mate
 - start and end interface (put menu inside interface class)
-- castling move
-- king legal move (cannot check himself)
-- pawn promotion
-- when check, only moves that remove check are legal
-- checks can also be done indirectly
+- special moves in isLegalMove: pawn promotion, castling, en passant
 - highlight legal moves for drag piece
+- isKingAttacked function: check "attack field" and can stop when king is attacked, keep track of king positions
+- moving a piece: in interface just dont render dragged piece (instead of removing it from the board), create function to *try to* move a piece in class Game (which can be used to check if the king is moving) which will call the isLegalMove function and return false if not worked to update the rendering
+
+*Game:*
+- getPossibleMoves\[Pawn|Knight|Bishop|Rook|Queen|King\]
+- getLegalMoves
+- isKingAttacked
+- MovePiece
+
+*Interface:*
+- pickupPiece
+- renderLegalMoves
+- releasePiece
 
 *Ideas*
 - random move opponent
