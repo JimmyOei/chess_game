@@ -1,6 +1,6 @@
 INC_DIR = include
 SRC_DIR = source
-SOURCES =  $(SRC_DIR)/main.cc $(SRC_DIR)/game.cc $(SRC_DIR)/state.cc
+SOURCES =  $(SRC_DIR)/main.cc $(SRC_DIR)/game.cc $(SRC_DIR)/state.cc $(SRC_DIR)/interface.cc
 OBJECTS = $(SOURCES:.cc=.o)
 TARGET = Chess_game
 CXX = g++

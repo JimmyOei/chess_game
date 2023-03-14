@@ -49,7 +49,7 @@ void menu(State* state, int& gamemode) {
         if(FEN == "default") {
             FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
         }
-        if(!state->setByteBoardFromFEN(FEN)) {
+        if(!state->setStateFromFEN(FEN)) {
             std::cerr << ">> The given FEN-notation is invalid: " << FEN << std::endl << std::endl;
         }
         else {
@@ -57,40 +57,48 @@ void menu(State* state, int& gamemode) {
         }
     }
     std::cout << ">> Good luck!" << std::endl;
-    std::cout << state->getFEN() << std::endl;
+    state->debugPrintState();
 }
 
 int main(int argc, char *argv[]) {
-    int const frameDelay = 1000 / 60;
-    Uint32 frameStart;
-    int frameTime;
-    SDL_Event event;
-
-    Interface* interface = new Interface;
-    Game* game = new Game;
     State* state = new State;
     int gamemode = 0;
     menu(state, gamemode);
-    interface->init(state, gamemode);
 
-    while(interface->isRunning()) {
-        frameStart = SDL_GetTicks();
+    exit(0);
+    // int const frameDelay = 1000 / 60;
+    // Uint32 frameStart;
+    // int frameTime;
+    // SDL_Event event;
 
-        if(SDL_WaitEvent(&event) != 0) {
-            interface->eventHandler(event);
-            interface->render();
-        }
+    // Interface* interface = new Interface;
+    // Game* game = new Game;
+    // State* state = new State;
+    // int gamemode = 0;
+    // menu(state, gamemode);
 
-        frameTime = SDL_GetTicks() - frameStart;
+    // exit(0);
 
-        if(frameDelay > frameStart) {
-            SDL_Delay(frameDelay - frameTime);
-        }
-    }
+    // interface->init(state, gamemode);
 
-    delete interface;
-    delete game;
-    delete state;
+    // while(interface->isRunning()) {
+    //     frameStart = SDL_GetTicks();
 
-    return 0;
+    //     if(SDL_WaitEvent(&event) != 0) {
+    //         interface->eventHandler(event);
+    //         interface->render();
+    //     }
+
+    //     frameTime = SDL_GetTicks() - frameStart;
+
+    //     if(frameDelay > frameStart) {
+    //         SDL_Delay(frameDelay - frameTime);
+    //     }
+    // }
+
+    // delete interface;
+    // delete game;
+    // delete state;
+
+    // return 0;
 }

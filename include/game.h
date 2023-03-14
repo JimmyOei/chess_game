@@ -43,7 +43,7 @@ class Game {
             return pieceByte & WHITE_PIECE;
         }
 
-        std::vector<std::pair<int, int>> getPossibleMoves
+        std::vector<std::pair<int, int>> getPossibleMoves;
 
 
 };

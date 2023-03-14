@@ -44,6 +44,10 @@
 #define BOARD_LENGTH 8
 #define BOARD_SIZE BOARD_LENGTH*BOARD_LENGTH
 
+/* turn */
+#define WHITE true
+#define BLACK false;
+
 class State {
     public:
         /**
@@ -76,6 +80,7 @@ class State {
         */
         bool getTurn();
 
+        int getPosOfKing(bool const color);
 
         /**
          * @brief gets the byte from the ByteBoard at position (x, y)
@@ -121,6 +126,8 @@ class State {
         // */
         // std::string getFEN();
 
+        void debugPrintState();
+
     private:
         uint8_t byteBoard[BOARD_SIZE];
 
@@ -138,6 +145,9 @@ class State {
         // NOT IMPLEMENTED YET
         // int halfMoveClock;
         // int fullMoveNumber;
+
+        int whiteKingPos;
+        int blackKingPos;
 
         void clearState();
 };

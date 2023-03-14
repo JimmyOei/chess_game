@@ -1,16 +1,20 @@
 #include "../include/state.h"
 
+#include <iostream>
+
 void State::clearState() {
     for(int i = 0; i < BOARD_SIZE; i++) {
         byteBoard[i] = NO_PIECE;
     }
-    turn = false;
+    turn = WHITE;
     enPassant = false;
     enPassantPos = 0;
     whiteCastlingQueenside = false;
     whiteCastlingKingside = false;
     blackCastlingQueenside = false;
     blackCastlingKingside = false;
+    whiteKingPos = -1;
+    blackKingPos = -1;
 }
 
 State::State() {
@@ -51,6 +55,10 @@ bool State::getTurn() {
     return turn;
 }
 
+int State::getPosOfKing(bool const color) {
+    return color ? whiteKingPos : blackKingPos;
+}
+
 uint8_t State::getByteFromByteBoard(int const pos) {
     return byteBoard[pos];
 }
@@ -69,12 +77,15 @@ bool State::setStateFromFEN(std::string FEN) {
     int const lengthFEN = FEN.length();
 
     // setting the board
-    int pos = 0;
+    int pos = BOARD_SIZE-1;
     int i = 0;
-    while(i < lengthFEN && pos < BOARD_SIZE) {
+
+    // TODO: FIX THE MIRRORING
+    while(i < lengthFEN && pos >= 0) {
         switch(FEN[i]) {
             case '/':
-                pos = pos + BOARD_LENGTH - (pos % BOARD_LENGTH) - 1;
+                pos += 1; // because we may just have moved to new row
+                pos = pos - (pos % BOARD_LENGTH);
                 if(pos >= BOARD_SIZE) {
                     return false;
                 }
@@ -89,26 +100,33 @@ bool State::setStateFromFEN(std::string FEN) {
             case 'R': byteBoard[pos] = WHITE_ROOK; break;
             case 'q': byteBoard[pos] = BLACK_QUEEN; break;
             case 'Q': byteBoard[pos] = WHITE_QUEEN; break;
-            case 'k': byteBoard[pos] = BLACK_KING; break;
-            case 'K': byteBoard[pos] = WHITE_KING; break;
+            case 'k': byteBoard[pos] = BLACK_KING; blackKingPos = pos; break;
+            case 'K': byteBoard[pos] = WHITE_KING; whiteKingPos = pos;  break;
             default:
                 int const nrEmptySquares = FEN[i] - '0';
-                pos += nrEmptySquares;
+                if(nrEmptySquares > BOARD_LENGTH) {
+                    return false;;
+                }
+                pos = pos - nrEmptySquares + 1;
                 if(pos >= BOARD_SIZE) {
                     return false;
                 }
                 break;
         }
-        pos++;
+        std::cout << i << " " << FEN[i] << " "  << pos << " " << byteBoard[pos] << std::endl;
+        pos--;
         i++;
     }
+    if(whiteKingPos == -1 || blackKingPos == -1) {
+        return false;
+    } // no king(s) on the board
 
     i++;
     // who's turn is it
     if(i < lengthFEN && FEN[i-1] == ' ') {
         switch(FEN[i]) {
-            case 'w': turn = true; break;
-            case 'b': turn = false; break;
+            case 'w': turn = WHITE; break;
+            case 'b': turn = BLACK; break;
             default: return false;
         }
     }
@@ -236,3 +254,39 @@ bool State::setStateFromFEN(std::string FEN) {
 
 //     return FEN;
 // }
+
+void State::debugPrintState() {
+    std::cout << "--------===== DEBUG STATE =====--------" << std::endl
+              << "Turn: " << turn << std::endl
+              << "enPassant: " << enPassant << std::endl
+              << "enPassantPos: " << enPassantPos << std::endl
+              << "whiteCastlingQueenside: " << whiteCastlingQueenside << std::endl
+              << "whiteCastlingKingside: " << whiteCastlingKingside << std::endl
+              << "blackCastlingQueenside: " << blackCastlingQueenside << std::endl
+              << "blackCastlingKingside: " << blackCastlingKingside << std::endl
+              << "whiteKingPos: " << whiteKingPos << std::endl
+              << "blackKingPos: " << blackKingPos << std::endl
+              << std::endl;
+
+    for(int i = BOARD_LENGTH-1; i >= 0; i--) {
+        for(int pos = i*BOARD_LENGTH; pos < (i+1)*BOARD_LENGTH; pos++) {
+            std::cout << " ";
+            switch(byteBoard[pos]) {
+                case WHITE_PAWN: std::cout << "P"; break;
+                case BLACK_PAWN: std::cout << "p"; break;
+                case WHITE_KNIGHT: std::cout << "N"; break;
+                case BLACK_KNIGHT: std::cout << "n"; break;
+                case WHITE_BISHOP: std::cout << "B"; break;
+                case BLACK_BISHOP: std::cout << "b"; break;
+                case WHITE_ROOK: std::cout << "R"; break;
+                case BLACK_ROOK: std::cout << "r"; break;
+                case WHITE_QUEEN: std::cout << "Q"; break;
+                case BLACK_QUEEN: std::cout << "q"; break;
+                case WHITE_KING: std::cout << "K"; break;
+                case BLACK_KING: std::cout << "k"; break;
+                default: std::cout << ".";
+            }
+        }
+        std::cout << std::endl;
+    }
+}   
