@@ -42,6 +42,7 @@
 
 /* board */
 #define BOARD_LENGTH 8
+#define BOARD_SIZE BOARD_LENGTH*BOARD_LENGTH
 
 class State {
     public:
@@ -51,9 +52,14 @@ class State {
         */
         State();
 
-        State(State* state);
+        State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
+              bool const enPassant, int const enPassantPos, bool const whiteCastlingQueenside,
+              bool const whiteCastlingKingside, bool const blackCastlingQueenside,
+              bool const blackCastlingKingside);
 
-        bool withinBoardLimits(int const x, int const y);
+        State* copyState();
+
+        bool withinBoardLimits(int const pos);
 
         /**
          * @brief passes turn and resetting the booleans enPassant 
@@ -70,7 +76,6 @@ class State {
         */
         bool getTurn();
 
-        void clearByteBoard();
 
         /**
          * @brief gets the byte from the ByteBoard at position (x, y)
@@ -79,7 +84,7 @@ class State {
          * @param y point on the vertical axis of the board
          * @return byte/uint8_t on position (x, y)
         */
-        uint8_t getByteFromByteBoard(int const x, int const y);
+        uint8_t getByteFromByteBoard(int const pos);
 
         /**
          * @brief sets the byte in the byteBoard at 
@@ -89,7 +94,7 @@ class State {
          * @param x point on the horizontal axis of the board
          * @param y point on the vertical axis of the board
         */
-        void setByteInByteBoard(uint8_t const byte, int const x, int const y);
+        void setByteInByteBoard(uint8_t const byte, int const pos);
 
         /**
          * @brief setting the En Passant square positions 
@@ -98,7 +103,7 @@ class State {
          * @param x point on the horizontale axis
          * @param y point on the vertical axis
         */
-        void setEnPassantSquare(int const x, int const y);
+        void setEnPassantPos(int const pos);
 
         /**
          * @brief sets the byteBoard according to the given FEN-notation
@@ -107,30 +112,34 @@ class State {
          * @return true if FEN is a legal FEN-notation and byteBoard
          *          is set succesfully, otherwise false
         */
-        bool setByteBoardFromFEN(std::string FEN);
+        bool setStateFromFEN(std::string FEN);
 
-        /**
-         * @brief translates the byteBoard to FEN-notation and returns this
-         * 
-         * @return the FEN-notation of the current state
-        */
-        std::string getFEN();
+        // /**
+        //  * @brief translates the byteBoard to FEN-notation and returns this
+        //  * 
+        //  * @return the FEN-notation of the current state
+        // */
+        // std::string getFEN();
 
     private:
-        uint8_t byteBoard[BOARD_LENGTH][BOARD_LENGTH];
+        uint8_t byteBoard[BOARD_SIZE];
 
         // true for white's turn, false for black's turn
         bool turn;
 
         bool enPassant;
-        int xEnPassantSquare;
-        int yEnPassantSquare; 
+        int enPassantPos;
 
         bool whiteCastlingQueenside;
         bool whiteCastlingKingside;
         bool blackCastlingQueenside;
         bool blackCastlingKingside;
 
+        // NOT IMPLEMENTED YET
+        // int halfMoveClock;
+        // int fullMoveNumber;
+
+        void clearState();
 };
 
 #endif

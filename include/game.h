@@ -43,8 +43,8 @@ class Game {
             return pieceByte & WHITE_PIECE;
         }
 
-        void clearAttackFieldWhite();
-        void clearAttackFieldBlack();
+        std::vector<std::pair<int, int>> getPossibleMoves
+
 
 };
 
