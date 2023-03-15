@@ -91,15 +91,8 @@ class State {
         */
         uint8_t getByteFromByteBoard(int const pos);
 
-        /**
-         * @brief sets the byte in the byteBoard at 
-         *          position (x, y) to given byte
-         * 
-         * @param byte byte to put at position (x, y)
-         * @param x point on the horizontal axis of the board
-         * @param y point on the vertical axis of the board
-        */
-        void setByteInByteBoard(uint8_t const byte, int const pos);
+        // Note: pawn advance can be down with movePiece(pieceByteToAdvanceTo, prevPos, newPos)
+        void movePiece(uint8_t const pieceByte, int const prevPos, int const newPos);
 
         /**
          * @brief setting the En Passant square positions 

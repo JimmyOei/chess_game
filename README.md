@@ -25,7 +25,6 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 *Ideas*
 - random move opponent
 
-
 ## License
 
 The chess pieces in this project are made by Cburnett and unchanged.

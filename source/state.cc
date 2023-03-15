@@ -63,8 +63,15 @@ uint8_t State::getByteFromByteBoard(int const pos) {
     return byteBoard[pos];
 }
 
-void State::setByteInByteBoard(uint8_t const byte, int const pos) {
-    byteBoard[pos] = byte;
+void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newPos) {
+    if(pieceByte == WHITE_KING) {
+        whiteKingPos = newPos;
+    }
+    else if(pieceByte == BLACK_KING) {
+        blackKingPos = newPos;
+    }
+    byteBoard[prevPos] = NO_PIECE;
+    byteBoard[newPos] = pieceByte;
 }
 
 void State::setEnPassantPos(int const pos) {
@@ -75,20 +82,18 @@ void State::setEnPassantPos(int const pos) {
 bool State::setStateFromFEN(std::string FEN) {
     clearState();
     int const lengthFEN = FEN.length();
-
-    // setting the board
-    int pos = BOARD_SIZE-1;
     int i = 0;
 
-    // TODO: FIX THE MIRRORING
-    while(i < lengthFEN && pos >= 0) {
+    // setting the board
+    int posY = BOARD_LENGTH-1;
+    int posX = 0;
+    int pos = BOARD_SIZE - BOARD_LENGTH;
+    while(i < lengthFEN && posY >= 0 && posX <= BOARD_LENGTH && FEN[i] != ' ') {
         switch(FEN[i]) {
             case '/':
-                pos += 1; // because we may just have moved to new row
-                pos = pos - (pos % BOARD_LENGTH);
-                if(pos >= BOARD_SIZE) {
-                    return false;
-                }
+                posY--;
+                posX = -1;
+                pos = posY * BOARD_LENGTH - 1;
                 break;
             case 'p': byteBoard[pos] = BLACK_PAWN; break;
             case 'P': byteBoard[pos] = WHITE_PAWN; break;
@@ -103,23 +108,22 @@ bool State::setStateFromFEN(std::string FEN) {
             case 'k': byteBoard[pos] = BLACK_KING; blackKingPos = pos; break;
             case 'K': byteBoard[pos] = WHITE_KING; whiteKingPos = pos;  break;
             default:
-                int const nrEmptySquares = FEN[i] - '0';
-                if(nrEmptySquares > BOARD_LENGTH) {
-                    return false;;
-                }
-                pos = pos - nrEmptySquares + 1;
-                if(pos >= BOARD_SIZE) {
+                int const tmp = FEN[i] - '0';
+                if(tmp < 0 || tmp > BOARD_LENGTH) {
                     return false;
                 }
+                posX += tmp-1;
+                pos += tmp-1;
                 break;
         }
-        std::cout << i << " " << FEN[i] << " "  << pos << " " << byteBoard[pos] << std::endl;
-        pos--;
+        std::cout << i << " " << FEN[i] << " " << posY << " "  << pos << " " << byteBoard[pos] << std::endl;
+        pos++;
+        posX++;
         i++;
     }
-    if(whiteKingPos == -1 || blackKingPos == -1) {
+    if(whiteKingPos == -1 || blackKingPos == -1 || posX != BOARD_LENGTH || posY != 0) {
         return false;
-    } // no king(s) on the board
+    } // no king(s) on the board or fen did not cover whole board (incorrect notation)
 
     i++;
     // who's turn is it
