@@ -7,8 +7,7 @@
 #include <iostream>
 #include <stdint.h>
 
-#include "../include/state.h"
-
+#include "state.h"
 
 
 class Game {
@@ -21,13 +20,9 @@ class Game {
 
         // TODO: getAttack.. update.. could maybe be private
 
-        std::vector<std::pair<int, int>> getAttackFieldOfPiece(uint8_t const pieceByte,
-                                                               int const x, int const y);
-
         bool isKingAttacked(State* state, uint8_t colorOfKing);
 
-        std::vector<std::pair<int, int>> getLegalMovesOfPiece(uint8_t const pieceByte,
-                                                              int const x, int const y);
+        std::vector<int> getLegalMovesOfPiece(uint8_t const pieceByte, int const pos);
 
 
     private:
@@ -39,11 +34,7 @@ class Game {
         int xBlackKing;
         int yBlackKing;
 
-        bool isWhitePiece(uint8_t const pieceByte) {
-            return pieceByte & WHITE_PIECE;
-        }
-
-        std::vector<std::pair<int, int>> getPossibleMoves;
+        std::vector<int> getPossibleMoves(uint8_t const pieceByte, int const pos);
 
 
 };

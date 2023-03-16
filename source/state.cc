@@ -7,8 +7,7 @@ void State::clearState() {
         byteBoard[i] = NO_PIECE;
     }
     turn = WHITE;
-    enPassant = false;
-    enPassantPos = 0;
+    enPassantPos = -1;
     whiteCastlingQueenside = false;
     whiteCastlingKingside = false;
     blackCastlingQueenside = false;
@@ -22,11 +21,10 @@ State::State() {
 }
 
 State::State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
-             bool const enPassant, int const enPassantPos, bool const whiteCastlingQueenside,
+             int const enPassantPos, bool const whiteCastlingQueenside,
              bool const whiteCastlingKingside, bool const blackCastlingQueenside,
              bool const blackCastlingKingside) {
     this->turn = turn;
-    this->enPassant = enPassant;
     this->whiteCastlingQueenside = whiteCastlingQueenside;
     this->whiteCastlingKingside = whiteCastlingKingside;
     this->blackCastlingQueenside = blackCastlingQueenside;
@@ -37,7 +35,7 @@ State::State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
 }
 
 State* State::copyState() {
-    return new State(byteBoard, turn, enPassant, enPassantPos, 
+    return new State(byteBoard, turn, enPassantPos, 
                      whiteCastlingQueenside, whiteCastlingKingside,
                      blackCastlingQueenside, blackCastlingKingside);
 }
@@ -48,7 +46,7 @@ bool State::withinBoardLimits(int const pos) {
 
 void State::passTurn() {
     turn = !turn;
-    enPassant = false;
+    enPassantPos = -1;
 }
 
 bool State::getTurn() {
@@ -76,7 +74,10 @@ void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newP
 
 void State::setEnPassantPos(int const pos) {
     enPassantPos = pos;
-    enPassant = true;
+}
+
+int State::getEnPassantPos() {
+    return enPassantPos;
 }
 
 bool State::setStateFromFEN(std::string FEN) {
@@ -163,10 +164,7 @@ bool State::setStateFromFEN(std::string FEN) {
         }
 
         // En Passant data
-        if(FEN[i++] == '-') {
-            enPassant = false;
-        }
-        else {
+        if(FEN[i++] != '-') {
             if(i < lengthFEN-1)
             enPassantPos = FEN[i++] - 'a';
             if(enPassantPos >= BOARD_LENGTH && i >= lengthFEN) {
@@ -262,7 +260,6 @@ bool State::setStateFromFEN(std::string FEN) {
 void State::debugPrintState() {
     std::cout << "--------===== DEBUG STATE =====--------" << std::endl
               << "Turn: " << turn << std::endl
-              << "enPassant: " << enPassant << std::endl
               << "enPassantPos: " << enPassantPos << std::endl
               << "whiteCastlingQueenside: " << whiteCastlingQueenside << std::endl
               << "whiteCastlingKingside: " << whiteCastlingKingside << std::endl

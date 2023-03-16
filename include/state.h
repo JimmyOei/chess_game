@@ -48,6 +48,17 @@
 #define WHITE true
 #define BLACK false;
 
+/* directions */
+#define NORTH BOARD_LENGTH
+#define EAST +1
+#define WEST -1
+#define SOUTH -BOARD_LENGTH
+
+bool getColorOfPiece(uint8_t const pieceByte) {
+    return pieceByte & WHITE_PIECE;
+}
+
+
 class State {
     public:
         /**
@@ -57,7 +68,7 @@ class State {
         State();
 
         State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
-              bool const enPassant, int const enPassantPos, bool const whiteCastlingQueenside,
+              int const enPassantPos, bool const whiteCastlingQueenside,
               bool const whiteCastlingKingside, bool const blackCastlingQueenside,
               bool const blackCastlingKingside);
 
@@ -103,6 +114,8 @@ class State {
         */
         void setEnPassantPos(int const pos);
 
+        int getEnPassantPos();
+
         /**
          * @brief sets the byteBoard according to the given FEN-notation
          * 
@@ -127,7 +140,6 @@ class State {
         // true for white's turn, false for black's turn
         bool turn;
 
-        bool enPassant;
         int enPassantPos;
 
         bool whiteCastlingQueenside;
