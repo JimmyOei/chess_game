@@ -16,8 +16,6 @@ bool Game::isKingAttacked(State* state, uint8_t colorOfKing) {
 std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) {
     std::vector<int> possibleMoves;
 
-    // TODO: En Passant move
-
     int tmpPos = pos;
     bool colorPieceByte = getColorOfPiece(pieceByte);
     switch(pieceByte) {
