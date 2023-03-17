@@ -14,8 +14,7 @@ Interface::Interface() {
     boardStartingY = 0;
     running = false;
     dragPieceByte = NO_PIECE;
-    dragPieceTextureMouseX = 0;
-    dragPieceTextureMouseY = 0;
+    dragPiecePos = -1;
     game = new Game;
 }
 
@@ -238,9 +237,14 @@ void Interface::renderBoard() {
 }
 
 void Interface::renderState() {
-    for(int y = 0; y < BOARD_LENGTH; y++) {
+    int pos = 0;
+    for(int y = BOARD_LENGTH-1; y >= 0; y--) {
         for(int x = 0; x < BOARD_LENGTH; x++) {
-            uint8_t byteFromByteBoard = game->state->getPieceAt(x, y);
+            if(pos == dragPiecePos) {
+                pos++;
+                continue;
+            }
+            uint8_t byteFromByteBoard = game->state->getPieceAt(pos++);
 
             if(byteFromByteBoard == NO_PIECE) {
                 continue;
@@ -271,16 +275,15 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY) {
     if((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH)) {
         dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdge;
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
-        dragPieceByte = game->state->getPieceAt(squareXOfMouse, squareYOfMouse);
+        dragPiecePos = squareXOfMouse + (BOARD_LENGTH-squareYOfMouse-1)*BOARD_LENGTH;
+        dragPieceByte = game->state->getPieceAt(dragPiecePos);
 
-        if(dragPieceByte != NO_PIECE && (game->state->getTurn() ? dragPieceByte & WHITE_PIECE : dragPieceByte & BLACK_PIECE)) {
-            game->state->setByteInByteBoard(NO_PIECE, squareXOfMouse, squareYOfMouse);
-            dragPieceInitialSquareX = squareXOfMouse;
-            dragPieceInitialSquareY = squareYOfMouse;
-        } // there is a piece and it's of the current player's side
-        else {
+        if(dragPieceByte == NO_PIECE || game->state->getTurn() != getColorOfPiece(dragPieceByte)) {
             dragPieceByte = NO_PIECE;
-        }
+            dragPiecePos = -1;
+            return;
+        } // there is no piece at this square or it's of the opponent's color
+        dragPieceLegalMoves = game->getLegalMoves(dragPieceByte, dragPiecePos);
     }
 }
 
@@ -311,39 +314,17 @@ void Interface::renderDragPiece(int const mouseX, int const mouseY) {
 void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
-    bool enPassantMove = false;
-    bool castlingMove = false;
+    int const newDragPiecePos = squareXOfMouse + (BOARD_LENGTH-squareYOfMouse-1)*BOARD_LENGTH;
 
-    // // Checks if mouse is inside board, it's the user's turn and it's a legal move, 
-    // // else the piece goes back to initial square
-    // if(((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH))
-    //     && state->isLegalMove(dragPieceByte, 
-    //                           dragPieceInitialSquareX, dragPieceInitialSquareY, 
-    //                           squareXOfMouse, squareYOfMouse,
-    //                           enPassantMove, castlingMove)) {
-    //     state->setByteInByteBoard(dragPieceByte, squareXOfMouse, squareYOfMouse);
-    //     if(enPassantMove) {
-    //         state->setByteInByteBoard(NO_PIECE, squareXOfMouse, state->getTurn() ? squareYOfMouse + 1 : squareYOfMouse - 1);
-    //     }
-    //     state->passTurn();
-    //     state->isCheck(dragPieceByte, squareXOfMouse, squareYOfMouse);
-    //     if(dragPieceByte & 0b00000001) {
-    //         if(dragPieceInitialSquareY == 1 && squareYOfMouse == 3) {
-    //             state->setEnPassantSquare(squareXOfMouse, 2);
-    //         }
-    //         else if(dragPieceInitialSquareY = BOARD_LENGTH-2 && squareYOfMouse == BOARD_LENGTH-4) {
-    //             state->setEnPassantSquare(squareXOfMouse, BOARD_LENGTH-3);
-    //         }
-    //     }
-    // }
-    // else {
-    //     state->setByteInByteBoard(dragPieceByte, dragPieceInitialSquareX, dragPieceInitialSquareY);
-    // }
+    for(int i = 0; i < dragPieceLegalMoves->size(); i++) {
+        if(dragPieceLegalMoves->at(i) == newDragPiecePos) {
+            game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);
+            game->state->passTurn();
+            break;
+        }
+    }
 
     // reset dragPiece variables
     dragPieceByte = NO_PIECE;
-    dragPieceInitialSquareX = 0;
-    dragPieceInitialSquareY = 0;
-    dragPieceTextureMouseX = 0;
-    dragPieceTextureMouseY = 0;
+    dragPiecePos = -1;
 }

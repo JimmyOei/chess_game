@@ -54,10 +54,9 @@
 #define WEST -1
 #define SOUTH -BOARD_LENGTH
 
-bool getColorOfPiece(uint8_t const pieceByte) {
+inline bool getColorOfPiece(uint8_t const pieceByte) {
     return pieceByte & WHITE_PIECE;
 }
-
 
 class State {
     public:

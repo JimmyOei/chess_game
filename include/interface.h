@@ -6,7 +6,9 @@
 
 #include <iostream>
 #include <stdint.h>
+#include <vector>
 
+#include "state.h"
 #include "game.h"
 
 #define MIN_SCREEN_WIDTH 500
@@ -27,7 +29,7 @@
 #define DARK_KING_IMG "./pieces/darkKing.png"
 #define LIGHT_KING_IMG "./pieces/lightKing.png"
 
-
+// TODO: en passant implementation different
 class Interface {
     public: 
         Interface();
@@ -62,8 +64,8 @@ class Interface {
         uint8_t dragPieceByte;
         int dragPieceTextureMouseX;
         int dragPieceTextureMouseY;
-        int dragPieceInitialSquareX;
-        int dragPieceInitialSquareY;
+        int dragPiecePos;
+        std::vector<int>* dragPieceLegalMoves;
 
         void menu();
 

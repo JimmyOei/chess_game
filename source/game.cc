@@ -17,8 +17,8 @@ bool Game::isKingAttacked() {
     return false;
 }
 
-std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) {
-    std::vector<int> possibleMoves;
+std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos) {
+    std::vector<int>* possibleMoves = new std::vector<int>;
 
     int tmpPos = pos;
     bool colorPieceByte = getColorOfPiece(pieceByte);
@@ -27,21 +27,21 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
             tmpPos += BOARD_LENGTH;
             if(state->withinBoardLimits(tmpPos)
                && state->getPieceAt(tmpPos) == NO_PIECE) {
-                possibleMoves.push_back(tmpPos);
+                possibleMoves->push_back(tmpPos);
             } // one step upwards move
             tmpPos += BOARD_LENGTH;
             if(pos >= BOARD_LENGTH && pos < 2*BOARD_LENGTH 
                && state->withinBoardLimits(tmpPos)
                && state->getPieceAt(tmpPos-BOARD_LENGTH) == NO_PIECE
                && state->getPieceAt(tmpPos) == NO_PIECE) {
-                possibleMoves.push_back(tmpPos);
+                possibleMoves->push_back(tmpPos);
             } // two step upwards move (only possible if at y=BOARD_LENGTH-1)
             tmpPos = pos+BOARD_LENGTH-1;
             if(state->withinBoardLimits(tmpPos)) {
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
-                    possibleMoves.push_back(tmpPos);
+                    possibleMoves->push_back(tmpPos);
                 }
             } // left diagonal take
             tmpPos += 2;
@@ -49,7 +49,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
-                    possibleMoves.push_back(tmpPos);
+                    possibleMoves->push_back(tmpPos);
                 }
             } // right diagonal take
             break;
@@ -57,21 +57,21 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
             tmpPos -= BOARD_LENGTH;
             if(state->withinBoardLimits(tmpPos)
                && state->getPieceAt(tmpPos) == NO_PIECE) {
-                possibleMoves.push_back(tmpPos);
+                possibleMoves->push_back(tmpPos);
             } // one step upwards move
             tmpPos -= BOARD_LENGTH;
-            if(pos >= BOARD_LENGTH && pos < 2*BOARD_LENGTH 
+            if(pos >= BOARD_SIZE-BOARD_LENGTH-BOARD_LENGTH && pos < BOARD_SIZE-BOARD_LENGTH
                && state->withinBoardLimits(tmpPos)
-               && state->getPieceAt(tmpPos-BOARD_LENGTH) == NO_PIECE
+               && state->getPieceAt(tmpPos+BOARD_LENGTH) == NO_PIECE
                && state->getPieceAt(tmpPos) == NO_PIECE) {
-                possibleMoves.push_back(tmpPos);
+                possibleMoves->push_back(tmpPos);
             } // two step upwards move (only possible if at y=BOARD_LENGTH-1)
             tmpPos = pos-BOARD_LENGTH-1;
             if(state->withinBoardLimits(tmpPos)) {
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
-                    possibleMoves.push_back(tmpPos);
+                    possibleMoves->push_back(tmpPos);
                 }
             } // left diagonal take
             tmpPos += 2;
@@ -79,7 +79,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
-                    possibleMoves.push_back(tmpPos);
+                    possibleMoves->push_back(tmpPos);
                 }
             } // right diagonal take
             break;
@@ -93,7 +93,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 if(state->withinBoardLimits(tmpPos)) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE || colorPieceByte != getColorOfPiece(tmp)) {
-                        possibleMoves.push_back(tmpPos);
+                        possibleMoves->push_back(tmpPos);
                     }
                 }
             }
@@ -110,12 +110,12 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 while(state->withinBoardLimits(tmpPos)) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE) {
-                        possibleMoves.push_back(tmpPos);
+                        possibleMoves->push_back(tmpPos);
                         tmpPos = tmpPos+directionIncrementals[i];
                         continue;
                     }
                     if(colorPieceByte != getColorOfPiece(tmp)) {
-                        possibleMoves.push_back(tmpPos);
+                        possibleMoves->push_back(tmpPos);
                     }
                     break;
                 }
@@ -137,12 +137,12 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 while(state->withinBoardLimits(tmpPos)) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE) {
-                        possibleMoves.push_back(tmpPos);
+                        possibleMoves->push_back(tmpPos);
                         tmpPos = tmpPos+directionIncrementals[i];
                         continue;
                     }
                     if(colorPieceByte != getColorOfPiece(tmp)) {
-                        possibleMoves.push_back(tmpPos);
+                        possibleMoves->push_back(tmpPos);
                     }
                     break;
                 }
@@ -159,7 +159,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 if(state->withinBoardLimits(tmpPos)) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE || colorPieceByte != getColorOfPiece(tmp)) {
-                        possibleMoves.push_back(tmpPos);
+                        possibleMoves->push_back(tmpPos);
                     }
                 }
             }
@@ -171,7 +171,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
 
 
 
-std::vector<int> Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
+std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
     /**
      * A legal move of a piece is:
      * 1. a move according to the rules of the piece ----> Game::getPossibleMoves
@@ -183,14 +183,14 @@ std::vector<int> Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
      * 5. a move that does not leaves your own king attacked afterwards ----> Game::getLegalMoves
     */
 
-    std::vector<int> legalMoves = getPossibleMoves(pieceByte, pos);
+    std::vector<int>* legalMoves = getPossibleMoves(pieceByte, pos);
 
-    for(int i = 0; i < legalMoves.size(); i++) {
-        int newPos = legalMoves[i];
+    for(int i = 0; i < legalMoves->size(); i++) {
+        int newPos = legalMoves->at(i);
         uint8_t tmp = state->getPieceAt(newPos);
         state->movePiece(pieceByte, pos, newPos);
         if(isKingAttacked()) {
-            legalMoves.erase(legalMoves.begin()+i);
+            legalMoves->erase(legalMoves->begin()+i);
         }
         state->movePiece(pieceByte, newPos, pos);
         state->movePiece(tmp, newPos, newPos);
