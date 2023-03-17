@@ -36,7 +36,7 @@ class Interface {
 
         bool isRunning();
 
-        void init(State* state, int const gamemode);
+        void initiate();
 
         void eventHandler(SDL_Event event);
 
@@ -64,6 +64,8 @@ class Interface {
         int dragPieceTextureMouseY;
         int dragPieceInitialSquareX;
         int dragPieceInitialSquareY;
+
+        void menu();
 
         void loadPieces();
 

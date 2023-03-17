@@ -1,104 +1,32 @@
 #include <SDL2/SDL.h>
 
-#include <iostream>
-
 #include "../include/interface.h"
-#include "../include/game.h"
-#include "../include/state.h"
-
-void menu(State* state, int& gamemode) {
-    std::cout << "-------------------Chess Game--------------------" << std::endl
-              << "  Made By James Montyn at github.com/JamesMontyn " << std::endl
-              << "  Programmed in C++, with SDL 2.0                " << std::endl
-              << "-------------------------------------------------" << std::endl << std::endl;
-
-    std::string FEN;
-    std::string inputGamemode;
-    bool menuDone = false;
-    while(!menuDone) {
-        std::cout << ">> Input the number of the gamemode of Chess you would like to play" << std::endl
-                  << ">> \"1\": 2 players | \"2\": 1 player against engine | \"3\": 1 player against random moves" << std::endl << std::endl;
-        getline(std::cin, inputGamemode);
-        std::cout << std::endl;
-        if(inputGamemode.length() == 1) {
-            switch(inputGamemode[0]) {
-                case '1':
-                    gamemode = 1;
-                    menuDone = true;
-                    break;
-                case '2':
-                    gamemode = 2;
-                    menuDone = true;
-                    break;
-                case '3':
-                    gamemode = 3;
-                    menuDone = true;
-                    break;
-            }
-        }
-        if(!menuDone) {
-            std::cerr << ">> Invalid input, please try again" << std::endl << std::endl;
-        }
-    }
-    menuDone = false;
-    while(!menuDone) {
-        std::cout << ">> Input a FEN-notation for the game or \"default\" for a new standard game" << std::endl
-                  << ">> Example of expected input: \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3\"" << std::endl << std::endl;
-        getline(std::cin, FEN);
-        std::cout << std::endl;
-        if(FEN == "default") {
-            FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-        }
-        if(!state->setStateFromFEN(FEN)) {
-            std::cerr << ">> The given FEN-notation is invalid: " << FEN << std::endl << std::endl;
-        }
-        else {
-            menuDone = true;
-        }
-    }
-    std::cout << ">> Good luck!" << std::endl;
-    state->debugPrintState();
-}
 
 int main(int argc, char *argv[]) {
-    State* state = new State;
-    int gamemode = 0;
-    menu(state, gamemode);
+    int const frameDelay = 1000 / 60;
+    Interface* interface = new Interface;
+    Uint32 frameStart;
+    int frameTime;
+    SDL_Event event;
 
-    exit(0);
-    // int const frameDelay = 1000 / 60;
-    // Uint32 frameStart;
-    // int frameTime;
-    // SDL_Event event;
+    interface->initiate();
 
-    // Interface* interface = new Interface;
-    // Game* game = new Game;
-    // State* state = new State;
-    // int gamemode = 0;
-    // menu(state, gamemode);
+    while(interface->isRunning()) {
+        frameStart = SDL_GetTicks();
 
-    // exit(0);
+        if(SDL_WaitEvent(&event) != 0) {
+            interface->eventHandler(event);
+            interface->render();
+        }
 
-    // interface->init(state, gamemode);
+        frameTime = SDL_GetTicks() - frameStart;
 
-    // while(interface->isRunning()) {
-    //     frameStart = SDL_GetTicks();
+        if(frameDelay > frameStart) {
+            SDL_Delay(frameDelay - frameTime);
+        }
+    }
 
-    //     if(SDL_WaitEvent(&event) != 0) {
-    //         interface->eventHandler(event);
-    //         interface->render();
-    //     }
+    delete interface;
 
-    //     frameTime = SDL_GetTicks() - frameStart;
-
-    //     if(frameDelay > frameStart) {
-    //         SDL_Delay(frameDelay - frameTime);
-    //     }
-    // }
-
-    // delete interface;
-    // delete game;
-    // delete state;
-
-    // return 0;
+    return 0;
 }

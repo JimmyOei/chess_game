@@ -17,6 +17,8 @@ class Game {
 
         State* state;
 
+        void setGamemode(int const gamemode);
+
         std::vector<int> getLegalMoves(uint8_t const pieceByte, int const pos);
 
     private:

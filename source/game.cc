@@ -8,6 +8,10 @@ Game::~Game() {
     delete state;
 }
 
+void Game::setGamemode(int const gamemode) {
+    this->gamemode = gamemode;
+}
+
 bool Game::isKingAttacked() {
     // TODO
     return false;
@@ -49,7 +53,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 }
             } // right diagonal take
             break;
-        case BLACK_PAWN:
+        case BLACK_PAWN: 
             tmpPos -= BOARD_LENGTH;
             if(state->withinBoardLimits(tmpPos)
                && state->getPieceAt(tmpPos) == NO_PIECE) {
@@ -80,7 +84,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
             } // right diagonal take
             break;
         case WHITE_KNIGHT:
-        case BLACK_KNIGHT:
+        case BLACK_KNIGHT: {
             int directionIncrementals[8] = {NORTH+NORTH+EAST, NORTH+NORTH+WEST, SOUTH+SOUTH+EAST, SOUTH+SOUTH+WEST, 
                                             EAST+EAST+NORTH, EAST+EAST+SOUTH, WEST+WEST+NORTH, WEST+WEST+SOUTH}; 
 
@@ -94,6 +98,7 @@ std::vector<int> Game::getPossibleMoves(uint8_t const pieceByte, int const pos) 
                 }
             }
             break;
+        }
         case WHITE_QUEEN: // queen is same as bishop + rook
         case BLACK_QUEEN:
         case WHITE_BISHOP:
