@@ -67,13 +67,6 @@ class State {
         */
         State();
 
-        State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
-              int const enPassantPos, bool const whiteCastlingQueenside,
-              bool const whiteCastlingKingside, bool const blackCastlingQueenside,
-              bool const blackCastlingKingside);
-
-        State* copyState();
-
         bool withinBoardLimits(int const pos);
 
         /**
@@ -91,7 +84,7 @@ class State {
         */
         bool getTurn();
 
-        int getPosOfKing(bool const color);
+        int getKingPos(bool const color);
 
         /**
          * @brief gets the byte from the ByteBoard at position (x, y)
@@ -100,19 +93,10 @@ class State {
          * @param y point on the vertical axis of the board
          * @return byte/uint8_t on position (x, y)
         */
-        uint8_t getByteFromByteBoard(int const pos);
+        uint8_t getPieceAt(int const pos);
 
         // Note: pawn advance can be down with movePiece(pieceByteToAdvanceTo, prevPos, newPos)
         void movePiece(uint8_t const pieceByte, int const prevPos, int const newPos);
-
-        /**
-         * @brief setting the En Passant square positions 
-         *          and boolean enPassant to true
-         * 
-         * @param x point on the horizontale axis
-         * @param y point on the vertical axis
-        */
-        void setEnPassantPos(int const pos);
 
         int getEnPassantPos();
 

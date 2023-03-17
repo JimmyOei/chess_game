@@ -184,7 +184,7 @@
 // void Interface::renderState() {
 //     for(int y = 0; y < BOARD_LENGTH; y++) {
 //         for(int x = 0; x < BOARD_LENGTH; x++) {
-//             uint8_t byteFromByteBoard = game->state->getByteFromByteBoard(x, y);
+//             uint8_t byteFromByteBoard = game->state->getPieceAt(x, y);
 
 //             if(byteFromByteBoard == NO_PIECE) {
 //                 continue;
@@ -215,7 +215,7 @@
 //     if((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH)) {
 //         dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdge;
 //         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
-//         dragPieceByte = game->state->getByteFromByteBoard(squareXOfMouse, squareYOfMouse);
+//         dragPieceByte = game->state->getPieceAt(squareXOfMouse, squareYOfMouse);
 
 //         if(dragPieceByte != NO_PIECE && (game->state->getTurn() ? dragPieceByte & WHITE_PIECE : dragPieceByte & BLACK_PIECE)) {
 //             game->state->setByteInByteBoard(NO_PIECE, squareXOfMouse, squareYOfMouse);

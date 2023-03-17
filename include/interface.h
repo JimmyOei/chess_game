@@ -7,7 +7,7 @@
 #include <iostream>
 #include <stdint.h>
 
-#include "../include/game.h"
+#include "game.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500

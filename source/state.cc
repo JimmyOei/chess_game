@@ -20,26 +20,6 @@ State::State() {
     clearState();
 }
 
-State::State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
-             int const enPassantPos, bool const whiteCastlingQueenside,
-             bool const whiteCastlingKingside, bool const blackCastlingQueenside,
-             bool const blackCastlingKingside) {
-    this->turn = turn;
-    this->whiteCastlingQueenside = whiteCastlingQueenside;
-    this->whiteCastlingKingside = whiteCastlingKingside;
-    this->blackCastlingQueenside = blackCastlingQueenside;
-    this->blackCastlingKingside = blackCastlingQueenside;
-    for(int i = 0; i < BOARD_SIZE; i++) {
-        this->byteBoard[i] = byteBoard[i];
-    }
-}
-
-State* State::copyState() {
-    return new State(byteBoard, turn, enPassantPos, 
-                     whiteCastlingQueenside, whiteCastlingKingside,
-                     blackCastlingQueenside, blackCastlingKingside);
-}
-
 bool State::withinBoardLimits(int const pos) {
     return pos >= 0 && pos < BOARD_SIZE;
 }
@@ -53,27 +33,32 @@ bool State::getTurn() {
     return turn;
 }
 
-int State::getPosOfKing(bool const color) {
+int State::getKingPos(bool const color) {
     return color ? whiteKingPos : blackKingPos;
 }
 
-uint8_t State::getByteFromByteBoard(int const pos) {
+uint8_t State::getPieceAt(int const pos) {
     return byteBoard[pos];
 }
 
 void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newPos) {
-    if(pieceByte == WHITE_KING) {
-        whiteKingPos = newPos;
+    switch(pieceByte) {
+        case WHITE_KING: whiteKingPos = newPos; break;
+        case BLACK_KING: blackKingPos = newPos; break;
+        case WHITE_PAWN:
+            if(newPos == prevPos+BOARD_LENGTH+BOARD_LENGTH) {
+                enPassantPos = prevPos+BOARD_LENGTH;
+            break;
+        }
+        case BLACK_PAWN:
+            if(newPos == prevPos-BOARD_LENGTH-BOARD_LENGTH) {
+                enPassantPos = prevPos-BOARD_LENGTH;
+            }
+            break;
     }
-    else if(pieceByte == BLACK_KING) {
-        blackKingPos = newPos;
-    }
+    
     byteBoard[prevPos] = NO_PIECE;
     byteBoard[newPos] = pieceByte;
-}
-
-void State::setEnPassantPos(int const pos) {
-    enPassantPos = pos;
 }
 
 int State::getEnPassantPos() {

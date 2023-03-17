@@ -9,7 +9,6 @@
 
 #include "state.h"
 
-
 class Game {
     public: 
         Game();
@@ -18,21 +17,12 @@ class Game {
 
         State* state;
 
-        // TODO: getAttack.. update.. could maybe be private
-
-        bool isKingAttacked(State* state, uint8_t colorOfKing);
-
-        std::vector<int> getLegalMovesOfPiece(uint8_t const pieceByte, int const pos);
-
+        std::vector<int> getLegalMoves(uint8_t const pieceByte, int const pos);
 
     private:
         int gamemode;
 
-        // TODO: use for mate/check
-        int xWhiteKing;
-        int yWhiteKing;
-        int xBlackKing;
-        int yBlackKing;
+        bool isKingAttacked();
 
         std::vector<int> getPossibleMoves(uint8_t const pieceByte, int const pos);
 
