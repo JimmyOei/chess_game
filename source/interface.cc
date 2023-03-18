@@ -348,6 +348,8 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
         if(dragPieceLegalMoves->at(i) == newDragPiecePos) {
             game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);
             game->state->passTurn();
+            game->state->setSpecialMovesData(dragPieceByte, dragPiecePos, newDragPiecePos);
+
             break;
         }
     }

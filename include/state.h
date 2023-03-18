@@ -107,6 +107,8 @@ class State {
 
         int getEnPassantPos();
 
+        void setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos);
+
         /**
          * @brief sets the byteBoard according to the given FEN-notation
          * 

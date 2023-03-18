@@ -70,13 +70,13 @@ void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newP
         case WHITE_KING: whiteKingPos = newPos; break;
         case BLACK_KING: blackKingPos = newPos; break;
         case WHITE_PAWN:
-            if(newPos == prevPos+BOARD_LENGTH+BOARD_LENGTH) {
-                enPassantPos = prevPos-BOARD_LENGTH;
+            if(newPos == enPassantPos) {
+                byteBoard[newPos-BOARD_LENGTH] = NO_PIECE;
+            }
             break;
-        }
         case BLACK_PAWN:
-            if(newPos == prevPos-BOARD_LENGTH-BOARD_LENGTH) {
-                enPassantPos = prevPos+BOARD_LENGTH;
+            if(newPos == enPassantPos) {
+                byteBoard[newPos+BOARD_LENGTH] = NO_PIECE;
             }
             break;
     }
@@ -88,6 +88,22 @@ void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newP
 int State::getEnPassantPos() {
     return enPassantPos;
 }
+
+void State::setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos) {
+    switch(pieceByte) {
+        case WHITE_PAWN:
+            if(newPos == prevPos+BOARD_LENGTH+BOARD_LENGTH) {
+                enPassantPos = prevPos+BOARD_LENGTH;
+            }
+            
+        case BLACK_PAWN:
+            if(newPos == prevPos-BOARD_LENGTH-BOARD_LENGTH) {
+                enPassantPos = prevPos-BOARD_LENGTH;
+            }
+            break;
+    }
+}
+
 
 bool State::setStateFromFEN(std::string FEN) {
     clearState();
