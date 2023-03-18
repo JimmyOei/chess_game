@@ -1,5 +1,7 @@
 #include "../include/game.h"
 
+#include <algorithm>
+
 Game::Game() {
     state = new State();
 }
@@ -196,5 +198,6 @@ std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
         state->movePiece(tmp, newPos, newPos);
     }
 
+    std::sort(legalMoves->begin(), legalMoves->end());
     return legalMoves;  
 }

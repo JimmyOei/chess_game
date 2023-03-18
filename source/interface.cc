@@ -218,7 +218,9 @@ void Interface::renderBoard() {
     boardStartingX = ((screenWidth - (squareEdge * BOARD_LENGTH)) / 2) * (screenWidth > squareEdge);
     boardStartingY = ((screenHeight - (squareEdge * BOARD_LENGTH)) / 2) * (screenHeight > squareEdge);
 
-    for(int y = 0; y < BOARD_LENGTH; y++) {
+    int pos = 0;
+    int i = 0;
+    for(int y = BOARD_LENGTH-1; y >= 0; y--) {
         for(int x = 0; x < BOARD_LENGTH; x++) {
             SDL_Rect rect;
             rect.w = squareEdge;
@@ -226,10 +228,24 @@ void Interface::renderBoard() {
             rect.x = boardStartingX + x*squareEdge;
             rect.y = boardStartingY + y*squareEdge;
             if((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1)) {
-                SDL_SetRenderDrawColor(renderer, 238, 238, 210, 255);
+                if(dragPieceLegalMoves && i < dragPieceLegalMoves->size() 
+                   && pos++ == dragPieceLegalMoves->at(i)) {
+                    i++;
+                    SDL_SetRenderDrawColor(renderer, 238, 238, 150, 255);
+                } // legal move square
+                else {
+                    SDL_SetRenderDrawColor(renderer, 238, 238, 210, 255);
+                }
             } // white plane
             else {
-                SDL_SetRenderDrawColor(renderer, 118, 150, 86, 255);
+                if(dragPieceLegalMoves && i < dragPieceLegalMoves->size() 
+                   && pos++ == dragPieceLegalMoves->at(i)) {
+                    i++;
+                    SDL_SetRenderDrawColor(renderer, 118, 150, 26, 255);
+                } // legal move square
+                else {
+                    SDL_SetRenderDrawColor(renderer, 118, 150, 86, 255);
+                }
             } // black plane
             SDL_RenderFillRect(renderer, &rect);
         }
@@ -327,4 +343,6 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
     // reset dragPiece variables
     dragPieceByte = NO_PIECE;
     dragPiecePos = -1;
+    delete dragPieceLegalMoves;
+    dragPieceLegalMoves = nullptr;
 }
