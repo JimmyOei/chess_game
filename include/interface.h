@@ -14,6 +14,9 @@
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
 
+#define STARTING_SCREEN_WIDTH 600
+#define STARTING_SCREEN_HEIGHT 600
+
 #define NUM_OF_PIECES 12
 
 #define DARK_PAWN_IMG "./pieces/darkPawn.png"

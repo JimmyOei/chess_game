@@ -7,26 +7,38 @@ Interface::Interface() {
     for(int i = 0; i < NUM_OF_PIECES; i++) {
         pieces[i] = nullptr;
     }
-    screenWidth = 600;
-    screenHeight = 600;
+    screenWidth = STARTING_SCREEN_WIDTH;
+    screenHeight = STARTING_SCREEN_HEIGHT;
     squareEdge = 0;
     boardStartingX = 0;
     boardStartingY = 0;
     running = false;
     dragPieceByte = NO_PIECE;
     dragPiecePos = -1;
+    dragPieceLegalMoves = nullptr;
     game = new Game;
 }
 
 Interface::~Interface() {
-    SDL_DestroyWindow(window);
-    SDL_DestroyRenderer(renderer);
-    for(int i = 0; i < 12; i++) {
-        SDL_DestroyTexture(pieces[i]);
+    if(window) {
+        SDL_DestroyWindow(window);
+    }
+    if(renderer) {
+        SDL_DestroyRenderer(renderer);
+    }
+    for(int i = 0; i < NUM_OF_PIECES; i++) {
+        if(pieces[i]) {
+            SDL_DestroyTexture(pieces[i]);
+        }
     }
     IMG_Quit();
     SDL_Quit();
-    delete game;
+    if(game) {
+        delete game;
+    }
+    if(dragPieceLegalMoves) {
+        delete dragPieceLegalMoves;
+    }
 };
 
 bool Interface::isRunning() {

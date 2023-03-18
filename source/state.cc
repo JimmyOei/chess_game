@@ -126,7 +126,6 @@ bool State::setStateFromFEN(std::string FEN) {
                 pos += tmp-1;
                 break;
         }
-        std::cout << i << " " << FEN[i] << " " << posY << " "  << pos << " " << byteBoard[pos] << std::endl;
         pos++;
         posX++;
         i++;

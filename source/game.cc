@@ -8,7 +8,9 @@ Game::Game() {
 }
 
 Game::~Game() {
-    delete state;
+    if(state) {
+        delete state;
+    }
 }
 
 void Game::setGamemode(int const gamemode) {
