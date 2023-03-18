@@ -66,6 +66,14 @@ class State {
         */
         State();
 
+        State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
+              int const enPassantPos, bool const whiteCastlingQueenside,
+              bool const whiteCastlingKingside, bool const blackCastlingQueenside,
+              bool const blackCastlingKingside, int const whiteKingPos, 
+              int const blackKingPos);
+
+        State* copyState();
+
         bool withinBoardLimits(int const pos);
 
         /**

@@ -20,6 +20,30 @@ State::State() {
     clearState();
 }
 
+State::State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
+             int const enPassantPos, bool const whiteCastlingQueenside,
+             bool const whiteCastlingKingside, bool const blackCastlingQueenside,
+             bool const blackCastlingKingside, int const whiteKingPos, int const blackKingPos) {
+    this->turn = turn;
+    this->enPassantPos = enPassantPos;
+    this->whiteCastlingQueenside = whiteCastlingQueenside;
+    this->whiteCastlingKingside = whiteCastlingKingside;
+    this->blackCastlingQueenside = blackCastlingQueenside;
+    this->blackCastlingKingside = blackCastlingQueenside;
+    this->whiteKingPos = whiteKingPos;
+    this->blackKingPos = blackKingPos;
+    for(int i = 0; i < BOARD_SIZE; i++) {
+        this->byteBoard[i] = byteBoard[i];
+    }
+}
+
+State* State::copyState() {
+    return new State(byteBoard, turn, enPassantPos, 
+                     whiteCastlingQueenside, whiteCastlingKingside,
+                     blackCastlingQueenside, blackCastlingKingside,
+                     whiteKingPos, blackKingPos);
+}
+
 bool State::withinBoardLimits(int const pos) {
     return pos >= 0 && pos < BOARD_SIZE;
 }
@@ -47,12 +71,12 @@ void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newP
         case BLACK_KING: blackKingPos = newPos; break;
         case WHITE_PAWN:
             if(newPos == prevPos+BOARD_LENGTH+BOARD_LENGTH) {
-                enPassantPos = prevPos+BOARD_LENGTH;
+                enPassantPos = prevPos-BOARD_LENGTH;
             break;
         }
         case BLACK_PAWN:
             if(newPos == prevPos-BOARD_LENGTH-BOARD_LENGTH) {
-                enPassantPos = prevPos-BOARD_LENGTH;
+                enPassantPos = prevPos+BOARD_LENGTH;
             }
             break;
     }

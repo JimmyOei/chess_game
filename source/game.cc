@@ -1,6 +1,7 @@
 #include "../include/game.h"
 
 #include <algorithm>
+#include <iostream>
 
 Game::Game() {
     state = new State();
@@ -89,10 +90,17 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
         case BLACK_KNIGHT: {
             int directionIncrementals[8] = {NORTH+NORTH+EAST, NORTH+NORTH+WEST, SOUTH+SOUTH+EAST, SOUTH+SOUTH+WEST, 
                                             EAST+EAST+NORTH, EAST+EAST+SOUTH, WEST+WEST+NORTH, WEST+WEST+SOUTH}; 
+            int borderOfDirection[8] = {0, BOARD_LENGTH-1, 0, BOARD_LENGTH-1, 
+                                        1, 1, BOARD_LENGTH-2, BOARD_LENGTH-2};
+
 
             for(int i = 0; i < 8; i++) {
                 tmpPos = pos+directionIncrementals[i];
-                if(state->withinBoardLimits(tmpPos)) {
+                if(state->withinBoardLimits(tmpPos) && tmpPos % BOARD_LENGTH != borderOfDirection[i]) {
+                    if(((i == 4 || i == 5) && tmpPos % BOARD_LENGTH == borderOfDirection[i]-1)
+                       || ((i == 6 || i == 7) && tmpPos % BOARD_LENGTH == borderOfDirection[i]+1)) {
+                        continue;
+                    }
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE || colorPieceByte != getColorOfPiece(tmp)) {
                         possibleMoves->push_back(tmpPos);
@@ -106,10 +114,12 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
         case WHITE_BISHOP:
         case BLACK_BISHOP: {
             int directionIncrementals[4] = {NORTH+EAST, NORTH+WEST, SOUTH+EAST, SOUTH+WEST};
+            int borderOfDirection[4] = {0, BOARD_LENGTH-1, 0, BOARD_LENGTH-1};
 
             for(int i = 0; i < 4; i++) {
                 tmpPos = pos+directionIncrementals[i];
-                while(state->withinBoardLimits(tmpPos)) {
+                while(state->withinBoardLimits(tmpPos) 
+                      && tmpPos % BOARD_LENGTH != borderOfDirection[i]) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE) {
                         possibleMoves->push_back(tmpPos);
@@ -126,17 +136,16 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
             if(pieceByte != WHITE_QUEEN && pieceByte != BLACK_QUEEN) {
                 break;
             } // no break if the piece is a queen (queen can also do rook moves)
-            
-            // reset tmpX, tmpY for queen to check rook moves
-            tmpPos = pos;
         }
         case WHITE_ROOK:
         case BLACK_ROOK: {
             int directionIncrementals[4] = {NORTH, EAST, WEST, SOUTH};
+            int borderOfDirection[4] = {-1, 0, 7, -1};
 
             for(int i = 0; i < 4; i++) {
                 tmpPos = pos+directionIncrementals[i];
-                while(state->withinBoardLimits(tmpPos)) {
+                while(state->withinBoardLimits(tmpPos)
+                      && tmpPos % BOARD_LENGTH != borderOfDirection[i]) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE) {
                         possibleMoves->push_back(tmpPos);
@@ -186,18 +195,20 @@ std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
     */
 
     std::vector<int>* legalMoves = getPossibleMoves(pieceByte, pos);
+    State* stateCopy = state->copyState();
 
     for(int i = 0; i < legalMoves->size(); i++) {
         int newPos = legalMoves->at(i);
-        uint8_t tmp = state->getPieceAt(newPos);
-        state->movePiece(pieceByte, pos, newPos);
+        uint8_t tmp = stateCopy->getPieceAt(newPos);
+        stateCopy->movePiece(pieceByte, pos, newPos);
         if(isKingAttacked()) {
             legalMoves->erase(legalMoves->begin()+i);
         }
-        state->movePiece(pieceByte, newPos, pos);
-        state->movePiece(tmp, newPos, newPos);
+        stateCopy->movePiece(pieceByte, newPos, pos);
+        stateCopy->movePiece(tmp, newPos, newPos);
     }
 
+    delete stateCopy;
     std::sort(legalMoves->begin(), legalMoves->end());
     return legalMoves;  
 }
