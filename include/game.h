@@ -24,7 +24,7 @@ class Game {
     private:
         int gamemode;
 
-        bool isKingAttacked();
+        bool isPosAttacked(int const pos);
 
         std::vector<int>* getPossibleMoves(uint8_t const pieceByte, int const pos);
 

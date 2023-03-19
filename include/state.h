@@ -107,6 +107,10 @@ class State {
 
         int getEnPassantPos();
 
+        bool getCastlingKingSide(bool const color);
+
+        bool getCastlingQueenSide(bool const color);
+
         void setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos);
 
         /**

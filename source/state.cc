@@ -67,8 +67,28 @@ uint8_t State::getPieceAt(int const pos) {
 
 void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newPos) {
     switch(pieceByte) {
-        case WHITE_KING: whiteKingPos = newPos; break;
-        case BLACK_KING: blackKingPos = newPos; break;
+        case WHITE_KING:
+            if(newPos == prevPos+2) {
+                byteBoard[newPos+1] = NO_PIECE;
+                byteBoard[newPos-1] = WHITE_ROOK;
+            } // castling king side
+            else if(newPos == prevPos-2) {
+                byteBoard[newPos-2] = NO_PIECE;
+                byteBoard[newPos+1] = WHITE_ROOK;
+            } // castling queen side
+            whiteKingPos = newPos; 
+            break;
+        case BLACK_KING:
+            if(newPos == prevPos+2) {
+                byteBoard[newPos+1] = NO_PIECE;
+                byteBoard[newPos-1] = BLACK_ROOK;
+            } // castling king side
+            else if(newPos == prevPos-2) {
+                byteBoard[newPos-2] = NO_PIECE;
+                byteBoard[newPos+1] = BLACK_ROOK;
+            } // castling queen side
+            blackKingPos = newPos; 
+            break;
         case WHITE_PAWN:
             if(newPos == enPassantPos) {
                 byteBoard[newPos-BOARD_LENGTH] = NO_PIECE;
@@ -89,18 +109,56 @@ int State::getEnPassantPos() {
     return enPassantPos;
 }
 
+bool State::getCastlingKingSide(bool const color) {
+    return color ? whiteCastlingKingside : blackCastlingKingside;
+}
+
+bool State::getCastlingQueenSide(bool const color) {
+    return color ? whiteCastlingQueenside : blackCastlingQueenside;
+}
+
 void State::setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos) {
     switch(pieceByte) {
         case WHITE_PAWN:
             if(newPos == prevPos+BOARD_LENGTH+BOARD_LENGTH) {
                 enPassantPos = prevPos+BOARD_LENGTH;
             }
-            
+            break;
         case BLACK_PAWN:
             if(newPos == prevPos-BOARD_LENGTH-BOARD_LENGTH) {
                 enPassantPos = prevPos-BOARD_LENGTH;
             }
             break;
+        case WHITE_KING:
+            if(whiteCastlingKingside) {
+                whiteCastlingKingside = false;
+            }
+            if(whiteCastlingQueenside) {
+                whiteCastlingQueenside = false;
+            }
+            break;
+        case BLACK_KING:
+            if(blackCastlingKingside) {
+                blackCastlingKingside = false;
+            }
+            if(blackCastlingQueenside) {
+                blackCastlingQueenside = false;
+            }
+            break;
+        case WHITE_ROOK:
+            if(whiteCastlingKingside && prevPos == 0) {
+                whiteCastlingKingside = false;
+            }
+            else if(whiteCastlingQueenside && prevPos == BOARD_LENGTH-1) {
+                whiteCastlingQueenside = false;
+            }
+        case BLACK_ROOK:
+            if(blackCastlingKingside && prevPos == BOARD_SIZE-1) {
+                blackCastlingKingside = false;
+            }
+            else if(blackCastlingQueenside && prevPos == BOARD_SIZE-BOARD_LENGTH) {
+                blackCastlingQueenside = false;
+            }  
     }
 }
 
