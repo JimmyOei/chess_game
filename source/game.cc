@@ -17,8 +17,11 @@ void Game::setGamemode(int const gamemode) {
     this->gamemode = gamemode;
 }
 
-bool Game::isPosAttacked(int const pos) {
-    // TODO
+bool Game::isPosAttacked(State* state, int const pos) {
+    // TODO: isPosAttacked and getPossibleMoves to State class
+    // for(int i = 0; i < BOARD_SIZE; i++) {
+
+    // }
     return false;
 }
 
@@ -209,7 +212,7 @@ std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
         int newPos = legalMoves->at(i);
         uint8_t tmp = stateCopy->getPieceAt(newPos);
         stateCopy->movePiece(pieceByte, pos, newPos);
-        if(isPosAttacked(state->getKingPos(colorPieceByte))) {
+        if(isPosAttacked(stateCopy, stateCopy->getKingPos(colorPieceByte))) {
             legalMoves->erase(legalMoves->begin()+i);
         }
         stateCopy->movePiece(pieceByte, newPos, pos);
@@ -217,21 +220,21 @@ std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
     }
 
     // special move: castling
-    bool isKingAttacked = isPosAttacked(state->getKingPos(colorPieceByte));
+    bool isKingAttacked = isPosAttacked(state, state->getKingPos(colorPieceByte));
     if(!isKingAttacked && (pieceByte == WHITE_KING || pieceByte == BLACK_KING)) {
         if(state->getCastlingKingSide(colorPieceByte)
            && state->getPieceAt(pos+1) == NO_PIECE
-           && !isPosAttacked(pos+1)
+           && !isPosAttacked(state, pos+1)
            && state->getPieceAt(pos+2) == NO_PIECE
-           && !isPosAttacked(pos+2)) {
+           && !isPosAttacked(state, pos+2)) {
             legalMoves->push_back(pos+2);
         }
         if(state->getCastlingQueenSide(colorPieceByte)
             && state->getPieceAt(pos-3) == NO_PIECE
             && state->getPieceAt(pos-2) == NO_PIECE
-            && !isPosAttacked(pos-2)
+            && !isPosAttacked(state, pos-2)
             && state->getPieceAt(pos-1) == NO_PIECE
-            && !isPosAttacked(pos-1)) {
+            && !isPosAttacked(state, pos-1)) {
             legalMoves->push_back(pos-2);
         }
     }

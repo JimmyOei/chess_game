@@ -8,6 +8,7 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 - start and end interface
 - choose pawn promotion (for now its automatically a queen)
 - function isPosAttacked
+- move isPosAttacked and getPossibleMoves to State class
 
 *Ideas*
 - random move opponent
