@@ -5,8 +5,8 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 
 ## TODO
 - implement mate
-- start and end interface ~~(put menu inside interface class)~~
-- special moves in isLegalMove: pawn promotion, ~~castling, en passant~~
+- start and end interface
+- choose pawn promotion (for now its automatically a queen)
 - function isPosAttacked
 
 *Ideas*
