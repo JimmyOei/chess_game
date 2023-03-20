@@ -346,7 +346,15 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
 
     for(int i = 0; i < dragPieceLegalMoves->size(); i++) {
         if(dragPieceLegalMoves->at(i) == newDragPiecePos) {
-            game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);
+            if(dragPieceByte == WHITE_PAWN && newDragPiecePos >= (BOARD_SIZE-BOARD_LENGTH)) {
+                game->state->movePiece(WHITE_QUEEN, dragPiecePos, newDragPiecePos);
+            } // pawn promotion (for now only queen)
+            else if(dragPieceByte == BLACK_PAWN && newDragPiecePos < BOARD_LENGTH) {
+                game->state->movePiece(BLACK_QUEEN, dragPiecePos, newDragPiecePos);
+            } // pawn promotion (for now only queen)
+            else {
+                game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);
+            }
             game->state->passTurn();
             game->state->setSpecialMovesData(dragPieceByte, dragPiecePos, newDragPiecePos);
 

@@ -42,7 +42,8 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
                 possibleMoves->push_back(tmpPos);
             } // two step upwards move (only possible if at y=BOARD_LENGTH-1)
             tmpPos = pos+BOARD_LENGTH-1;
-            if(state->withinBoardLimits(tmpPos)) {
+            if(tmpPos % BOARD_LENGTH != 7 
+               && state->withinBoardLimits(tmpPos)) {
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
@@ -50,7 +51,8 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
                 }
             } // left diagonal take
             tmpPos += 2;
-            if(state->withinBoardLimits(tmpPos)) {
+            if(tmpPos % BOARD_LENGTH != 0
+               && state->withinBoardLimits(tmpPos)) {
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
@@ -72,7 +74,8 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
                 possibleMoves->push_back(tmpPos);
             } // two step upwards move (only possible if at y=BOARD_LENGTH-1)
             tmpPos = pos-BOARD_LENGTH-1;
-            if(state->withinBoardLimits(tmpPos)) {
+            if(tmpPos % BOARD_LENGTH != 7 
+               && state->withinBoardLimits(tmpPos)) {
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
@@ -80,7 +83,8 @@ std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos)
                 }
             } // left diagonal take
             tmpPos += 2;
-            if(state->withinBoardLimits(tmpPos)) {
+            if(tmpPos % BOARD_LENGTH != 0
+               && state->withinBoardLimits(tmpPos)) {
                 uint8_t tmp = state->getPieceAt(tmpPos);
                 if((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp))
                     || state->getEnPassantPos() == tmpPos) {
