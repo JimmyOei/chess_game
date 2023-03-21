@@ -243,7 +243,7 @@ void Interface::renderBoard() {
                 if(dragPieceLegalMoves && i < dragPieceLegalMoves->size() 
                    && pos++ == dragPieceLegalMoves->at(i)) {
                     i++;
-                    SDL_SetRenderDrawColor(renderer, 228, 228, 50, 255);
+                    SDL_SetRenderDrawColor(renderer, 228, 228, 150, 255);
                 } // legal move square
                 else {
                     SDL_SetRenderDrawColor(renderer, 238, 238, 210, 255);

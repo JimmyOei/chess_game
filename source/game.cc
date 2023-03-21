@@ -107,9 +107,9 @@ std::vector<int>* Game::getPossibleMoves(State* state, uint8_t const pieceByte, 
             break;
         case WHITE_KNIGHT:
         case BLACK_KNIGHT: {
-            int directionIncrementals[8] = {NORTH+NORTH+EAST, NORTH+NORTH+WEST, SOUTH+SOUTH+EAST, SOUTH+SOUTH+WEST, 
+            int const directionIncrementals[8] = {NORTH+NORTH+EAST, NORTH+NORTH+WEST, SOUTH+SOUTH+EAST, SOUTH+SOUTH+WEST, 
                                             EAST+EAST+NORTH, EAST+EAST+SOUTH, WEST+WEST+NORTH, WEST+WEST+SOUTH}; 
-            int borderOfDirection[8] = {0, BOARD_LENGTH-1, 0, BOARD_LENGTH-1, 
+            int const borderOfDirection[8] = {0, BOARD_LENGTH-1, 0, BOARD_LENGTH-1, 
                                         1, 1, BOARD_LENGTH-2, BOARD_LENGTH-2};
 
 
@@ -132,8 +132,8 @@ std::vector<int>* Game::getPossibleMoves(State* state, uint8_t const pieceByte, 
         case BLACK_QUEEN:
         case WHITE_BISHOP:
         case BLACK_BISHOP: {
-            int directionIncrementals[4] = {NORTH+EAST, NORTH+WEST, SOUTH+EAST, SOUTH+WEST};
-            int borderOfDirection[4] = {0, BOARD_LENGTH-1, 0, BOARD_LENGTH-1};
+            int const directionIncrementals[4] = {NORTH+EAST, NORTH+WEST, SOUTH+EAST, SOUTH+WEST};
+            int const borderOfDirection[4] = {0, BOARD_LENGTH-1, 0, BOARD_LENGTH-1};
 
             for(int i = 0; i < 4; i++) {
                 tmpPos = pos+directionIncrementals[i];
@@ -158,8 +158,8 @@ std::vector<int>* Game::getPossibleMoves(State* state, uint8_t const pieceByte, 
         }
         case WHITE_ROOK:
         case BLACK_ROOK: {
-            int directionIncrementals[4] = {NORTH, EAST, WEST, SOUTH};
-            int borderOfDirection[4] = {-1, 0, 7, -1};
+            int const directionIncrementals[4] = {NORTH, EAST, WEST, SOUTH};
+            int const borderOfDirection[4] = {-1, 0, 7, -1};
 
             for(int i = 0; i < 4; i++) {
                 tmpPos = pos+directionIncrementals[i];
@@ -181,12 +181,14 @@ std::vector<int>* Game::getPossibleMoves(State* state, uint8_t const pieceByte, 
         }
         case WHITE_KING:
         case BLACK_KING: {
-            int directionIncrementals[8] = {NORTH+EAST, NORTH+WEST, SOUTH+EAST, SOUTH+WEST, 
-                                            NORTH, EAST, WEST, SOUTH}; 
+            int const directionIncrementals[8] = {NORTH+EAST, NORTH+WEST, SOUTH+EAST, SOUTH+WEST, 
+                                            NORTH, EAST, WEST, SOUTH};
+            int const borderOfDirection[8] = {0, 7, 0, 7, -1, 0, 7, -1};
 
             for(int i = 0; i < 8; i++) {
                 tmpPos = pos+directionIncrementals[i];
-                if(state->withinBoardLimits(tmpPos)) {
+                if(state->withinBoardLimits(tmpPos)
+                   && tmpPos % BOARD_LENGTH != borderOfDirection[i]) {
                     uint8_t tmp = state->getPieceAt(tmpPos);
                     if(tmp == NO_PIECE || colorPieceByte != getColorOfPiece(tmp)) {
                         possibleMoves->push_back(tmpPos);
