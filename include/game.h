@@ -24,9 +24,9 @@ class Game {
     private:
         int gamemode;
 
-        bool isPosAttacked(State* state, int const pos);
+        bool isPosAttacked(State* state, int const pos, bool const colorOfAttacker);
 
-        std::vector<int>* getPossibleMoves(uint8_t const pieceByte, int const pos);
+        std::vector<int>* getPossibleMoves(State* state, uint8_t const pieceByte, int const pos);
 
 
 };

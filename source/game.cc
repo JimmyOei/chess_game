@@ -17,15 +17,25 @@ void Game::setGamemode(int const gamemode) {
     this->gamemode = gamemode;
 }
 
-bool Game::isPosAttacked(State* state, int const pos) {
-    // TODO: isPosAttacked and getPossibleMoves to State class
-    // for(int i = 0; i < BOARD_SIZE; i++) {
+bool Game::isPosAttacked(State* state, int const pos, bool const colorOfAttacker) {
+    for(int i = 0; i < BOARD_SIZE; i++) {
+        uint8_t tmp = state->getPieceAt(i);
+        if(tmp != NO_PIECE && getColorOfPiece(tmp) == colorOfAttacker) {
+            std::vector<int>* possibleMoves = getPossibleMoves(state, tmp, i);
+            for(int j = 0; j < possibleMoves->size(); j++) {
+                if(possibleMoves->at(j) == pos) {
+                    delete possibleMoves;
+                    return true;
+                }
+            }
+            delete possibleMoves;
+        }
+    }
 
-    // }
     return false;
 }
 
-std::vector<int>* Game::getPossibleMoves(uint8_t const pieceByte, int const pos) {
+std::vector<int>* Game::getPossibleMoves(State* state, uint8_t const pieceByte, int const pos) {
     std::vector<int>* possibleMoves = new std::vector<int>;
 
     int tmpPos = pos;
@@ -204,7 +214,7 @@ std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
      * 5. a move that does not leaves your own king attacked afterwards ----> Game::getLegalMoves
     */
 
-    std::vector<int>* legalMoves = getPossibleMoves(pieceByte, pos);
+    std::vector<int>* legalMoves = getPossibleMoves(this->state, pieceByte, pos);
     State* stateCopy = state->copyState();
     bool colorPieceByte = getColorOfPiece(pieceByte);
 
@@ -212,29 +222,30 @@ std::vector<int>* Game::getLegalMoves(uint8_t const pieceByte, int const pos) {
         int newPos = legalMoves->at(i);
         uint8_t tmp = stateCopy->getPieceAt(newPos);
         stateCopy->movePiece(pieceByte, pos, newPos);
-        if(isPosAttacked(stateCopy, stateCopy->getKingPos(colorPieceByte))) {
+        if(isPosAttacked(stateCopy, stateCopy->getKingPos(colorPieceByte), !colorPieceByte)) {
             legalMoves->erase(legalMoves->begin()+i);
+            i--;
         }
         stateCopy->movePiece(pieceByte, newPos, pos);
         stateCopy->movePiece(tmp, newPos, newPos);
     }
 
     // special move: castling
-    bool isKingAttacked = isPosAttacked(state, state->getKingPos(colorPieceByte));
+    bool isKingAttacked = isPosAttacked(state, state->getKingPos(colorPieceByte), !colorPieceByte);
     if(!isKingAttacked && (pieceByte == WHITE_KING || pieceByte == BLACK_KING)) {
         if(state->getCastlingKingSide(colorPieceByte)
            && state->getPieceAt(pos+1) == NO_PIECE
-           && !isPosAttacked(state, pos+1)
+           && !isPosAttacked(state, pos+1, !colorPieceByte)
            && state->getPieceAt(pos+2) == NO_PIECE
-           && !isPosAttacked(state, pos+2)) {
+           && !isPosAttacked(state, pos+2, !colorPieceByte)) {
             legalMoves->push_back(pos+2);
         }
         if(state->getCastlingQueenSide(colorPieceByte)
             && state->getPieceAt(pos-3) == NO_PIECE
             && state->getPieceAt(pos-2) == NO_PIECE
-            && !isPosAttacked(state, pos-2)
+            && !isPosAttacked(state, pos-2, !colorPieceByte)
             && state->getPieceAt(pos-1) == NO_PIECE
-            && !isPosAttacked(state, pos-1)) {
+            && !isPosAttacked(state, pos-1, !colorPieceByte)) {
             legalMoves->push_back(pos-2);
         }
     }
