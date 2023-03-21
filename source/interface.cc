@@ -100,6 +100,25 @@ void Interface::menu() {
     game->state->debugPrintState();
 }
 
+uint8_t Interface::menuPawnPromotion() {
+    bool const colorOfDragPiece = getColorOfPiece(dragPieceByte);
+    while(true) {
+        std::string input;
+        std::cout << ">> Input the first letter of the piece you would like to promote your pawn to" << std::endl
+                  << ">> \"q\": queen | \"r\": rook | \"b\": bishop | \"k\": knight" << std::endl << std::endl;
+        getline(std::cin, input);
+        if(input.length() == 1) {
+            switch(input[0]) {
+                case 'k': case 'K': return colorOfDragPiece ? WHITE_KNIGHT : BLACK_KNIGHT;
+                case 'b': case 'B': return colorOfDragPiece ? WHITE_BISHOP : BLACK_BISHOP;
+                case 'r': case 'R': return colorOfDragPiece ? WHITE_ROOK : BLACK_ROOK;
+                case 'q': case 'Q': return colorOfDragPiece ? WHITE_QUEEN : BLACK_QUEEN;
+            }
+        }
+        std::cout << ">> Invalid input, please try again" << std::endl << std::endl;
+    }
+}
+
 void Interface::initiate() {
     menu();
 
@@ -339,6 +358,7 @@ void Interface::renderDragPiece(int const mouseX, int const mouseY) {
     SDL_RenderCopy(renderer, getTexturePieceFromByte(dragPieceByte), NULL, &rect);
 }
 
+
 void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
@@ -347,10 +367,10 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
     for(int i = 0; i < dragPieceLegalMoves->size(); i++) {
         if(dragPieceLegalMoves->at(i) == newDragPiecePos) {
             if(dragPieceByte == WHITE_PAWN && newDragPiecePos >= (BOARD_SIZE-BOARD_LENGTH)) {
-                game->state->movePiece(WHITE_QUEEN, dragPiecePos, newDragPiecePos);
+                game->state->movePiece(menuPawnPromotion(), dragPiecePos, newDragPiecePos);
             } // pawn promotion (for now only queen)
             else if(dragPieceByte == BLACK_PAWN && newDragPiecePos < BOARD_LENGTH) {
-                game->state->movePiece(BLACK_QUEEN, dragPiecePos, newDragPiecePos);
+                game->state->movePiece(menuPawnPromotion(), dragPiecePos, newDragPiecePos);
             } // pawn promotion (for now only queen)
             else {
                 game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);

@@ -5,7 +5,6 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 
 ## TODO
 - start and end interface
-- choose pawn promotion (for now its automatically a queen)
 
 *Ideas*
 - random move opponent

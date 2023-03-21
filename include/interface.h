@@ -72,6 +72,8 @@ class Interface {
 
         void menu();
 
+        uint8_t menuPawnPromotion();
+
         void loadPieces();
 
         SDL_Texture* getTexturePieceFromByte(uint8_t byte);

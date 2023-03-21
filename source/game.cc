@@ -1,7 +1,6 @@
 #include "../include/game.h"
 
 #include <algorithm>
-#include <iostream>
 
 Game::Game() {
     state = new State();
