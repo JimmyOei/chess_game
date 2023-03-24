@@ -32,6 +32,8 @@
 #define DARK_KING_IMG "./pieces/darkKing.png"
 #define LIGHT_KING_IMG "./pieces/lightKing.png"
 
+#define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+
 // TODO: en passant implementation different
 class Interface {
     public: 
@@ -70,7 +72,11 @@ class Interface {
         int dragPiecePos;
         std::vector<int>* dragPieceLegalMoves;
 
-        void menu();
+        void menuGamemode(bool const color);
+
+        void menuFEN();
+
+        bool menu();
 
         uint8_t menuPawnPromotion();
 

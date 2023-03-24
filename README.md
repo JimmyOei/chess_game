@@ -4,7 +4,7 @@ This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 
 
 ## TODO
-- start and end interface
+- end interface (implement mate, winning the game)
 
 *Ideas*
 - random move opponent

@@ -253,7 +253,7 @@ bool State::setStateFromFEN(std::string FEN) {
                 return false;
             }
             enPassantPos += (FEN[i++] - '0') * BOARD_LENGTH;
-            if(enPassantPos >= BOARD_LENGTH) {
+            if(enPassantPos >= BOARD_SIZE) {
                 return false;
             }
         }

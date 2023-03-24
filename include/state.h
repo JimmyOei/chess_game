@@ -46,7 +46,7 @@
 
 /* turn */
 #define WHITE true
-#define BLACK false;
+#define BLACK false
 
 /* directions */
 #define NORTH BOARD_LENGTH

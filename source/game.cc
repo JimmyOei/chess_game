@@ -12,8 +12,13 @@ Game::~Game() {
     }
 }
 
-void Game::setGamemode(int const gamemode) {
-    this->gamemode = gamemode;
+void Game::setGamemode(bool const color, int const gamemode) {
+    if(color) {
+        gamemodeWhite = gamemode;
+    }
+    else {
+        gamemodeBlack = gamemode;
+    }
 }
 
 bool Game::isPosAttacked(State* state, int const pos, bool const colorOfAttacker) {

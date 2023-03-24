@@ -45,59 +45,78 @@ bool Interface::isRunning() {
     return running;
 }
 
-
-void Interface::menu() {
-    std::cout << "-------------------Chess Game--------------------" << std::endl
-              << "  Made By James Montyn at github.com/JamesMontyn " << std::endl
-              << "  Programmed in C++, with SDL 2.0                " << std::endl
-              << "-------------------------------------------------" << std::endl << std::endl;
-
-    std::string FEN;
-    std::string inputGamemode;
-    bool menuDone = false;
-    while(!menuDone) {
-        std::cout << ">> Input the number of the gamemode of Chess you would like to play" << std::endl
-                  << ">> \"1\": 2 players | \"2\": 1 player against engine | \"3\": 1 player against random moves" << std::endl << std::endl;
+void Interface::menuGamemode(bool const color) {
+    while(true) {
+        std::string inputGamemode;
+        if(color) {
+            std::cout << ">> Input the gamemode for white" << std::endl;
+        }
+        else{
+            std::cout << ">> Input the gamemode for black" << std::endl;
+        }
+        std::cout << ">> \"1\": player | \"2\": random move computer" << std::endl << std::endl;
         getline(std::cin, inputGamemode);
         std::cout << std::endl;
         if(inputGamemode.length() == 1) {
             switch(inputGamemode[0]) {
                 case '1':
-                    game->setGamemode(1);
-                    menuDone = true;
-                    break;
+                    game->setGamemode(color, 1);
+                    return;
                 case '2':
-                    game->setGamemode(2);
-                    menuDone = true;
-                    break;
-                case '3':
-                    game->setGamemode(3);
-                    menuDone = true;
-                    break;
+                    game->setGamemode(color, 2);
+                    return;
             }
         }
-        if(!menuDone) {
-            std::cerr << ">> Invalid input, please try again" << std::endl << std::endl;
-        }
+        std::cerr << ">> Invalid input, please try again" << std::endl << std::endl;
     }
-    menuDone = false;
-    while(!menuDone) {
-        std::cout << ">> Input a FEN-notation for the game or \"default\" for a new standard game" << std::endl
+}
+
+void Interface::menuFEN() {
+    while(true) {
+        std::string FEN;
+        std::cout << ">> Input a FEN-notation for the game or \"default\" for the standard opening position" << std::endl
                   << ">> Example of expected input: \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3\"" << std::endl << std::endl;
         getline(std::cin, FEN);
         std::cout << std::endl;
         if(FEN == "default") {
-            FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
+            FEN = STANDARD_OPENING_FEN;
         }
-        if(!game->state->setStateFromFEN(FEN)) {
-            std::cerr << ">> The given FEN-notation is invalid: " << FEN << std::endl << std::endl;
+        if(game->state->setStateFromFEN(FEN)) {
+            return;
+        } // correct FEN notation
+        std::cerr << ">> The given FEN-notation is invalid: " << FEN << std::endl 
+                  << ">> Please try again " << std::endl << std::endl;
+    }
+}
+
+bool Interface::menu() {
+    while(true) {
+        std::string input;
+        std::cout << ">> What would you like to do? (Input a letter)" << std::endl 
+                  << "\"P\": Play a Chess game" << std::endl
+                  << "\"C\": Change the starting position of the Chess game" << std::endl
+                  << "\"Q\": Quit program" << std::endl
+                  << std::endl;
+        getline(std::cin, input);
+        std::cout << std::endl;
+        if(input.length() == 1) {
+            switch(input[0]) {
+                case 'P': case 'p':
+                    menuGamemode(WHITE);
+                    menuGamemode(BLACK);
+                    std::cout << "The game will begin. Good luck!" << std::endl << std::endl;
+                    return true;
+                case 'C': case 'c': menuFEN(); render(); break;
+                case 'Q': case 'q': return false;
+                default:
+                    std::cout << "Invalid input, please try again" << std::endl << std::endl;
+            }
         }
         else {
-            menuDone = true;
+            std::cout << "Invalid input, please try again" << std::endl << std::endl;
         }
+
     }
-    std::cout << ">> Good luck!" << std::endl;
-    game->state->debugPrintState();
 }
 
 uint8_t Interface::menuPawnPromotion() {
@@ -120,22 +139,19 @@ uint8_t Interface::menuPawnPromotion() {
 }
 
 void Interface::initiate() {
-    menu();
-
-    if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        std::cerr << "Failed to initiate SDL: " << SDL_GetError() << std::endl;
+    if(!menu()) {
         return;
     }
-    else {
-        std::cout << "Succesfully initiated SDL" << std::endl;
+    game->state->setStateFromFEN(STANDARD_OPENING_FEN);
+
+    if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        std::cerr << "Failed to initiate SDL: " << SDL_GetError() << std::endl << std::endl;
+        return;
     }
 
     if(IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-       std::cerr << "Failed to initiate IMG: " << SDL_GetError() << std::endl;
+       std::cerr << "Failed to initiate IMG: " << SDL_GetError() << std::endl << std::endl;
        return;
-    }
-    else {
-        std::cout << "Succesfully initiated IMG" << std::endl;
     }
 
     window = SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
@@ -144,8 +160,7 @@ void Interface::initiate() {
     renderer = SDL_CreateRenderer(window, -1, 0);
 
     loadPieces();
-    renderBoard();
-    
+
     running = true;
 }
 

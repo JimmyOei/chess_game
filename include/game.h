@@ -17,12 +17,13 @@ class Game {
 
         State* state;
 
-        void setGamemode(int const gamemode);
+        void setGamemode(bool const color, int const gamemode);
 
         std::vector<int>* getLegalMoves(uint8_t const pieceByte, int const pos);
 
     private:
-        int gamemode;
+        int gamemodeWhite;
+        int gamemodeBlack;
 
         bool isPosAttacked(State* state, int const pos, bool const colorOfAttacker);
 
