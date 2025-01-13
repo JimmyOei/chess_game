@@ -1,4 +1,4 @@
-#ifndef INTERFACE_H 
+#ifndef INTERFACE_H
 #define INTERFACE_H
 
 #include <SDL2/SDL.h>
@@ -34,67 +34,73 @@
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
-// TODO: en passant implementation different
-class Interface {
-    public: 
-        Interface();
+/**
+ * @brief Interface class for the chess game
+ *
+ * This class is responsible for the graphical user interface of the chess game.
+ * It uses SDL2 and SDL2_image for rendering and handling events.
+ */
+class Interface
+{
+public:
+    Interface();
 
-        ~Interface();
+    ~Interface();
 
-        bool isRunning();
+    bool isRunning();
 
-        void initiate();
+    void initiate();
 
-        void eventHandler(SDL_Event event);
+    void eventHandler(SDL_Event event);
 
-        void render();
+    void render();
 
-    private:
-        Game* game;
+private:
+    Game *game;
 
-        SDL_Window* window;
-        SDL_Renderer* renderer;
-        
-        SDL_Texture* pieces[NUM_OF_PIECES];
+    SDL_Window *window;
+    SDL_Renderer *renderer;
 
-        int screenWidth;
-        int screenHeight;
+    SDL_Texture *pieces[NUM_OF_PIECES];
 
-        int squareEdge;
-        int boardStartingX;
-        int boardStartingY;
+    int screenWidth;
+    int screenHeight;
 
-        bool running;
+    int squareEdge;
+    int boardStartingX;
+    int boardStartingY;
 
-        uint8_t dragPieceByte;
-        int dragPieceTextureMouseX;
-        int dragPieceTextureMouseY;
-        int dragPiecePos;
-        std::vector<int>* dragPieceLegalMoves;
+    bool running;
 
-        void menuGamemode(bool const color);
+    uint8_t dragPieceByte;
+    int dragPieceTextureMouseX;
+    int dragPieceTextureMouseY;
+    int dragPiecePos;
+    std::vector<int> *dragPieceLegalMoves;
 
-        void menuFEN();
+    void menuGamemode(bool const color);
 
-        bool menu();
+    void menuFEN();
 
-        uint8_t menuPawnPromotion();
+    bool menu();
 
-        void loadPieces();
+    uint8_t menuPawnPromotion();
 
-        SDL_Texture* getTexturePieceFromByte(uint8_t byte);
+    void loadPieces();
 
-        void renderBoard();
+    SDL_Texture *getTexturePieceFromByte(uint8_t byte);
 
-        void renderState();
+    void renderBoard();
 
-        void resizeWindow(int const height, int const width);
+    void renderState();
 
-        void pickupDragPiece(int const mouseX, int const mouseY);
+    void resizeWindow(int const height, int const width);
 
-        void renderDragPiece(int const mouseX, int const mouseY);
+    void pickupDragPiece(int const mouseX, int const mouseY);
 
-        void releaseDragPiece(int const mouseX, int const mouseY);
+    void renderDragPiece(int const mouseX, int const mouseY);
+
+    void releaseDragPiece(int const mouseX, int const mouseY);
 };
 
 #endif

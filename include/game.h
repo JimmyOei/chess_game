@@ -1,4 +1,4 @@
-#ifndef GAME_H 
+#ifndef GAME_H
 #define GAME_H
 
 #include <SDL2/SDL.h>
@@ -8,28 +8,28 @@
 #include <vector>
 
 #include "state.h"
+#include "player.h"
 
-class Game {
-    public: 
-        Game();
+class Game
+{
+public:
+    Game(std::unique_ptr<Player> playerWhite, std::unique_ptr<Player> playerBlack);
 
-        ~Game();
+    ~Game();
 
-        State* state;
+    State *state;
 
-        void setGamemode(bool const color, int const gamemode);
+    void setGamemode(bool const color, int const gamemode);
 
-        std::vector<int>* getLegalMoves(uint8_t const pieceByte, int const pos);
+    std::vector<int> *getLegalMoves(uint8_t const pieceByte, int const pos);
 
-    private:
-        int gamemodeWhite;
-        int gamemodeBlack;
+private:
+    std::unique_ptr<Player> playerWhite;
+    std::unique_ptr<Player> playerBlack;
 
-        bool isPosAttacked(State* state, int const pos, bool const colorOfAttacker);
+    bool isPosAttacked(State *state, int const pos, bool const colorOfAttacker);
 
-        std::vector<int>* getPossibleMoves(State* state, uint8_t const pieceByte, int const pos);
-
-
+    std::vector<int> *getPossibleMoves(State *state, uint8_t const pieceByte, int const pos);
 };
 
 #endif

@@ -1,4 +1,4 @@
-#ifndef STATE_H 
+#ifndef STATE_H
 #define STATE_H
 
 #include <stdint.h>
@@ -6,7 +6,7 @@
 #include <vector>
 
 /**
- * Chess board represented in uint8_t, 
+ * Chess board represented in uint8_t,
  * which represents the piece and colour as follows:
  * pawn   = 0b00000001
  * knight = 0b00000010
@@ -18,6 +18,8 @@
  * black  = 0b01000000
  * white  = 0b10000000
  */
+
+#define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
 /* white pieces */
 #define WHITE_PAWN 0b10000001
@@ -42,11 +44,7 @@
 
 /* board */
 #define BOARD_LENGTH 8
-#define BOARD_SIZE BOARD_LENGTH*BOARD_LENGTH
-
-/* turn */
-#define WHITE true
-#define BLACK false
+#define BOARD_SIZE BOARD_LENGTH * BOARD_LENGTH
 
 /* directions */
 #define NORTH BOARD_LENGTH
@@ -54,104 +52,120 @@
 #define WEST -1
 #define SOUTH -BOARD_LENGTH
 
-inline bool getColorOfPiece(uint8_t const pieceByte) {
+enum class Color
+{
+    WHITE,
+    BLACK
+};
+
+inline bool getColorOfPiece(uint8_t const pieceByte)
+{
     return pieceByte & WHITE_PIECE;
 }
 
-class State {
-    public:
-        /**
-         * @brief sets all private booleans to false, except turn
-         *          turn will be set to true, because white starts the game
-        */
-        State();
+class State
+{
+public:
+    /**
+     * @brief default constructor, initiates the state to the standard chess starting position
+     */
+    State();
 
-        State(uint8_t byteBoard[BOARD_SIZE], bool const turn,
-              int const enPassantPos, bool const whiteCastlingQueenside,
-              bool const whiteCastlingKingside, bool const blackCastlingQueenside,
-              bool const blackCastlingKingside, int const whiteKingPos, 
-              int const blackKingPos);
+    /**
+     * @brief initiates the state from a given FEN-notation
+     *          if the FEN-notation is not legal, the state
+     *          will be set to an empty board
+     *
+     * @param FEN FEN-notation to create the state from
+     */
+    State(const std::string FEN);
 
-        State* copyState();
+    /**
+     * @brief copy constructor
+     *
+     * @param state state to copy
+     */
+    State(State const &state);
 
-        bool withinBoardLimits(int const pos);
+    ~State() = default;
 
-        /**
-         * @brief passes turn and resetting the booleans enPassant 
-         *          and check to false
-        */
-        void passTurn();
+    bool isPosWithinBoardLimits(int const pos);
 
-        /**
-         * @brief getter for the boolean turn
-         * 
-         * @return returns the boolean value of turn:
-         *          true for white
-         *          false for black
-        */
-        bool getTurn();
+    /**
+     * @brief passes turn and resetting the booleans enPassant
+     *          and check to false
+     */
+    void passTurn();
 
-        int getKingPos(bool const color);
+    /**
+     * @brief getter for the boolean turn
+     *
+     * @return returns the boolean value of turn:
+     *          true for white
+     *          false for black
+     */
+    Color getTurn();
 
-        /**
-         * @brief gets the byte from the ByteBoard at position (x, y)
-         * 
-         * @param x point on the horizontal axis of the board
-         * @param y point on the vertical axis of the board
-         * @return byte/uint8_t on position (x, y)
-        */
-        uint8_t getPieceAt(int const pos);
+    /**
+     * @brief getter for the position of the king of a given color
+     * 
+     * @param color color of the king to get the position of
+     * 
+     * @return position of the king of the given color
+     */
+    int getKingPosOfColor(Color const color);
 
-        // Note: pawn advance can be down with movePiece(pieceByteToAdvanceTo, prevPos, newPos)
-        void movePiece(uint8_t const pieceByte, int const prevPos, int const newPos);
+    uint8_t getPieceAtPos(int const pos);
 
-        int getEnPassantPos();
+    // Note: pawn advance can be down with movePiece(pieceByteToAdvanceTo, prevPos, newPos)
+    void movePiece(uint8_t const pieceByte, int const prevPos, int const newPos);
 
-        bool getCastlingKingSide(bool const color);
+    int getEnPassantPos();
 
-        bool getCastlingQueenSide(bool const color);
+    bool getCastlingKingSide(Color const color);
 
-        void setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos);
+    bool getCastlingQueenSide(Color const color);
 
-        /**
-         * @brief sets the byteBoard according to the given FEN-notation
-         * 
-         * @param FEN FEN-notation to set the byteBoard to
-         * @return true if FEN is a legal FEN-notation and byteBoard
-         *          is set succesfully, otherwise false
-        */
-        bool setStateFromFEN(std::string FEN);
+    void setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos);
 
-        // /**
-        //  * @brief translates the byteBoard to FEN-notation and returns this
-        //  * 
-        //  * @return the FEN-notation of the current state
-        // */
-        // std::string getFEN();
+    /**
+     * @brief initiates the state according to the given FEN-notation
+     *
+     * @param FEN FEN-notation to set the state to
+     * @return true if FEN is a legal FEN-notation and state
+     *          is set succesfully, otherwise false
+     */
+    bool initStateFromFEN(std::string FEN);
 
-        void debugPrintState();
+    // /**
+    //  * @brief translates the byteBoard to FEN-notation and returns this
+    //  *
+    //  * @return the FEN-notation of the current state
+    // */
+    // std::string getFEN();
 
-    private:
-        uint8_t byteBoard[BOARD_SIZE];
+    void debugPrintState();
 
-        // true for white's turn, false for black's turn
-        bool turn;
+private:
+    uint8_t byteBoard[BOARD_SIZE];
 
-        int enPassantPos;
+    Color turn;
 
-        bool whiteCastlingQueenside;
-        bool whiteCastlingKingside;
-        bool blackCastlingQueenside;
-        bool blackCastlingKingside;
+    int enPassantPos;
 
-        // NOT IMPLEMENTED YET
-        // int halfMoveClock;
-        // int fullMoveNumber;
+    bool whiteCastlingQueenside;
+    bool whiteCastlingKingside;
+    bool blackCastlingQueenside;
+    bool blackCastlingKingside;
 
-        int whiteKingPos;
-        int blackKingPos;
+    // NOT IMPLEMENTED YET
+    // int halfMoveClock;
+    // int fullMoveNumber;
 
-        void clearState();
+    int whiteKingPos;
+    int blackKingPos;
+
+    void initState();
 };
 
 #endif
