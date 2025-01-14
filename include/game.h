@@ -9,11 +9,13 @@
 
 #include "state.h"
 #include "player.h"
+#include "piece.h"
 
 class Game
 {
 public:
-    Game(std::unique_ptr<Player> playerWhite, std::unique_ptr<Player> playerBlack);
+    Game(std::unique_ptr<Player>& playerWhite,
+         std::unique_ptr<Player>& playerBlack);
 
     ~Game();
 
@@ -21,7 +23,7 @@ public:
 
     void setGamemode(bool const color, int const gamemode);
 
-    std::vector<int> *getLegalMoves(uint8_t const pieceByte, int const pos);
+    std::vector<int> *getLegalMoves(Piece const piece, int const pos);
 
 private:
     std::unique_ptr<Player> playerWhite;
@@ -29,7 +31,7 @@ private:
 
     bool isPosAttacked(State *state, int const pos, bool const colorOfAttacker);
 
-    std::vector<int> *getPossibleMoves(State *state, uint8_t const pieceByte, int const pos);
+    std::vector<int> *getPossibleMoves(State *state, Piece const piece, int const pos);
 };
 
 #endif

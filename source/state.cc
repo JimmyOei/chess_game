@@ -14,7 +14,7 @@ void State::initState()
     blackKingPos = 0;
 
     // Setting to board to empty, 0 is value for NO_PIECE
-    std::memset(byteBoard, 0, BOARD_SIZE);
+    std::memset(board, 0, BOARD_SIZE);
 }
 
 State::State()
@@ -42,9 +42,9 @@ State::State(State const &state)
       blackCastlingQueenside(state.blackCastlingQueenside),
       blackCastlingKingside(state.blackCastlingKingside),
       whiteKingPos(state.whiteKingPos),
-      blackKingPos(state.blackKingPos),
+      blackKingPos(state.blackKingPos)
 {
-    memcpy(byteBoard, state.byteBoard, BOARD_SIZE);
+    memcpy(board, state.board, BOARD_SIZE);
 }
 
 bool State::isPosWithinBoardLimits(int const pos)
@@ -79,57 +79,57 @@ int State::getKingPosOfColor(Color const color)
     return blackKingPos;
 }
 
-uint8_t State::getPieceAtPos(int const pos)
+Piece State::getPieceAtPos(int const pos)
 {
-    return byteBoard[pos];
+    return board[pos];
 }
 
-void State::movePiece(uint8_t const pieceByte, int const prevPos, int const newPos)
+void State::makeMove(Piece const piece, int const from, int const to)
 {
-    switch (pieceByte)
+    switch (piece)
     {
-    case WHITE_KING:
-        if (newPos == prevPos + 2)
+    case Piece::WHITE_KING:
+        if (to == from + 2)
         {
-            byteBoard[newPos + 1] = NO_PIECE;
-            byteBoard[newPos - 1] = WHITE_ROOK;
+            board[to + 1] = Piece::NO_PIECE;
+            board[to - 1] = Piece::WHITE_ROOK;
         } // castling king side
-        else if (newPos == prevPos - 2)
+        else if (to == from - 2)
         {
-            byteBoard[newPos - 2] = NO_PIECE;
-            byteBoard[newPos + 1] = WHITE_ROOK;
+            board[to - 2] = Piece::NO_PIECE;
+            board[to + 1] = Piece::WHITE_ROOK;
         } // castling queen side
-        whiteKingPos = newPos;
+        whiteKingPos = to;
         break;
-    case BLACK_KING:
-        if (newPos == prevPos + 2)
+    case Piece::BLACK_KING:
+        if (to == from + 2)
         {
-            byteBoard[newPos + 1] = NO_PIECE;
-            byteBoard[newPos - 1] = BLACK_ROOK;
+            board[to + 1] = Piece::NO_PIECE;
+            board[to - 1] = Piece::BLACK_ROOK;
         } // castling king side
-        else if (newPos == prevPos - 2)
+        else if (to == from - 2)
         {
-            byteBoard[newPos - 2] = NO_PIECE;
-            byteBoard[newPos + 1] = BLACK_ROOK;
+            board[to - 2] = Piece::NO_PIECE;
+            board[to + 1] = Piece::BLACK_ROOK;
         } // castling queen side
-        blackKingPos = newPos;
+        blackKingPos = to;
         break;
-    case WHITE_PAWN:
-        if (newPos == enPassantPos)
+    case Piece::WHITE_PAWN:
+        if (to == enPassantPos)
         {
-            byteBoard[newPos - BOARD_LENGTH] = NO_PIECE;
+            board[to - BOARD_LENGTH] = Piece::NO_PIECE;
         }
         break;
-    case BLACK_PAWN:
-        if (newPos == enPassantPos)
+    case Piece::BLACK_PAWN:
+        if (to == enPassantPos)
         {
-            byteBoard[newPos + BOARD_LENGTH] = NO_PIECE;
+            board[to + BOARD_LENGTH] = Piece::NO_PIECE;
         }
         break;
     }
 
-    byteBoard[prevPos] = NO_PIECE;
-    byteBoard[newPos] = pieceByte;
+    board[from] = Piece::NO_PIECE;
+    board[to] = piece;
 }
 
 int State::getEnPassantPos()
@@ -137,30 +137,30 @@ int State::getEnPassantPos()
     return enPassantPos;
 }
 
-bool State::getCastlingKingSide(bool const color)
+bool State::getCastlingKingSide(Color const color)
 {
-    return color ? whiteCastlingKingside : blackCastlingKingside;
+    return color == Color::WHITE ? whiteCastlingKingside : blackCastlingKingside;
 }
 
-bool State::getCastlingQueenSide(bool const color)
+bool State::getCastlingQueenSide(Color const color)
 {
-    return color ? whiteCastlingQueenside : blackCastlingQueenside;
+    return color == Color::BLACK ? whiteCastlingQueenside : blackCastlingQueenside;
 }
 
-void State::setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos)
+void State::setSpecialMovesData(uint8_t const pieceByte, int const from, int const to)
 {
     switch (pieceByte)
     {
     case WHITE_PAWN:
-        if (newPos == prevPos + BOARD_LENGTH + BOARD_LENGTH)
+        if (to == from + BOARD_LENGTH + BOARD_LENGTH)
         {
-            enPassantPos = prevPos + BOARD_LENGTH;
+            enPassantPos = from + BOARD_LENGTH;
         }
         break;
     case BLACK_PAWN:
-        if (newPos == prevPos - BOARD_LENGTH - BOARD_LENGTH)
+        if (to == from - BOARD_LENGTH - BOARD_LENGTH)
         {
-            enPassantPos = prevPos - BOARD_LENGTH;
+            enPassantPos = from - BOARD_LENGTH;
         }
         break;
     case WHITE_KING:
@@ -184,20 +184,20 @@ void State::setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int 
         }
         break;
     case WHITE_ROOK:
-        if (whiteCastlingKingside && prevPos == 0)
+        if (whiteCastlingKingside && from == 0)
         {
             whiteCastlingKingside = false;
         }
-        else if (whiteCastlingQueenside && prevPos == BOARD_LENGTH - 1)
+        else if (whiteCastlingQueenside && from == BOARD_LENGTH - 1)
         {
             whiteCastlingQueenside = false;
         }
     case BLACK_ROOK:
-        if (blackCastlingKingside && prevPos == BOARD_SIZE - 1)
+        if (blackCastlingKingside && from == BOARD_SIZE - 1)
         {
             blackCastlingKingside = false;
         }
-        else if (blackCastlingQueenside && prevPos == BOARD_SIZE - BOARD_LENGTH)
+        else if (blackCastlingQueenside && from == BOARD_SIZE - BOARD_LENGTH)
         {
             blackCastlingQueenside = false;
         }
@@ -224,41 +224,41 @@ bool State::initStateFromFEN(std::string FEN)
             pos = posY * BOARD_LENGTH - 1;
             break;
         case 'p':
-            byteBoard[pos] = BLACK_PAWN;
+            board[pos] = BLACK_PAWN;
             break;
         case 'P':
-            byteBoard[pos] = WHITE_PAWN;
+            board[pos] = WHITE_PAWN;
             break;
         case 'n':
-            byteBoard[pos] = BLACK_KNIGHT;
+            board[pos] = BLACK_KNIGHT;
             break;
         case 'N':
-            byteBoard[pos] = WHITE_KNIGHT;
+            board[pos] = WHITE_KNIGHT;
             break;
         case 'b':
-            byteBoard[pos] = BLACK_BISHOP;
+            board[pos] = BLACK_BISHOP;
             break;
         case 'B':
-            byteBoard[pos] = WHITE_BISHOP;
+            board[pos] = WHITE_BISHOP;
             break;
         case 'r':
-            byteBoard[pos] = BLACK_ROOK;
+            board[pos] = BLACK_ROOK;
             break;
         case 'R':
-            byteBoard[pos] = WHITE_ROOK;
+            board[pos] = WHITE_ROOK;
             break;
         case 'q':
-            byteBoard[pos] = BLACK_QUEEN;
+            board[pos] = BLACK_QUEEN;
             break;
         case 'Q':
-            byteBoard[pos] = WHITE_QUEEN;
+            board[pos] = WHITE_QUEEN;
             break;
         case 'k':
-            byteBoard[pos] = BLACK_KING;
+            board[pos] = BLACK_KING;
             blackKingPos = pos;
             break;
         case 'K':
-            byteBoard[pos] = WHITE_KING;
+            board[pos] = WHITE_KING;
             whiteKingPos = pos;
             break;
         default:
@@ -363,11 +363,11 @@ bool State::initStateFromFEN(std::string FEN)
 //     int countEmptySquares = 0;
 
 //     for(int i = 0; i < BOARD_SIZE; i++) {
-//             switch(byteBoard[i]) {
+//             switch(board[i]) {
 //                 case NO_PIECE:
 //                     countEmptySquares = 1;
 //                     i++;
-//                     while(byteBoard[i][j] == NO_PIECE && j < BOARD_LENGTH-1) {
+//                     while(board[i][j] == NO_PIECE && j < BOARD_LENGTH-1) {
 //                         countEmptySquares++;
 //                         j++;
 //                     }
@@ -449,7 +449,7 @@ void State::debugPrintState()
         for (int pos = i * BOARD_LENGTH; pos < (i + 1) * BOARD_LENGTH; pos++)
         {
             std::cout << " ";
-            switch (byteBoard[pos])
+            switch (board[pos])
             {
             case WHITE_PAWN:
                 std::cout << "P";

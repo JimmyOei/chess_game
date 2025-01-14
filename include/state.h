@@ -5,42 +5,9 @@
 #include <string>
 #include <vector>
 
-/**
- * Chess board represented in uint8_t,
- * which represents the piece and colour as follows:
- * pawn   = 0b00000001
- * knight = 0b00000010
- * bishop = 0b00000100
- * rook   = 0b00001000
- * queen  = 0b00010000
- * king   = 0b00100000
- *
- * black  = 0b01000000
- * white  = 0b10000000
- */
+#include "piece.h"
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
-
-/* white pieces */
-#define WHITE_PAWN 0b10000001
-#define WHITE_KNIGHT 0b10000010
-#define WHITE_BISHOP 0b10000100
-#define WHITE_ROOK 0b10001000
-#define WHITE_QUEEN 0b10010000
-#define WHITE_KING 0b10100000
-
-/* black pieces */
-#define BLACK_PAWN 0b01000001
-#define BLACK_KNIGHT 0b01000010
-#define BLACK_BISHOP 0b01000100
-#define BLACK_ROOK 0b01001000
-#define BLACK_QUEEN 0b01010000
-#define BLACK_KING 0b01100000
-
-/* general */
-#define NO_PIECE 0b00000000
-#define WHITE_PIECE 0b10000000
-#define BLACK_PIECE 0b01000000
 
 /* board */
 #define BOARD_LENGTH 8
@@ -51,17 +18,6 @@
 #define EAST +1
 #define WEST -1
 #define SOUTH -BOARD_LENGTH
-
-enum class Color
-{
-    WHITE,
-    BLACK
-};
-
-inline bool getColorOfPiece(uint8_t const pieceByte)
-{
-    return pieceByte & WHITE_PIECE;
-}
 
 class State
 {
@@ -110,15 +66,20 @@ public:
      * @brief getter for the position of the king of a given color
      * 
      * @param color color of the king to get the position of
-     * 
      * @return position of the king of the given color
      */
     int getKingPosOfColor(Color const color);
 
-    uint8_t getPieceAtPos(int const pos);
+    /**
+     * @brief getter for the piece at a given position
+     *
+     * @param pos position to get the piece at
+     * @return the piece at the given position
+     */
+    Piece getPieceAtPos(int const pos);
 
     // Note: pawn advance can be down with movePiece(pieceByteToAdvanceTo, prevPos, newPos)
-    void movePiece(uint8_t const pieceByte, int const prevPos, int const newPos);
+    void makeMove(Piece const piece, int const from, int const to);
 
     int getEnPassantPos();
 
@@ -126,7 +87,7 @@ public:
 
     bool getCastlingQueenSide(Color const color);
 
-    void setSpecialMovesData(uint8_t const pieceByte, int const prevPos, int const newPos);
+    void setSpecialMovesData(Piece const piece, int const prevPos, int const newPos);
 
     /**
      * @brief initiates the state according to the given FEN-notation
@@ -147,7 +108,7 @@ public:
     void debugPrintState();
 
 private:
-    uint8_t byteBoard[BOARD_SIZE];
+    Piece board[BOARD_SIZE];
 
     Color turn;
 

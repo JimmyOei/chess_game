@@ -1,7 +1,5 @@
 #include "../include/game.h"
 
-#include <algorithm>
-
 Game::Game(std::unique_ptr<Player> playerWhite,
            std::unique_ptr<Player> playerBlack)
     : playerWhite(std::move(playerWhite)),
@@ -233,7 +231,7 @@ std::vector<int> *Game::getPossibleMoves(State *state, uint8_t const pieceByte, 
     return possibleMoves;
 }
 
-std::vector<int> *Game::getLegalMoves(uint8_t const pieceByte, int const pos)
+std::vector<int> *Game::getLegalMoves(Piece const piece, int const pos)
 {
     /**
      * A legal move of a piece is:
