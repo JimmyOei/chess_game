@@ -1,7 +1,7 @@
 #ifndef PIECES_H
 #define PIECES_H
 
-#include <cstdint>
+#include <stdint.h>
 
 /**
  * @brief Enum class for the pieces in the chess game
@@ -42,9 +42,15 @@ enum class Color
   BLACK = 0b01000000
 };
 
-bool getColorOfPiece(Piece const piece)
+/**
+ * @brief getter for the color of a given piece
+ * 
+ * @param piece piece to get the color of
+ * @return color of the piece (see enum class Color)
+ */
+Color getColorOfPiece(Piece const piece)
 {
-  return static_cast<uint8_t>(piece) & static_cast<uint8_t>(Piece::WHITE_PIECE);
-}
+  return static_cast<Color>(static_cast<uint8_t>(piece & 0b11000000));
+};
 
 #endif

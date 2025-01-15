@@ -216,6 +216,206 @@ std::vector<Move> State::getLegalMovesForPos(int const pos)
     return legalMoves;
 }
 
+std::vector<Move> State::getLegalMovesForPos(int const pos)
+{
+    if (!isPosWithinBoardLimits(pos))
+    {
+        return {};
+    }
+
+    Piece piece = board[pos];
+    if (piece == Piece::NO_PIECE)
+    {
+        return {};
+    }
+
+    Color color = getColorOfPiece(piece);
+    if (color != turn)
+    {
+        return {};
+    }
+    
+
+    switch (piece)
+    {
+    case Piece::WHITE_PAWN:
+        tmpPos += BOARD_LENGTH;
+        /* 1. One step upwards */
+        if (isPosWithinBoardLimits(pos + BOARD_LENGTH) && state->getPieceAt(tmpPos) == NO_PIECE)
+        {
+            possibleMoves->push_back(tmpPos);
+        } // One step upwards move
+        tmpPos += BOARD_LENGTH;
+
+        /* 2. Two steps upwards */
+        if (pos >= BOARD_LENGTH && pos < 2 * BOARD_LENGTH && state->withinBoardLimits(tmpPos) && state->getPieceAt(tmpPos - BOARD_LENGTH) == NO_PIECE && state->getPieceAt(tmpPos) == NO_PIECE)
+        {
+            possibleMoves->push_back(tmpPos);
+        } // two step upwards move (only possible if at y=BOARD_LENGTH-1)
+        tmpPos = pos + BOARD_LENGTH - 1;
+
+        /* 3. En Passant left diagonal */
+        if (tmpPos % BOARD_LENGTH != 7 && state->withinBoardLimits(tmpPos))
+        {
+            uint8_t tmp = state->getPieceAt(tmpPos);
+            if ((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp)) || state->getEnPassantPos() == tmpPos)
+            {
+                possibleMoves->push_back(tmpPos);
+            }
+        } // left diagonal take
+        tmpPos += 2;
+        /* 4. En Passant right diagonal */
+        if (tmpPos % BOARD_LENGTH != 0 && state->withinBoardLimits(tmpPos))
+        {
+            uint8_t tmp = state->getPieceAt(tmpPos);
+            if ((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp)) || state->getEnPassantPos() == tmpPos)
+            {
+                possibleMoves->push_back(tmpPos);
+            }
+        } // right diagonal take
+        break;
+    case Piece::BLACK_PAWN:
+        tmpPos -= BOARD_LENGTH;
+        if (state->withinBoardLimits(tmpPos) && state->getPieceAt(tmpPos) == NO_PIECE)
+        {
+            possibleMoves->push_back(tmpPos);
+        } // one step upwards move
+        tmpPos -= BOARD_LENGTH;
+        if (pos >= BOARD_SIZE - BOARD_LENGTH - BOARD_LENGTH && pos < BOARD_SIZE - BOARD_LENGTH && state->withinBoardLimits(tmpPos) && state->getPieceAt(tmpPos + BOARD_LENGTH) == NO_PIECE && state->getPieceAt(tmpPos) == NO_PIECE)
+        {
+            possibleMoves->push_back(tmpPos);
+        } // two step upwards move (only possible if at y=BOARD_LENGTH-1)
+        tmpPos = pos - BOARD_LENGTH - 1;
+        if (tmpPos % BOARD_LENGTH != 7 && state->withinBoardLimits(tmpPos))
+        {
+            uint8_t tmp = state->getPieceAt(tmpPos);
+            if ((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp)) || state->getEnPassantPos() == tmpPos)
+            {
+                possibleMoves->push_back(tmpPos);
+            }
+        } // left diagonal take
+        tmpPos += 2;
+        if (tmpPos % BOARD_LENGTH != 0 && state->withinBoardLimits(tmpPos))
+        {
+            uint8_t tmp = state->getPieceAt(tmpPos);
+            if ((tmp != NO_PIECE && colorPieceByte != getColorOfPiece(tmp)) || state->getEnPassantPos() == tmpPos)
+            {
+                possibleMoves->push_back(tmpPos);
+            }
+        } // right diagonal take
+        break;
+    case Piece::WHITE_KNIGHT:
+    case Piece::BLACK_KNIGHT:
+    {
+        int const directionIncrementals[8] = {NORTH + NORTH + EAST, NORTH + NORTH + WEST, SOUTH + SOUTH + EAST, SOUTH + SOUTH + WEST,
+                                              EAST + EAST + NORTH, EAST + EAST + SOUTH, WEST + WEST + NORTH, WEST + WEST + SOUTH};
+        int const borderOfDirection[8] = {0, BOARD_LENGTH - 1, 0, BOARD_LENGTH - 1,
+                                          1, 1, BOARD_LENGTH - 2, BOARD_LENGTH - 2};
+
+        for (int i = 0; i < 8; i++)
+        {
+            tmpPos = pos + directionIncrementals[i];
+            if (state->withinBoardLimits(tmpPos) && tmpPos % BOARD_LENGTH != borderOfDirection[i])
+            {
+                if (((i == 4 || i == 5) && tmpPos % BOARD_LENGTH == borderOfDirection[i] - 1) || ((i == 6 || i == 7) && tmpPos % BOARD_LENGTH == borderOfDirection[i] + 1))
+                {
+                    continue;
+                }
+                uint8_t tmp = state->getPieceAt(tmpPos);
+                if (tmp == NO_PIECE || colorPieceByte != getColorOfPiece(tmp))
+                {
+                    possibleMoves->push_back(tmpPos);
+                }
+            }
+        }
+        break;
+    }
+    case Piece::WHITE_QUEEN: // queen is same as bishop + rook
+    case Piece::BLACK_QUEEN:
+    case Piece::WHITE_BISHOP:
+    case Piece::BLACK_BISHOP:
+    {
+        int const directionIncrementals[4] = {NORTH + EAST, NORTH + WEST, SOUTH + EAST, SOUTH + WEST};
+        int const borderOfDirection[4] = {0, BOARD_LENGTH - 1, 0, BOARD_LENGTH - 1};
+
+        for (int i = 0; i < 4; i++)
+        {
+            tmpPos = pos + directionIncrementals[i];
+            while (state->withinBoardLimits(tmpPos) && tmpPos % BOARD_LENGTH != borderOfDirection[i])
+            {
+                uint8_t tmp = state->getPieceAt(tmpPos);
+                if (tmp == NO_PIECE)
+                {
+                    possibleMoves->push_back(tmpPos);
+                    tmpPos = tmpPos + directionIncrementals[i];
+                    continue;
+                }
+                if (colorPieceByte != getColorOfPiece(tmp))
+                {
+                    possibleMoves->push_back(tmpPos);
+                }
+                break;
+            }
+        }
+
+        if (pieceByte != WHITE_QUEEN && pieceByte != BLACK_QUEEN)
+        {
+            break;
+        } // no break if the piece is a queen (queen can also do rook moves)
+    }
+    case Piece::WHITE_ROOK:
+    case Piece::BLACK_ROOK:
+    {
+        int const directionIncrementals[4] = {NORTH, EAST, WEST, SOUTH};
+        int const borderOfDirection[4] = {-1, 0, 7, -1};
+
+        for (int i = 0; i < 4; i++)
+        {
+            tmpPos = pos + directionIncrementals[i];
+            while (state->withinBoardLimits(tmpPos) && tmpPos % BOARD_LENGTH != borderOfDirection[i])
+            {
+                uint8_t tmp = state->getPieceAt(tmpPos);
+                if (tmp == NO_PIECE)
+                {
+                    possibleMoves->push_back(tmpPos);
+                    tmpPos = tmpPos + directionIncrementals[i];
+                    continue;
+                }
+                if (colorPieceByte != getColorOfPiece(tmp))
+                {
+                    possibleMoves->push_back(tmpPos);
+                }
+                break;
+            }
+        }
+        break;
+    }
+    case Piece::WHITE_KING:
+    case Piece::BLACK_KING:
+    {
+        int const directionIncrementals[8] = {NORTH + EAST, NORTH + WEST, SOUTH + EAST, SOUTH + WEST,
+                                              NORTH, EAST, WEST, SOUTH};
+        int const borderOfDirection[8] = {0, 7, 0, 7, -1, 0, 7, -1};
+
+        for (int i = 0; i < 8; i++)
+        {
+            tmpPos = pos + directionIncrementals[i];
+            if (state->withinBoardLimits(tmpPos) && tmpPos % BOARD_LENGTH != borderOfDirection[i])
+            {
+                uint8_t tmp = state->getPieceAt(tmpPos);
+                if (tmp == NO_PIECE || colorPieceByte != getColorOfPiece(tmp))
+                {
+                    possibleMoves->push_back(tmpPos);
+                }
+            }
+        }
+        break;
+    }
+    }
+
+    return possibleMoves;
+}
+
 int State::getEnPassantPos()
 {
     return enPassantPos;
