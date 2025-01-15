@@ -19,17 +19,18 @@ void State::initState()
 
 State::State()
 {
-    if(!initStateFromFEN(STANDARD_OPENING_FEN)) {
-        std::cerr << ">> Invalid FEN-notation. State is set to an empty board." << std::endl;
+    if (!initStateFromFENString(STANDARD_OPENING_FENString))
+    {
+        std::cerr << ">> Invalid FENString-notation. State is set to an empty board." << std::endl;
         initState();
     }
 }
 
-State::State(std::string FEN)
+State::State(std::string FENString)
 {
-    if (!initStateFromFEN(FEN))
+    if (!initStateFromFENString(FENString))
     {
-        std::cerr << ">> Invalid FEN-notation. State is set to an empty board." << std::endl;
+        std::cerr << ">> Invalid FENString-notation. State is set to an empty board." << std::endl;
         initState();
     }
 }
@@ -84,52 +85,135 @@ Piece State::getPieceAtPos(int const pos)
     return board[pos];
 }
 
-void State::makeMove(Piece const piece, int const from, int const to)
+bool State::makeMove(Move const move)
 {
-    switch (piece)
+    /* Move validation */
+    if (!isPosWithinBoardLimits(move.from) || !isPosWithinBoardLimits(move.to) || board[move.from] != move.piece)
+    {
+        std::cerr << "Invalid move" << std::endl;
+        return false;
+    }
+
+    switch (move.piece)
     {
     case Piece::WHITE_KING:
-        if (to == from + 2)
+        if (whiteCastlingKingside || whiteCastlingQueenside)
         {
-            board[to + 1] = Piece::NO_PIECE;
-            board[to - 1] = Piece::WHITE_ROOK;
-        } // castling king side
-        else if (to == from - 2)
-        {
-            board[to - 2] = Piece::NO_PIECE;
-            board[to + 1] = Piece::WHITE_ROOK;
-        } // castling queen side
-        whiteKingPos = to;
+            if (move.to == move.from + 2)
+            {
+                /* Castling king side */
+                board[move.to + 1] = Piece::NO_PIECE;
+                board[move.to - 1] = Piece::WHITE_ROOK;
+            }
+            else if (move.to == move.from - 2)
+            {
+                /* Castling queen side */
+                board[move.to - 2] = Piece::NO_PIECE;
+                board[move.to + 1] = Piece::WHITE_ROOK;
+            }
+            whiteCastlingKingside = false;
+            whiteCastlingQueenside = false;
+        }
+        whiteKingPos = move.to;
         break;
     case Piece::BLACK_KING:
-        if (to == from + 2)
+        if (blackCastlingKingside || blackCastlingQueenside)
         {
-            board[to + 1] = Piece::NO_PIECE;
-            board[to - 1] = Piece::BLACK_ROOK;
-        } // castling king side
-        else if (to == from - 2)
-        {
-            board[to - 2] = Piece::NO_PIECE;
-            board[to + 1] = Piece::BLACK_ROOK;
-        } // castling queen side
-        blackKingPos = to;
+            if (move.to == move.from + 2)
+            {
+                /* Castling king side */
+                board[move.to + 1] = Piece::NO_PIECE;
+                board[move.to - 1] = Piece::BLACK_ROOK;
+            }
+            else if (move.to == move.from - 2)
+            {
+                /* Castling queen side */
+                board[move.to - 2] = Piece::NO_PIECE;
+                board[move.to + 1] = Piece::BLACK_ROOK;
+            }
+            blackCastlingKingside = false;
+            blackCastlingQueenside = false;
+        }
+        blackKingPos = move.to;
         break;
     case Piece::WHITE_PAWN:
-        if (to == enPassantPos)
+        if (move.to == enPassantPos)
         {
-            board[to - BOARD_LENGTH] = Piece::NO_PIECE;
+            // Capturing the en passant piece
+            board[move.to - BOARD_LENGTH] = Piece::NO_PIECE;
+        }
+        else if (move.to == move.from + BOARD_LENGTH + BOARD_LENGTH)
+        {
+            enPassantPos = move.from + BOARD_LENGTH;
         }
         break;
     case Piece::BLACK_PAWN:
-        if (to == enPassantPos)
+        if (move.to == enPassantPos)
         {
-            board[to + BOARD_LENGTH] = Piece::NO_PIECE;
+            // Capturing the en passant piece
+            board[move.to + BOARD_LENGTH] = Piece::NO_PIECE;
+        }
+        else if (move.to == move.from - BOARD_LENGTH - BOARD_LENGTH)
+        {
+            enPassantPos = move.from - BOARD_LENGTH;
         }
         break;
     }
 
-    board[from] = Piece::NO_PIECE;
-    board[to] = piece;
+    board[move.from] = Piece::NO_PIECE;
+    board[move.to] = move.piece;
+    return true;
+}
+
+
+std::vector<Move> State::getLegalMovesForPos(int const pos)
+{
+    /**
+     * A legal move of a piece is:
+     * 1. a move according to the rules of the piece ----> Game::getPossibleMoves
+     * 2. a move that is within the bounds of the board ----> Interface
+     * 3. a move that is either: ----> Game::getPossibleMoves
+     *    3.1 to an empty square
+     *    3.2 to a piece of the opponent's color
+     * 4. [RULE 4 is exempted for knights] a move that does not "hop over" pieces ----> Game::getPossibleMoves
+     * 5. a move that does not leave your own king attacked ----> Game::getLegalMoves
+     */
+
+    std::vector<Move> *legalMoves = getPossibleMoves(this->state, pieceByte, pos);
+    State *stateCopy = state->copyState();
+    bool colorPieceByte = getColorOfPiece(pieceByte);
+
+    for (int i = 0; i < legalMoves->size(); i++)
+    {
+        int newPos = legalMoves->at(i);
+        uint8_t tmp = stateCopy->getPieceAt(newPos);
+        stateCopy->movePiece(pieceByte, pos, newPos);
+        if (isPosAttacked(stateCopy, stateCopy->getKingPos(colorPieceByte), !colorPieceByte))
+        {
+            legalMoves->erase(legalMoves->begin() + i);
+            i--;
+        }
+        stateCopy->movePiece(pieceByte, newPos, pos);
+        stateCopy->movePiece(tmp, newPos, newPos);
+    }
+
+    // special move: castling
+    bool isKingAttacked = isPosAttacked(state, state->getKingPos(colorPieceByte), !colorPieceByte);
+    if (!isKingAttacked && (pieceByte == WHITE_KING || pieceByte == BLACK_KING))
+    {
+        if (state->getCastlingKingSide(colorPieceByte) && state->getPieceAt(pos + 1) == NO_PIECE && !isPosAttacked(state, pos + 1, !colorPieceByte) && state->getPieceAt(pos + 2) == NO_PIECE && !isPosAttacked(state, pos + 2, !colorPieceByte))
+        {
+            legalMoves->push_back(pos + 2);
+        }
+        if (state->getCastlingQueenSide(colorPieceByte) && state->getPieceAt(pos - 3) == NO_PIECE && state->getPieceAt(pos - 2) == NO_PIECE && !isPosAttacked(state, pos - 2, !colorPieceByte) && state->getPieceAt(pos - 1) == NO_PIECE && !isPosAttacked(state, pos - 1, !colorPieceByte))
+        {
+            legalMoves->push_back(pos - 2);
+        }
+    }
+
+    delete stateCopy;
+    std::sort(legalMoves->begin(), legalMoves->end());
+    return legalMoves;
 }
 
 int State::getEnPassantPos()
@@ -147,150 +231,92 @@ bool State::getCastlingQueenSide(Color const color)
     return color == Color::BLACK ? whiteCastlingQueenside : blackCastlingQueenside;
 }
 
-void State::setSpecialMovesData(uint8_t const pieceByte, int const from, int const to)
-{
-    switch (pieceByte)
-    {
-    case WHITE_PAWN:
-        if (to == from + BOARD_LENGTH + BOARD_LENGTH)
-        {
-            enPassantPos = from + BOARD_LENGTH;
-        }
-        break;
-    case BLACK_PAWN:
-        if (to == from - BOARD_LENGTH - BOARD_LENGTH)
-        {
-            enPassantPos = from - BOARD_LENGTH;
-        }
-        break;
-    case WHITE_KING:
-        if (whiteCastlingKingside)
-        {
-            whiteCastlingKingside = false;
-        }
-        if (whiteCastlingQueenside)
-        {
-            whiteCastlingQueenside = false;
-        }
-        break;
-    case BLACK_KING:
-        if (blackCastlingKingside)
-        {
-            blackCastlingKingside = false;
-        }
-        if (blackCastlingQueenside)
-        {
-            blackCastlingQueenside = false;
-        }
-        break;
-    case WHITE_ROOK:
-        if (whiteCastlingKingside && from == 0)
-        {
-            whiteCastlingKingside = false;
-        }
-        else if (whiteCastlingQueenside && from == BOARD_LENGTH - 1)
-        {
-            whiteCastlingQueenside = false;
-        }
-    case BLACK_ROOK:
-        if (blackCastlingKingside && from == BOARD_SIZE - 1)
-        {
-            blackCastlingKingside = false;
-        }
-        else if (blackCastlingQueenside && from == BOARD_SIZE - BOARD_LENGTH)
-        {
-            blackCastlingQueenside = false;
-        }
-    }
-}
-
-bool State::initStateFromFEN(std::string FEN)
+bool State::initStateFromFENString(std::string FENString)
 {
     initState();
-    int const lengthFEN = FEN.length();
+    int const lengthFENString = FENString.length();
     int i = 0;
 
-    // setting the board
-    int posY = BOARD_LENGTH - 1;
-    int posX = 0;
-    int pos = BOARD_SIZE - BOARD_LENGTH;
-    while (i < lengthFEN && posY >= 0 && posX <= BOARD_LENGTH && FEN[i] != ' ')
+    int row = BOARD_LENGTH - 1;          // top row (black's first row)
+    int column = 0;                      // most left column
+    int pos = BOARD_SIZE - BOARD_LENGTH; // index of most top left square
+    while (i < lengthFENString && row >= 0 && column <= BOARD_LENGTH && FENString[i] != ' ')
     {
-        switch (FEN[i])
+        switch (FENString[i])
         {
         case '/':
-            posY--;
-            posX = -1;
-            pos = posY * BOARD_LENGTH - 1;
+            row--;
+            column = -1;
+            pos = row * BOARD_LENGTH - 1;
             break;
         case 'p':
-            board[pos] = BLACK_PAWN;
+            board[pos] = Piece::BLACK_PAWN;
             break;
         case 'P':
-            board[pos] = WHITE_PAWN;
+            board[pos] = Piece::WHITE_PAWN;
             break;
         case 'n':
-            board[pos] = BLACK_KNIGHT;
+            board[pos] = Piece::BLACK_KNIGHT;
             break;
         case 'N':
-            board[pos] = WHITE_KNIGHT;
+            board[pos] = Piece::WHITE_KNIGHT;
             break;
         case 'b':
-            board[pos] = BLACK_BISHOP;
+            board[pos] = Piece::BLACK_BISHOP;
             break;
         case 'B':
-            board[pos] = WHITE_BISHOP;
+            board[pos] = Piece::WHITE_BISHOP;
             break;
         case 'r':
-            board[pos] = BLACK_ROOK;
+            board[pos] = Piece::BLACK_ROOK;
             break;
         case 'R':
-            board[pos] = WHITE_ROOK;
+            board[pos] = Piece::WHITE_ROOK;
             break;
         case 'q':
-            board[pos] = BLACK_QUEEN;
+            board[pos] = Piece::BLACK_QUEEN;
             break;
         case 'Q':
-            board[pos] = WHITE_QUEEN;
+            board[pos] = Piece::WHITE_QUEEN;
             break;
         case 'k':
-            board[pos] = BLACK_KING;
+            board[pos] = Piece::BLACK_KING;
             blackKingPos = pos;
             break;
         case 'K':
-            board[pos] = WHITE_KING;
+            board[pos] = Piece::WHITE_KING;
             whiteKingPos = pos;
             break;
         default:
-            int const tmp = FEN[i] - '0';
+            int const tmp = FENString[i] - '0';
             if (tmp < 0 || tmp > BOARD_LENGTH)
             {
                 return false;
             }
-            posX += tmp - 1;
+            column += tmp - 1;
             pos += tmp - 1;
             break;
         }
         pos++;
-        posX++;
+        column++;
         i++;
     }
-    if (whiteKingPos == -1 || blackKingPos == -1 || posX != BOARD_LENGTH || posY != 0)
+    if (whiteKingPos == -1 || blackKingPos == -1 || column != BOARD_LENGTH || row != 0)
     {
+        // no king(s) on the board or FENString did not cover whole board (incorrect notation)
         return false;
-    } // no king(s) on the board or fen did not cover whole board (incorrect notation)
+    }
 
     i++;
-    // who's turn is it
-    if (i < lengthFEN && FEN[i - 1] == ' ')
+    if (i < lengthFENString && FENString[i - 1] == ' ')
     {
-        switch (FEN[i])
+        switch (FENString[i])
         {
         case 'w':
-            turn = WHITE;
+            turn = Color::WHITE;
             break;
         case 'b':
-            turn = BLACK;
+            turn = Color::BLACK;
             break;
         default:
             return false;
@@ -302,47 +328,45 @@ bool State::initStateFromFEN(std::string FEN)
     }
 
     i += 2;
-    if (i < lengthFEN && FEN[i - 1] == ' ')
+    if (i < lengthFENString && FENString[i - 1] == ' ')
     {
-        // castling data
-        if (FEN[i] == 'K' || FEN[i] == 'Q' || FEN[i] == 'k' || FEN[i] == 'q')
+        if (FENString[i] == 'K' || FENString[i] == 'Q' || FENString[i] == 'k' || FENString[i] == 'q')
         {
-            if (FEN[i++] == 'K')
+            if (FENString[i++] == 'K')
             {
                 whiteCastlingKingside = true;
             }
-            if (i < lengthFEN && FEN[i++] == 'Q')
+            if (i < lengthFENString && FENString[i++] == 'Q')
             {
                 whiteCastlingQueenside = true;
             }
-            if (i < lengthFEN && FEN[i++] == 'k')
+            if (i < lengthFENString && FENString[i++] == 'k')
             {
                 blackCastlingKingside = true;
             }
-            if (i < lengthFEN && FEN[i++] == 'q')
+            if (i < lengthFENString && FENString[i++] == 'q')
             {
                 blackCastlingQueenside = true;
             }
         }
-        else if (FEN[i++] != '-')
+        else if (FENString[i++] != '-')
         {
             return false;
         }
-        if (FEN[i++] != ' ')
+        if (FENString[i++] != ' ')
         {
             return false;
         }
 
-        // En Passant data
-        if (FEN[i++] != '-')
+        if (FENString[i++] != '-')
         {
-            if (i < lengthFEN - 1)
-                enPassantPos = FEN[i++] - 'a';
-            if (enPassantPos >= BOARD_LENGTH && i >= lengthFEN)
+            if (i < lengthFENString - 1)
+                enPassantPos = FENString[i++] - 'a';
+            if (enPassantPos >= BOARD_LENGTH && i >= lengthFENString)
             {
                 return false;
             }
-            enPassantPos += (FEN[i++] - '0') * BOARD_LENGTH;
+            enPassantPos += (FENString[i++] - '0') * BOARD_LENGTH;
             if (enPassantPos >= BOARD_SIZE)
             {
                 return false;
@@ -357,84 +381,10 @@ bool State::initStateFromFEN(std::string FEN)
     return true;
 }
 
-// NOT NEEDED RIGHT NOW, SO LEAVING AS IS FOR NOW
-// std::string State::getFEN() {
-//     std::string FEN = "";
-//     int countEmptySquares = 0;
-
-//     for(int i = 0; i < BOARD_SIZE; i++) {
-//             switch(board[i]) {
-//                 case NO_PIECE:
-//                     countEmptySquares = 1;
-//                     i++;
-//                     while(board[i][j] == NO_PIECE && j < BOARD_LENGTH-1) {
-//                         countEmptySquares++;
-//                         j++;
-//                     }
-//                     j--;
-//                     FEN += char('0' + countEmptySquares);
-//                     break;
-//                 case BLACK_PAWN: FEN += 'p'; break;
-//                 case WHITE_PAWN: FEN += 'P'; break;
-//                 case BLACK_KNIGHT: FEN += 'n'; break;
-//                 case WHITE_KNIGHT: FEN += 'N'; break;
-//                 case BLACK_BISHOP: FEN += 'b'; break;
-//                 case WHITE_BISHOP: FEN += 'B'; break;
-//                 case BLACK_ROOK: FEN += 'r'; break;
-//                 case WHITE_ROOK: FEN += 'R'; break;
-//                 case BLACK_QUEEN: FEN += 'q'; break;
-//                 case WHITE_QUEEN: FEN += 'Q'; break;
-//                 case BLACK_KING: FEN += 'k'; break;
-//                 case WHITE_KING: FEN += 'K'; break;
-//             }
-//             countEmptySquares = 0;
-//         }
-//         FEN += '/';
-//     }
-
-//     FEN += ' ';
-//     if(turn) {
-//         FEN += 'w';
-//     }
-//     else {
-//         FEN += 'b';
-//     }
-
-//     FEN += ' ';
-//     if(whiteCastlingKingside || whiteCastlingQueenside || blackCastlingKingside || blackCastlingQueenside) {
-//         if(whiteCastlingKingside) {
-//             FEN += 'K';
-//         }
-//         if(whiteCastlingQueenside) {
-//             FEN += 'Q';
-//         }
-//         if(blackCastlingKingside) {
-//             FEN += 'k';
-//         }
-//         if(blackCastlingQueenside) {
-//             FEN += 'q';
-//         }
-//     }
-//     else {
-//         FEN += '-';
-//     }
-
-//     FEN += ' ';
-//     if(enPassant) {
-//         FEN += char('a' + xEnPassantSquare);
-//         FEN += char('0' + yEnPassantSquare);
-//     }
-//     else {
-//         FEN += '-';
-//     }
-
-//     return FEN;
-// }
-
-void State::debugPrintState()
+void State::printState()
 {
-    std::cout << "--------===== DEBUG STATE =====--------" << std::endl
-              << "Turn: " << turn << std::endl
+    std::cout << "--------===== PRINTING STATE =====--------" << std::endl
+              << "Turn: " << (turn == Color::WHITE ? "White" : "Black") << std::endl
               << "enPassantPos: " << enPassantPos << std::endl
               << "whiteCastlingQueenside: " << whiteCastlingQueenside << std::endl
               << "whiteCastlingKingside: " << whiteCastlingKingside << std::endl
@@ -451,40 +401,40 @@ void State::debugPrintState()
             std::cout << " ";
             switch (board[pos])
             {
-            case WHITE_PAWN:
+            case Piece::WHITE_PAWN:
                 std::cout << "P";
                 break;
-            case BLACK_PAWN:
+            case Piece::BLACK_PAWN:
                 std::cout << "p";
                 break;
-            case WHITE_KNIGHT:
+            case Piece::WHITE_KNIGHT:
                 std::cout << "N";
                 break;
-            case BLACK_KNIGHT:
+            case Piece::BLACK_KNIGHT:
                 std::cout << "n";
                 break;
-            case WHITE_BISHOP:
+            case Piece::WHITE_BISHOP:
                 std::cout << "B";
                 break;
-            case BLACK_BISHOP:
+            case Piece::BLACK_BISHOP:
                 std::cout << "b";
                 break;
-            case WHITE_ROOK:
+            case Piece::WHITE_ROOK:
                 std::cout << "R";
                 break;
-            case BLACK_ROOK:
+            case Piece::BLACK_ROOK:
                 std::cout << "r";
                 break;
-            case WHITE_QUEEN:
+            case Piece::WHITE_QUEEN:
                 std::cout << "Q";
                 break;
-            case BLACK_QUEEN:
+            case Piece::BLACK_QUEEN:
                 std::cout << "q";
                 break;
-            case WHITE_KING:
+            case Piece::WHITE_KING:
                 std::cout << "K";
                 break;
-            case BLACK_KING:
+            case Piece::BLACK_KING:
                 std::cout << "k";
                 break;
             default:

@@ -6,12 +6,13 @@
 #include <vector>
 
 #include "piece.h"
+#include "move.h"
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
 /* board */
 #define BOARD_LENGTH 8
-#define BOARD_SIZE BOARD_LENGTH * BOARD_LENGTH
+#define BOARD_SIZE BOARD_LENGTH *BOARD_LENGTH
 
 /* directions */
 #define NORTH BOARD_LENGTH
@@ -64,7 +65,7 @@ public:
 
     /**
      * @brief getter for the position of the king of a given color
-     * 
+     *
      * @param color color of the king to get the position of
      * @return position of the king of the given color
      */
@@ -78,16 +79,15 @@ public:
      */
     Piece getPieceAtPos(int const pos);
 
-    // Note: pawn advance can be down with movePiece(pieceByteToAdvanceTo, prevPos, newPos)
-    void makeMove(Piece const piece, int const from, int const to);
+    bool makeMove(Move const move);
+
+    std::vector<Move> getLegalMovesForPos(int const pos);
 
     int getEnPassantPos();
 
     bool getCastlingKingSide(Color const color);
 
     bool getCastlingQueenSide(Color const color);
-
-    void setSpecialMovesData(Piece const piece, int const prevPos, int const newPos);
 
     /**
      * @brief initiates the state according to the given FEN-notation
@@ -96,16 +96,12 @@ public:
      * @return true if FEN is a legal FEN-notation and state
      *          is set succesfully, otherwise false
      */
-    bool initStateFromFEN(std::string FEN);
+    bool initStateFromFENString(std::string FEN);
 
-    // /**
-    //  * @brief translates the byteBoard to FEN-notation and returns this
-    //  *
-    //  * @return the FEN-notation of the current state
-    // */
-    // std::string getFEN();
-
-    void debugPrintState();
+    /**
+     * @brief prints the current state of the board to stdout for debugging
+     */
+    void printState();
 
 private:
     Piece board[BOARD_SIZE];
