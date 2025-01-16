@@ -64,6 +64,13 @@ public:
     Color getTurn();
 
     /**
+     * @brief getter for if the king of color who's turn it is, is in check
+     * 
+     * @return true if the king of the color who's turn it is, is in check, else false
+     */
+    bool isCheck();
+
+    /**
      * @brief getter for the position of the king of a given color
      *
      * @param color color of the king to get the position of
@@ -107,6 +114,8 @@ private:
     Piece board[BOARD_SIZE];
 
     Color turn;
+
+    bool check;
 
     int enPassantPos;
 

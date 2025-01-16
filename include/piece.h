@@ -14,6 +14,7 @@ enum class Piece
 {
   /* General */
   NO_PIECE = 0b00000000,
+  INVALID = 0b11111111,
 
   /* White pieces */
   WHITE_PAWN = 0b10000001,
