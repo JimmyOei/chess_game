@@ -1,7 +1,6 @@
 #ifndef STATE_H
 #define STATE_H
 
-#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -46,29 +45,35 @@ public:
 
     ~State() = default;
 
-    bool isPosWithinBoardLimits(int const pos);
-
     /**
-     * @brief passes turn and resetting the booleans enPassant
-     *          and check to false
+     * @brief checks if a given position is within the board limits
+     * 
+     * @param pos position to check
+     * @return true if the position is within the board limits, else false
      */
-    void passTurn();
+    bool isPosWithinBoardLimits(int const pos);
 
     /**
      * @brief getter for the boolean turn
      *
-     * @return returns the boolean value of turn:
-     *          true for white
-     *          false for black
+     * @return returns the color of the player who's turn it is
      */
     Color getTurn();
 
     /**
-     * @brief getter for if the king of color who's turn it is, is in check
-     * 
-     * @return true if the king of the color who's turn it is, is in check, else false
+     * @brief getter for the position of the en passant pawn
      */
-    bool isCheck();
+    int getEnPassantPos();
+
+    /**
+     * @brief getter for the boolean castling king side
+     */
+    bool getCastlingKingSide(Color const color);
+
+    /**
+     * @brief getter for the boolean castling queen side
+     */
+    bool getCastlingQueenSide(Color const color);
 
     /**
      * @brief getter for the position of the king of a given color
@@ -86,16 +91,37 @@ public:
      */
     Piece getPieceAtPos(int const pos);
 
-    bool makeMove(Move const move);
+    /**
+     * @brief getter for if the king of color who's turn it is, is in check
+     * 
+     * @return true if the king of the color who's turn it is, is in check, else false
+     */
+    bool isKingInCheck(Color const color);
 
+    /** 
+     * @brief gets all legal moves for a given position
+     * 
+     * @param pos position to get the legal moves for
+     * @return vector of legal moves for the given position
+    */
     std::vector<Move> getLegalMovesForPos(int const pos);
 
-    int getEnPassantPos();
+    /**
+     * @brief makes a move on the board
+     * 
+     * @param move move to make
+     * @return true if the move is within board limits and made, otherwise false
+     *          Note: it does not check if the move is legal, use in combination of
+     *                  getLegalMovesForPos() to check if a move is legal
+     */
+    bool makeMove(Move const move);
 
-    bool getCastlingKingSide(Color const color);
+    /**
+     * @brief prints the current state of the board to stdout for debugging
+     */
+    void printState();
 
-    bool getCastlingQueenSide(Color const color);
-
+private:
     /**
      * @brief initiates the state according to the given FEN-notation
      *
@@ -106,32 +132,30 @@ public:
     bool initStateFromFENString(std::string FEN);
 
     /**
-     * @brief prints the current state of the board to stdout for debugging
+     * @brief passes turn and resetting the booleans enPassant
+     *          and check to false
      */
-    void printState();
+    void passTurn();
 
-private:
+    /**
+     * @brief initiates the state to the standard chess starting position
+     */
+    void initState();
+
+    /* Chess state data */
     Piece board[BOARD_SIZE];
-
     Color turn;
-
-    bool check;
-
     int enPassantPos;
-
     bool whiteCastlingQueenside;
     bool whiteCastlingKingside;
     bool blackCastlingQueenside;
     bool blackCastlingKingside;
+    int whiteKingPos;
+    int blackKingPos;
 
     // NOT IMPLEMENTED YET
     // int halfMoveClock;
     // int fullMoveNumber;
-
-    int whiteKingPos;
-    int blackKingPos;
-
-    void initState();
 };
 
 #endif

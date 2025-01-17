@@ -5,7 +5,7 @@
 
 /**
  * @brief Enum class for the pieces in the chess game
- * 
+ *
  * This enum class is used to represent the pieces in the chess game.
  * Each piece is represented by a byte, where the first 2 bits represent the colour of the piece,
  * and the last 7 bits represent the type of the piece.
@@ -15,6 +15,12 @@ enum class Piece
   /* General */
   NO_PIECE = 0b00000000,
   INVALID = 0b11111111,
+  PAWN = 0b00000001,
+  KNIGHT = 0b00000010,
+  BISHOP = 0b00000100,
+  ROOK = 0b00001000,
+  QUEEN = 0b00010000,
+  KING = 0b00100000,
 
   /* White pieces */
   WHITE_PAWN = 0b10000001,
@@ -33,10 +39,9 @@ enum class Piece
   BLACK_KING = 0b01100000
 };
 
-
 /**
-* @brief enum class for the color of the pieces
-*/
+ * @brief enum class for the color of the pieces
+ */
 enum class Color
 {
   WHITE = 0b10000000,
@@ -45,13 +50,24 @@ enum class Color
 
 /**
  * @brief getter for the color of a given piece
- * 
+ *
  * @param piece piece to get the color of
  * @return color of the piece (see enum class Color)
  */
 Color getColorOfPiece(Piece const piece)
 {
-  return static_cast<Color>(static_cast<uint8_t>(piece & 0b11000000));
+  return static_cast<Color>(static_cast<uint8_t>(piece) & 0b11000000);
+};
+
+/**
+ * @brief getter for the piece without the color
+ *
+ * @param piece piece to get the type of
+ * @return type of the piece (see enum class Piece)
+ */
+Piece getPieceWithoutColor(Piece const piece)
+{
+  return static_cast<Piece>(static_cast<uint8_t>(piece) & 0b00111111);
 };
 
 #endif
