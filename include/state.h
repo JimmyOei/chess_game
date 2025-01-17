@@ -110,9 +110,7 @@ public:
      * @brief makes a move on the board
      * 
      * @param move move to make
-     * @return true if the move is within board limits and made, otherwise false
-     *          Note: it does not check if the move is legal, use in combination of
-     *                  getLegalMovesForPos() to check if a move is legal
+     * @return true if the move is legal and made, otherwise false
      */
     bool makeMove(Move const move);
 

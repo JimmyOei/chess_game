@@ -1,12 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-
-#include <stdint.h>
-#include <vector>
-
 #include "state.h"
 #include "player.h"
 #include "piece.h"
@@ -14,24 +8,32 @@
 class Game
 {
 public:
-    Game(std::unique_ptr<Player>& playerWhite,
-         std::unique_ptr<Player>& playerBlack);
+    /**
+     * @brief constructor for game object
+     * 
+     * @param playerWhite Player object for white
+     * @param playerblack Player object for black
+     */
+    Game(std::unique_ptr<Player> &playerWhite,
+         std::unique_ptr<Player> &playerBlack);
+
+    /**
+     * @brief constructs a game using the given state
+     * 
+     * @param playerWhite Player object for white
+     * @param playerblack Player object for black
+     * @param state State object to start the game with
+     */
+    Game(std::unique_ptr<Player> &playerWhite,
+        std::unique_ptr<Player> &playerBlack,
+        State state);
 
     ~Game();
-
-    State *state;
-
-    void setGamemode(bool const color, int const gamemode);
-
-    std::vector<int> *getLegalMoves(Piece const piece, int const pos);
 
 private:
     std::unique_ptr<Player> playerWhite;
     std::unique_ptr<Player> playerBlack;
-
-    bool isPosAttacked(State *state, int const pos, bool const colorOfAttacker);
-
-    std::vector<int> *getPossibleMoves(State *state, Piece const piece, int const pos);
+    std::unique_ptr<State> state;
 };
 
 #endif

@@ -13,7 +13,7 @@ void State::initState()
     whiteKingPos = 0;
     blackKingPos = 0;
 
-    for(int i = 0; i < BOARD_SIZE; i++)
+    for (int i = 0; i < BOARD_SIZE; i++)
     {
         board[i] = Piece::NO_PIECE;
     }
@@ -113,10 +113,11 @@ bool State::isKingInCheck(Color const color)
     int const rookDirections[4] = {NORTH, EAST, WEST, SOUTH};
     int const bishopDirections[4] = {NORTH + EAST, NORTH + WEST, SOUTH + EAST, SOUTH + WEST};
     int const knightDirections[8] = {NORTH + NORTH + EAST, NORTH + NORTH + WEST, SOUTH + SOUTH + EAST, SOUTH + SOUTH + WEST,
-                                  EAST + EAST + NORTH, EAST + EAST + SOUTH, WEST + WEST + NORTH, WEST + WEST + SOUTH};
+                                     EAST + EAST + NORTH, EAST + EAST + SOUTH, WEST + WEST + NORTH, WEST + WEST + SOUTH};
 
     /* Check if king is attacked by a rook */
-    for(auto const direction : rookDirections) {
+    for (auto const direction : rookDirections)
+    {
         int tmpPos = kingPos + direction;
         while (getPieceAtPos(tmpPos) == Piece::NO_PIECE)
         {
@@ -124,7 +125,7 @@ bool State::isKingInCheck(Color const color)
         }
 
         Piece const pieceAtTmpPos = getPieceAtPos(tmpPos);
-        if (pieceAtTmpPos != Piece::INVALID && 
+        if (pieceAtTmpPos != Piece::INVALID &&
             getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
             getPieceWithoutColor(pieceAtTmpPos) == Piece::ROOK)
         {
@@ -133,7 +134,8 @@ bool State::isKingInCheck(Color const color)
     }
 
     /* Check if king is attacked by a bishop */
-    for(auto const direction : bishopDirections) {
+    for (auto const direction : bishopDirections)
+    {
         int tmpPos = kingPos + direction;
         while (getPieceAtPos(tmpPos) == Piece::NO_PIECE)
         {
@@ -141,7 +143,7 @@ bool State::isKingInCheck(Color const color)
         }
 
         Piece const pieceAtTmpPos = getPieceAtPos(tmpPos);
-        if (pieceAtTmpPos != Piece::INVALID && 
+        if (pieceAtTmpPos != Piece::INVALID &&
             getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
             getPieceWithoutColor(pieceAtTmpPos) == Piece::BISHOP)
         {
@@ -150,7 +152,8 @@ bool State::isKingInCheck(Color const color)
     }
 
     /* Check if king is attacked by a knight */
-    for(auto const direction : knightDirections) {
+    for (auto const direction : knightDirections)
+    {
         int const tmpPos = kingPos + direction;
         if (getPieceAtPos(tmpPos) != Piece::INVALID &&
             getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
@@ -180,7 +183,6 @@ bool State::isKingInCheck(Color const color)
 
     return false;
 }
-
 
 std::vector<Move> State::getLegalMovesForPos(int const pos)
 {
@@ -467,9 +469,10 @@ std::vector<Move> State::getLegalMovesForPos(int const pos)
 bool State::makeMove(Move const move)
 {
     /* Move validation */
-    if (!isPosWithinBoardLimits(move.from) || !isPosWithinBoardLimits(move.to) || board[move.from] != move.piece)
+    std::vector<Move> const legalMoves = getLegalMovesForPos(move.from);
+    if (std::find(legalMoves.begin(), legalMoves.end(), move) == legalMoves.end())
     {
-        std::cerr << "Invalid move" << std::endl;
+        std::cerr << "Move is not legal" << std::endl;
         return false;
     }
 
@@ -536,6 +539,15 @@ bool State::makeMove(Move const move)
         }
         break;
     case Piece::WHITE_PAWN:
+        /* Promotion */
+        if (move.to >= BOARD_SIZE - BOARD_LENGTH)
+        {
+            board[move.from] = Piece::NO_PIECE;
+            board[move.to] = move.promotionPiece;
+            passTurn();
+            return true;
+        }
+
         if (move.to == enPassantPos)
         {
             // Capturing the en passant piece
@@ -547,6 +559,15 @@ bool State::makeMove(Move const move)
         }
         break;
     case Piece::BLACK_PAWN:
+        /* Promotion */
+        if (move.to < BOARD_LENGTH)
+        {
+            board[move.from] = Piece::NO_PIECE;
+            board[move.to] = move.promotionPiece;
+            passTurn();
+            return true;
+        }
+
         if (move.to == enPassantPos)
         {
             // Capturing the en passant piece
