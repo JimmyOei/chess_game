@@ -10,6 +10,7 @@
 
 #include "state.h"
 #include "game.h"
+#include "piece.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -62,6 +63,7 @@ private:
     SDL_Renderer *renderer;
 
     SDL_Texture *pieces[NUM_OF_PIECES];
+    std::unordered_map<Piece, SDL_Texture*> pieces;
 
     int screenWidth;
     int screenHeight;
@@ -72,11 +74,11 @@ private:
 
     bool running;
 
-    uint8_t dragPieceByte;
+    Piece dragPiece;
     int dragPieceTextureMouseX;
     int dragPieceTextureMouseY;
     int dragPiecePos;
-    std::vector<int> *dragPieceLegalMoves;
+    std::vector<Piece> *dragPieceLegalMoves;
 
     void menuGamemode(bool const color);
 
@@ -88,7 +90,7 @@ private:
 
     void loadPieces();
 
-    SDL_Texture *getTexturePieceFromByte(uint8_t byte);
+    SDL_Texture *getTexturePieceFromByte(Piece piece);
 
     void renderBoard();
 

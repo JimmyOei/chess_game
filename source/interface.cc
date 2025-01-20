@@ -14,7 +14,7 @@ Interface::Interface()
     boardStartingX = 0;
     boardStartingY = 0;
     running = false;
-    dragPieceByte = NO_PIECE;
+    dragPiece = Piece::NO_PIECE;
     dragPiecePos = -1;
     dragPieceLegalMoves = nullptr;
     game = new Game;
@@ -158,7 +158,7 @@ bool Interface::menu()
 
 uint8_t Interface::menuPawnPromotion()
 {
-    bool const colorOfDragPiece = getColorOfPiece(dragPieceByte);
+    bool const colorOfDragPiece = getColorOfPiece(dragPiece);
     while (true)
     {
         std::string input;
@@ -234,7 +234,7 @@ void Interface::eventHandler(SDL_Event event)
     case SDL_MOUSEBUTTONDOWN:
         if (event.button.button == SDL_BUTTON_LEFT)
         {
-            if (dragPieceByte == NO_PIECE)
+            if (dragPiece == NO_PIECE)
             {
                 int mouseX, mouseY;
                 SDL_GetMouseState(&mouseX, &mouseY);
@@ -243,7 +243,7 @@ void Interface::eventHandler(SDL_Event event)
         }
         break;
     case SDL_MOUSEBUTTONUP:
-        if (dragPieceByte != NO_PIECE)
+        if (dragPiece != NO_PIECE)
         {
             int mouseX, mouseY;
             SDL_GetMouseState(&mouseX, &mouseY);
@@ -266,7 +266,7 @@ void Interface::render()
     renderBoard();
     renderState();
 
-    if (dragPieceByte != NO_PIECE)
+    if (dragPiece != NO_PIECE)
     {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -278,62 +278,64 @@ void Interface::render()
 
 void Interface::loadPieces()
 {
-    char *PNGLocations[NUM_OF_PIECES];
-    PNGLocations[0] = (char *)DARK_PAWN_IMG;
-    PNGLocations[1] = (char *)LIGHT_PAWN_IMG;
-    PNGLocations[2] = (char *)DARK_KNIGT_IMG;
-    PNGLocations[3] = (char *)LIGHT_KNIGHT_IMG;
-    PNGLocations[4] = (char *)DARK_BISHOP_IMG;
-    PNGLocations[5] = (char *)LIGHT_BISHOP_IMG;
-    PNGLocations[6] = (char *)DARK_ROOK_IMG;
-    PNGLocations[7] = (char *)LIGHT_ROOK_IMG;
-    PNGLocations[8] = (char *)DARK_QUEEN_IMG;
-    PNGLocations[9] = (char *)LIGHT_QUEEN_IMG;
-    PNGLocations[10] = (char *)DARK_KING_IMG;
-    PNGLocations[11] = (char *)LIGHT_KING_IMG;
+    std::unordered_map<Piece, char*> PNGLocations;
+    PNGLocations[Piece::BLACK_PAWN] = (char *)DARK_PAWN_IMG;
+    PNGLocations[Piece::WHITE_PAWN] = (char *)LIGHT_PAWN_IMG;
+    PNGLocations[Piece::BLACK_KNIGHT] = (char *)DARK_KNIGT_IMG;
+    PNGLocations[Piece::WHITE_KNIGHT] = (char *)LIGHT_KNIGHT_IMG;
+    PNGLocations[Piece::BLACK_BISHOP] = (char *)DARK_BISHOP_IMG;
+    PNGLocations[Piece::WHITE_BISHOP] = (char *)LIGHT_BISHOP_IMG;
+    PNGLocations[Piece::BLACK_ROOK] = (char *)DARK_ROOK_IMG;
+    PNGLocations[Piece::WHITE_ROOK] = (char *)LIGHT_ROOK_IMG;
+    PNGLocations[Piece::BLACK_QUEEN] = (char *)DARK_QUEEN_IMG;
+    PNGLocations[Piece::WHITE_QUEEN] = (char *)LIGHT_QUEEN_IMG;
+    PNGLocations[Piece::BLACK_KING] = (char *)DARK_KING_IMG;
+    PNGLocations[Piece::WHITE_KING] = (char *)LIGHT_KING_IMG;
 
-    for (int i = 0; i < NUM_OF_PIECES; i++)
-    {
-        SDL_Surface *image = IMG_Load(PNGLocations[i]);
+    for(auto& [piece, PNGLocation] : PNGLocations) {
+        SDL_Surface *image = IMG_Load(PNGLocation);
         if (!image)
         {
-            std::cerr << "Failed to load image from: " << PNGLocations[i] << std::endl;
+            std::cerr << "Failed to load image from: " << PNGLocation << std::endl;
+            throw std::invalid_argument("Failed to load image.");
         }
-        pieces[i] = SDL_CreateTextureFromSurface(renderer, image);
-        if (pieces[i] == NULL)
+        pieces[piece] = SDL_CreateTextureFromSurface(renderer, image);
+        if (pieces[piece] == nullptr)
         {
             std::cerr << "Failed to create texture from image: " << SDL_GetError() << std::endl;
+            throw std::invalid_argument("Failed to create texture from image.");
         }
         SDL_FreeSurface(image);
     }
 }
 
-SDL_Texture *Interface::getTexturePieceFromByte(uint8_t byte)
+SDL_Texture *Interface::getTexturePieceFromByte(Piece piece)
 {
     // Mapping the byte for a piece to its corresponding index in the 'pieces' array
-    switch (byte)
+    /* Mapping the  */
+    switch (piece)
     {
-    case BLACK_PAWN:
+    case Piece::BLACK_PAWN:
         return pieces[0];
-    case WHITE_PAWN:
+    case Piece::WHITE_PAWN:
         return pieces[1];
-    case BLACK_KNIGHT:
+    case Piece::BLACK_KNIGHT:
         return pieces[2];
-    case WHITE_KNIGHT:
+    case Piece::WHITE_KNIGHT:
         return pieces[3];
-    case BLACK_BISHOP:
+    case Piece::BLACK_BISHOP:
         return pieces[4];
-    case WHITE_BISHOP:
+    case Piece::WHITE_BISHOP:
         return pieces[5];
-    case BLACK_ROOK:
+    case Piece::BLACK_ROOK:
         return pieces[6];
-    case WHITE_ROOK:
+    case Piece::WHITE_ROOK:
         return pieces[7];
-    case BLACK_QUEEN:
+    case Piece::BLACK_QUEEN:
         return pieces[8];
-    case WHITE_QUEEN:
+    case Piece::WHITE_QUEEN:
         return pieces[9];
-    case BLACK_KING:
+    case Piece::BLACK_KING:
         return pieces[10];
     default:
         return pieces[11];
@@ -433,15 +435,15 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdge;
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
         dragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
-        dragPieceByte = game->state->getPieceAt(dragPiecePos);
+        dragPiece = game->state->getPieceAt(dragPiecePos);
 
-        if (dragPieceByte == NO_PIECE || game->state->getTurn() != getColorOfPiece(dragPieceByte))
+        if (dragPiece == NO_PIECE || game->state->getTurn() != getColorOfPiece(dragPiece))
         {
-            dragPieceByte = NO_PIECE;
+            dragPiece = NO_PIECE;
             dragPiecePos = -1;
             return;
         } // there is no piece at this square or it's of the opponent's color
-        dragPieceLegalMoves = game->getLegalMoves(dragPieceByte, dragPiecePos);
+        dragPieceLegalMoves = game->getLegalMoves(dragPiece, dragPiecePos);
     }
 }
 
@@ -471,7 +473,7 @@ void Interface::renderDragPiece(int const mouseX, int const mouseY)
         rect.y = boardStartingY + BOARD_LENGTH * squareEdge - (squareEdge / 2);
     }
 
-    SDL_RenderCopy(renderer, getTexturePieceFromByte(dragPieceByte), NULL, &rect);
+    SDL_RenderCopy(renderer, getTexturePieceFromByte(dragPiece), NULL, &rect);
 }
 
 void Interface::releaseDragPiece(int const mouseX, int const mouseY)
@@ -484,27 +486,27 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY)
     {
         if (dragPieceLegalMoves->at(i) == newDragPiecePos)
         {
-            if (dragPieceByte == WHITE_PAWN && newDragPiecePos >= (BOARD_SIZE - BOARD_LENGTH))
+            if (dragPiece == WHITE_PAWN && newDragPiecePos >= (BOARD_SIZE - BOARD_LENGTH))
             {
                 game->state->movePiece(menuPawnPromotion(), dragPiecePos, newDragPiecePos);
             } // pawn promotion (for now only queen)
-            else if (dragPieceByte == BLACK_PAWN && newDragPiecePos < BOARD_LENGTH)
+            else if (dragPiece == BLACK_PAWN && newDragPiecePos < BOARD_LENGTH)
             {
                 game->state->movePiece(menuPawnPromotion(), dragPiecePos, newDragPiecePos);
             } // pawn promotion (for now only queen)
             else
             {
-                game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);
+                game->state->movePiece(dragPiece, dragPiecePos, newDragPiecePos);
             }
             game->state->passTurn();
-            game->state->setSpecialMovesData(dragPieceByte, dragPiecePos, newDragPiecePos);
+            game->state->setSpecialMovesData(dragPiece, dragPiecePos, newDragPiecePos);
 
             break;
         }
     }
 
     // reset dragPiece variables
-    dragPieceByte = NO_PIECE;
+    dragPiece = NO_PIECE;
     dragPiecePos = -1;
     delete dragPieceLegalMoves;
     dragPieceLegalMoves = nullptr;
