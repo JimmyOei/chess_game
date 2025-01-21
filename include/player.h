@@ -1,15 +1,14 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <move.h>
-#include <state.h>
+#include "move.h"
 
 class Player
 {
 public:
   virtual ~Player() = default;
 
-  virtual Move getMove(const State *state) = 0;
+  virtual Move getMove(const Game *game) = 0;
 };
 
 #endif

@@ -15,8 +15,8 @@ struct Move
 {
     int from;
     int to;
-    Piece piece;
-    Piece promotionPiece = Piece::NO_PIECE;
+    Piece::Type piece;
+    Piece::Type promotionPiece = Piece::Type::NO_PIECE;
 };
 
 #endif

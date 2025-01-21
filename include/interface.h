@@ -8,9 +8,10 @@
 #include <stdint.h>
 #include <vector>
 
-#include "state.h"
 #include "game.h"
 #include "piece.h"
+#include "player.h"
+#include "playerhuman.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -44,10 +45,21 @@
 class Interface
 {
 public:
+    /**
+     * @brief constructor for the interface object
+     */
     Interface();
 
+    /**
+     * @brief destructor for the interface object
+     *
+     * Cleans up SDL and SDL_image
+     */
     ~Interface();
 
+    /**
+     * @brief getter for if the interface is running
+     */
     bool isRunning();
 
     void initiate();
@@ -57,30 +69,33 @@ public:
     void render();
 
 private:
-    Game *game;
+    std::unique_ptr<Game> game;
 
     SDL_Window *window;
     SDL_Renderer *renderer;
 
-    SDL_Texture *pieces[NUM_OF_PIECES];
-    std::unordered_map<Piece, SDL_Texture*> pieces;
+    std::unordered_map<Piece::Type, SDL_Texture*> texturePieces;
 
     int screenWidth;
     int screenHeight;
 
-    int squareEdge;
+    // Length of an edge of a square on the board
+    int squareEdgeLength;
+
+    // Top left square position of the board on the window
     int boardStartingX;
     int boardStartingY;
 
+    // bool for if the interface is running
     bool running;
 
-    Piece dragPiece;
+    Piece::Type dragPiece;
     int dragPieceTextureMouseX;
     int dragPieceTextureMouseY;
     int dragPiecePos;
-    std::vector<Piece> *dragPieceLegalMoves;
+    std::vector<Move> dragPieceLegalMoves;
 
-    void menuGamemode(bool const color);
+    void menuGamemode(Piece::Color const color);
 
     void menuFEN();
 
@@ -88,9 +103,20 @@ private:
 
     uint8_t menuPawnPromotion();
 
-    void loadPieces();
+    /**
+     * @brief loads the textures for the pieces into the texturePieces unordered map
+     *          as SDL_Texture pointers
+     */
+    void loadTexturePieces();
 
-    SDL_Texture *getTexturePieceFromByte(Piece piece);
+    /**
+     * @brief getter for the texture of a piece
+     * 
+     * @param piece piece to get the texture of
+     * @return SDL_Texture* texture of the piece
+     *          or throws an invalid argument exception if the piece is not found
+     */
+    SDL_Texture *getTexturePiece(Piece::Type piece);
 
     void renderBoard();
 
