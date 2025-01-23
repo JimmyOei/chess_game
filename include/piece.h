@@ -13,7 +13,7 @@
 namespace Piece
 {
 
-  enum class Type
+  enum Type
   {
     /* General */
     NO_PIECE = 0b00000000,
@@ -45,7 +45,7 @@ namespace Piece
   /**
    * @brief enum class for the color of the pieces
    */
-  enum class Color
+  enum Color
   {
     WHITE = 0b10000000,
     BLACK = 0b01000000
@@ -57,7 +57,7 @@ namespace Piece
    * @param piece piece to get the color of
    * @return color of the piece (see enum class Color)
    */
-  Color getColorOfPiece(Piece::Type const piece)
+  static inline Color getColorOfPiece(Piece::Type const piece)
   {
     return static_cast<Color>(static_cast<uint8_t>(piece) & 0b11000000);
   };
@@ -68,7 +68,7 @@ namespace Piece
    * @param piece piece to get the type of
    * @return type of the piece (see enum class Piece)
    */
-  Piece::Type getPieceTypeWithoutColor(Piece::Type const piece)
+  static inline Piece::Type getPieceTypeWithoutColor(Piece::Type const piece)
   {
     return static_cast<Piece::Type>(static_cast<uint8_t>(piece) & 0b00111111);
   };

@@ -188,27 +188,27 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
 {
     if (!isPosWithinBoardLimits(pos))
     {
-        return 
+        return std::vector<Move>();
     }
 
     Piece::Type piece = board[pos];
     if (piece == Piece::Type::NO_PIECE)
     {
-        return {};
+        return std::vector<Move>();
     }
 
     Piece::Color color = Piece::getColorOfPiece(piece);
     if (color != turn)
     {
-        return {};
+        return std::vector<Move>();
     }
 
     if (isKingInCheck(color) && Piece::getPieceTypeWithoutColor(piece) != Piece::Type::KING)
     {
-        return {};
+        return std::vector<Move>();
     }
 
-    std::vector<Move> moves = {};
+    std::vector<Move> moves;
     switch (piece)
     {
     case Piece::Type::WHITE_PAWN:
@@ -218,20 +218,19 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* 1.1 Promotion */
             if (pos + BOARD_LENGTH + BOARD_LENGTH >= BOARD_SIZE)
             {
-                moves.insert(moves.end(),
-                             {Move{pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_QUEEN},
-                              Move{pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_ROOK},
-                              Move{pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_BISHOP},
-                              Move{pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_KNIGHT}});
+                moves.push_back(Move(pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_QUEEN));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_ROOK));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_BISHOP));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH, piece, Piece::Type::WHITE_KNIGHT));
             }
             else
             {
-                moves.push_back(Move{pos, pos + BOARD_LENGTH, piece});
+                moves.push_back(Move(pos, pos + BOARD_LENGTH, piece));
 
                 /* 2. Two steps upwards */
                 if (pos >= BOARD_LENGTH && pos < 2 * BOARD_LENGTH && getPieceAtPos(pos + 2 * BOARD_LENGTH) == Piece::Type::NO_PIECE)
                 {
-                    moves.push_back(Move{pos, pos + 2 * BOARD_LENGTH, piece});
+                    moves.push_back(Move(pos, pos + 2 * BOARD_LENGTH, piece));
                 }
             }
         }
@@ -244,15 +243,14 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* Capture is a promotion */
             if (pos + BOARD_LENGTH - 1 + BOARD_LENGTH >= BOARD_SIZE)
             {
-                moves.insert(moves.end(),
-                             {Move{pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_QUEEN},
-                              Move{pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_ROOK},
-                              Move{pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_BISHOP},
-                              Move{pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_KNIGHT}});
+                moves.push_back(Move(pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_QUEEN));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_ROOK));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_BISHOP));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH - 1, piece, Piece::Type::WHITE_KNIGHT));
             }
             else
             {
-                moves.push_back(Move{pos, pos + BOARD_LENGTH - 1, piece});
+                moves.push_back(Move(pos, pos + BOARD_LENGTH - 1, piece));
             }
         }
 
@@ -265,15 +263,14 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* Capture is a promotion */
             if (pos + BOARD_LENGTH + 1 + BOARD_LENGTH >= BOARD_SIZE)
             {
-                moves.insert(moves.end(),
-                             {Move{pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_QUEEN},
-                              Move{pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_ROOK},
-                              Move{pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_BISHOP},
-                              Move{pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_KNIGHT}});
+                moves.push_back(Move(pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_QUEEN));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_ROOK));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_BISHOP));
+                moves.push_back(Move(pos, pos + BOARD_LENGTH + 1, piece, Piece::Type::WHITE_KNIGHT));
             }
             else
             {
-                moves.push_back(Move{pos, pos + BOARD_LENGTH + 1, piece});
+                moves.push_back(Move(pos, pos + BOARD_LENGTH + 1, piece));
             }
         }
         break;
@@ -284,20 +281,19 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* 1.1 Promotion */
             if (pos - 2 * BOARD_LENGTH < 0)
             {
-                moves.insert(moves.end(),
-                             {Move{pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_QUEEN},
-                              Move{pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_ROOK},
-                              Move{pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_BISHOP},
-                              Move{pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_KNIGHT}});
+                moves.push_back(Move(pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_QUEEN));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_ROOK));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_BISHOP));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH, piece, Piece::Type::WHITE_KNIGHT));
             }
             else
             {
-                moves.push_back(Move{pos, pos - BOARD_LENGTH, piece});
+                moves.push_back(Move(pos, pos - BOARD_LENGTH, piece));
 
                 /* 2. Two steps downwards */
                 if (pos >= BOARD_SIZE - 2 * BOARD_LENGTH && pos < BOARD_SIZE - BOARD_LENGTH && getPieceAtPos(pos - 2 * BOARD_LENGTH) == Piece::Type::NO_PIECE)
                 {
-                    moves.push_back(Move{pos, pos - 2 * BOARD_LENGTH, piece});
+                    moves.push_back(Move(pos, pos - 2 * BOARD_LENGTH, piece));
                 }
             }
         }
@@ -310,15 +306,14 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* Capture is a promotion */
             if (pos - BOARD_LENGTH - 1 - BOARD_LENGTH <= BOARD_SIZE)
             {
-                moves.insert(moves.end(),
-                             {Move{pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_QUEEN},
-                              Move{pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_ROOK},
-                              Move{pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_BISHOP},
-                              Move{pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_KNIGHT}});
+                moves.push_back(Move(pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_QUEEN));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_ROOK));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_BISHOP));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH - 1, piece, Piece::Type::WHITE_KNIGHT));
             }
             else
             {
-                moves.push_back(Move{pos, pos - BOARD_LENGTH - 1, piece});
+                moves.push_back(Move(pos, pos - BOARD_LENGTH - 1, piece));
             }
         }
 
@@ -331,15 +326,14 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* Capture is a promotion */
             if (pos - BOARD_LENGTH + 1 - BOARD_LENGTH <= BOARD_SIZE)
             {
-                moves.insert(moves.end(),
-                             {Move{pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_QUEEN},
-                              Move{pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_ROOK},
-                              Move{pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_BISHOP},
-                              Move{pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_KNIGHT}});
+                moves.push_back(Move(pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_QUEEN));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_ROOK));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_BISHOP));
+                moves.push_back(Move(pos, pos - BOARD_LENGTH + 1, piece, Piece::Type::WHITE_KNIGHT));
             }
             else
             {
-                moves.push_back(Move{pos, pos - BOARD_LENGTH + 1, piece});
+                moves.push_back(Move(pos, pos - BOARD_LENGTH + 1, piece));
             }
         }
         break;
@@ -354,7 +348,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             const int toPos = pos + directionIncrementals[i];
             if (getPieceAtPos(toPos) == Piece::Type::NO_PIECE || Piece::getColorOfPiece(getPieceAtPos(toPos)) != color)
             {
-                moves.push_back(Move{pos, toPos, piece});
+                moves.push_back(Move(pos, toPos, piece));
             }
         }
         break;
@@ -372,13 +366,13 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             int tmpPos = pos + directionIncrementals[i];
             while (getPieceAtPos(tmpPos) == Piece::Type::NO_PIECE)
             {
-                moves.push_back(Move{pos, tmpPos, piece});
+                moves.push_back(Move(pos, tmpPos, piece));
             }
 
             if (getPieceAtPos(tmpPos) != Piece::Type::INVALID &&
                 Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color)
             {
-                moves.push_back(Move{pos, tmpPos, piece});
+                moves.push_back(Move(pos, tmpPos, piece));
             }
         }
 
@@ -397,13 +391,13 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             int tmpPos = pos + directionIncrementals[i];
             while (getPieceAtPos(tmpPos) == Piece::Type::NO_PIECE)
             {
-                moves.push_back(Move{pos, tmpPos, piece});
+                moves.push_back(Move(pos, tmpPos, piece));
             }
 
             if (getPieceAtPos(tmpPos) != Piece::Type::INVALID &&
                 Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color)
             {
-                moves.push_back(Move{pos, tmpPos, piece});
+                moves.push_back(Move(pos, tmpPos, piece));
             }
         }
         break;
@@ -412,13 +406,13 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         /* Castling King side */
         if (whiteCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK)
         {
-            moves.push_back(Move{pos, pos + 2, piece});
+            moves.push_back(Move(pos, pos + 2, piece));
         }
 
         /* Castling Queen side */
         if (whiteCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 3) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK)
         {
-            moves.push_back(Move{pos, pos - 2, piece});
+            moves.push_back(Move(pos, pos - 2, piece));
         }
     case Piece::Type::BLACK_KING:
     {
@@ -429,7 +423,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             int const toPos = pos + directionIncrementals[i];
             if (getPieceAtPos(toPos) == Piece::Type::NO_PIECE || (getPieceAtPos(toPos) != Piece::Type::INVALID && Piece::getColorOfPiece(getPieceAtPos(toPos)) != color))
             {
-                moves.push_back(Move{pos, toPos, piece});
+                moves.push_back(Move(pos, toPos, piece));
             }
         }
 
@@ -438,21 +432,23 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
             /* Castling King side */
             if (blackCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 3) == Piece::Type::BLACK_ROOK)
             {
-                moves.push_back(Move{pos, pos + 2, piece});
+                moves.push_back(Move(pos, pos + 2, piece));
             }
 
             /* Castling Queen side */
             if (blackCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 3) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 4) == Piece::Type::BLACK_ROOK)
             {
-                moves.push_back(Move{pos, pos - 2, piece});
+                moves.push_back(Move(pos, pos - 2, piece));
             }
         }
         break;
     }
+    default:
+        throw std::runtime_error("Invalid piece type");
     }
 
     /* Check if move leaves own king attacked */
-    std::vector<Move> legalMoves = {};
+    std::vector<Move> legalMoves;
     for (Move const move : moves)
     {
         Game gameCopy = Game(*this);
@@ -578,6 +574,8 @@ bool Game::makeMove(Move const move)
             enPassantPos = move.from - BOARD_LENGTH;
         }
         break;
+    default:
+        throw std::runtime_error("Invalid piece type");
     }
 
     board[move.from] = Piece::Type::NO_PIECE;

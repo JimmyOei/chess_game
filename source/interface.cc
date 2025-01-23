@@ -10,8 +10,8 @@ Interface::Interface() : window(nullptr),
                          running(false),
                          dragPiece(Piece::Type::NO_PIECE),
                          dragPiecePos(-1),
-                         dragPieceLegalMoves({}),
-                         game(std::make_unique<Game>(std::make_unique<PlayerHuman>(), std::make_unique<PlayerHuman>()))
+                         dragPieceLegalMoves(std::vector<Move>()),
+                         game(std::make_unique<Game>())
 {
 }
 
@@ -178,6 +178,7 @@ uint8_t Interface::menuPawnPromotion()
     //     std::cout << ">> Invalid input, please try again" << std::endl
     //               << std::endl;
     // }
+    return 0;
 }
 
 void Interface::initiate()
@@ -469,5 +470,5 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY)
     // reset dragPiece variables
     dragPiece = Piece::Type::NO_PIECE;
     dragPiecePos = -1;
-    dragPieceLegalMoves = {};
+    dragPieceLegalMoves.clear();
 }
