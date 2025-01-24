@@ -6,18 +6,14 @@
 
 #include "piece.h"
 #include "move.h"
+#include "position.h"
+#include "direction.h"
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
 /* board */
 #define BOARD_LENGTH 8
-#define BOARD_SIZE BOARD_LENGTH *BOARD_LENGTH
-
-/* directions */
-#define NORTH BOARD_LENGTH
-#define EAST +1
-#define WEST -1
-#define SOUTH -BOARD_LENGTH
+#define BOARD_SIZE BOARD_LENGTH * BOARD_LENGTH
 
 class Game
 {
@@ -46,14 +42,6 @@ public:
     ~Game() = default;
 
     /**
-     * @brief checks if a given position is within the board limits
-     * 
-     * @param pos position to check
-     * @return true if the position is within the board limits, else false
-     */
-    bool isPosWithinBoardLimits(int const pos);
-
-    /**
      * @brief getter for the boolean turn
      *
      * @return returns the color of the player who's turn it is
@@ -63,7 +51,7 @@ public:
     /**
      * @brief getter for the position of the en passant pawn
      */
-    int getEnPassantPos();
+    Position getEnPassantPos();
 
     /**
      * @brief getter for the boolean castling king side
@@ -81,7 +69,7 @@ public:
      * @param color color of the king to get the position of
      * @return position of the king of the given color
      */
-    int getKingPosOfPiece(Piece::Color const color);
+    Position getKingPosOfPiece(Piece::Color const color);
 
     /**
      * @brief getter for the piece at a given position
@@ -89,7 +77,7 @@ public:
      * @param pos position to get the piece at
      * @return the piece at the given position
      */
-    Piece::Type getPieceAtPos(int const pos);
+    Piece::Type getPieceAtPos(Position const pos);
 
     /**
      * @brief getter for if the king of color who's turn it is, is in check
@@ -143,13 +131,13 @@ private:
     /* Chess game data */
     Piece::Type board[BOARD_SIZE];
     Piece::Color turn;
-    int enPassantPos;
+    Position enPassantPos;
     bool whiteCastlingQueenside;
     bool whiteCastlingKingside;
     bool blackCastlingQueenside;
     bool blackCastlingKingside;
-    int whiteKingPos;
-    int blackKingPos;
+    Position whiteKingPos;
+    Position blackKingPos;
 
     // NOT IMPLEMENTED YET
     // int halfMoveClock;

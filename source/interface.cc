@@ -230,6 +230,7 @@ void Interface::eventHandler(SDL_Event event)
         {
             if (dragPiece == Piece::Type::NO_PIECE)
             {
+                std::cout << "Picking up piece" << std::endl;
                 int mouseX, mouseY;
                 SDL_GetMouseState(&mouseX, &mouseY);
                 pickupDragPiece(mouseX, mouseY);
@@ -238,7 +239,8 @@ void Interface::eventHandler(SDL_Event event)
         break;
     case SDL_MOUSEBUTTONUP:
         if (dragPiece != Piece::Type::NO_PIECE)
-        {
+        {   
+            std::cout << "Releasing piece" << std::endl;
             int mouseX, mouseY;
             SDL_GetMouseState(&mouseX, &mouseY);
             releaseDragPiece(mouseX, mouseY);
@@ -402,6 +404,7 @@ void Interface::resizeWindow(int const height, int const width)
 
 void Interface::pickupDragPiece(int const mouseX, int const mouseY)
 {
+    log(LogLevel::DEBUG) << "Picking up piece";
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
 
@@ -413,7 +416,7 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         dragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
         dragPiece = game->getPieceAtPos(dragPiecePos);
 
-        if (dragPiece == Piece::Type::NO_PIECE || game->getTurn() != Piece::getColorOfPiece(dragPiece))
+        if (dragPiece == Piece::Type::NO_PIECE || dragPiece == Piece::Type::INVALID || game->getTurn() != Piece::getColorOfPiece(dragPiece))
         {
             dragPiece = Piece::Type::NO_PIECE;
             dragPiecePos = -1;
@@ -421,6 +424,7 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         } // there is no piece at this square or it's of the opponent's color
         dragPieceLegalMoves = game->getLegalMovesForPos(dragPiecePos);
     }
+    log(LogLevel::INFO) << "Picked up piece: " << dragPiece << " at position: " << dragPiecePos;
 }
 
 void Interface::renderDragPiece(int const mouseX, int const mouseY)

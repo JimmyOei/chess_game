@@ -15,7 +15,7 @@ void Game::initGame()
 
     for (int i = 0; i < BOARD_SIZE; i++)
     {
-        board[i] = Piece::Type::NO_PIECE;
+        board[i] = Piece::Type::BLANK;
     }
 }
 
@@ -50,11 +50,6 @@ Game::Game(Game const &game)
     memcpy(board, game.board, BOARD_SIZE);
 }
 
-bool Game::isPosWithinBoardLimits(int const pos)
-{
-    return pos >= 0 && pos < BOARD_SIZE;
-}
-
 void Game::passTurn()
 {
     if (turn == Piece::Color::WHITE)
@@ -73,7 +68,7 @@ Piece::Color Game::getTurn()
     return turn;
 }
 
-int Game::getEnPassantPos()
+Position Game::getEnPassantPos()
 {
     return enPassantPos;
 }
@@ -88,7 +83,7 @@ bool Game::getCastlingQueenSide(Piece::Color const color)
     return color == Piece::Color::BLACK ? whiteCastlingQueenside : blackCastlingQueenside;
 }
 
-int Game::getKingPosOfPiece(Piece::Color const color)
+Position Game::getKingPosOfPiece(Piece::Color const color)
 {
     if (color == Piece::Color::WHITE)
     {
@@ -97,11 +92,11 @@ int Game::getKingPosOfPiece(Piece::Color const color)
     return blackKingPos;
 }
 
-Piece::Type Game::getPieceAtPos(int const pos)
+Piece::Type Game::getPieceAtPos(Position const pos)
 {
-    if (!isPosWithinBoardLimits(pos))
+    if (!pos.isValid())
     {
-        return Piece::Type::INVALID;
+        throw std::out_of_range("Position is out of range");
     }
 
     return board[pos];
@@ -109,23 +104,19 @@ Piece::Type Game::getPieceAtPos(int const pos)
 
 bool Game::isKingInCheck(Piece::Color const color)
 {
-    int const kingPos = getKingPosOfPiece(color);
-    int const rookDirections[4] = {NORTH, EAST, WEST, SOUTH};
-    int const bishopDirections[4] = {NORTH + EAST, NORTH + WEST, SOUTH + EAST, SOUTH + WEST};
-    int const knightDirections[8] = {NORTH + NORTH + EAST, NORTH + NORTH + WEST, SOUTH + SOUTH + EAST, SOUTH + SOUTH + WEST,
-                                     EAST + EAST + NORTH, EAST + EAST + SOUTH, WEST + WEST + NORTH, WEST + WEST + SOUTH};
+    Position const kingPos = getKingPosOfPiece(color);
 
     /* Check if king is attacked by a rook */
-    for (auto const direction : rookDirections)
+    for (auto const cardinal : Direction::Cardinals)
     {
-        int tmpPos = kingPos + direction;
-        while (getPieceAtPos(tmpPos) == Piece::Type::NO_PIECE)
+        Position tmpPos = kingPos + cardinal;
+        while (tmpPos.isValid() && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
         {
-            tmpPos += direction;
+            tmpPos += cardinal;
         }
 
         Piece::Type const pieceAtTmpPos = getPieceAtPos(tmpPos);
-        if (pieceAtTmpPos != Piece::Type::INVALID &&
+        if (
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
             Piece::getPieceTypeWithoutColor(pieceAtTmpPos) == Piece::Type::ROOK)
         {
@@ -134,16 +125,16 @@ bool Game::isKingInCheck(Piece::Color const color)
     }
 
     /* Check if king is attacked by a bishop */
-    for (auto const direction : bishopDirections)
+    for (auto const diagonals : Direction::Diagonals)
     {
-        int tmpPos = kingPos + direction;
-        while (getPieceAtPos(tmpPos) == Piece::Type::NO_PIECE)
+        Position tmpPos = kingPos + diagonals;
+        while (tmpPos.isValid() && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
         {
-            tmpPos += direction;
+            tmpPos += diagonals;
         }
 
         Piece::Type const pieceAtTmpPos = getPieceAtPos(tmpPos);
-        if (pieceAtTmpPos != Piece::Type::INVALID &&
+        if (
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
             Piece::getPieceTypeWithoutColor(pieceAtTmpPos) == Piece::Type::BISHOP)
         {
@@ -152,10 +143,10 @@ bool Game::isKingInCheck(Piece::Color const color)
     }
 
     /* Check if king is attacked by a knight */
-    for (auto const direction : knightDirections)
+    for (auto const knightMove : Direction::KnightMoves)
     {
-        int const tmpPos = kingPos + direction;
-        if (getPieceAtPos(tmpPos) != Piece::Type::INVALID &&
+        Position const tmpPos = kingPos + knightMove;
+        if (tmpPos.isValid() &&
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
             Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::KNIGHT)
         {
@@ -166,16 +157,16 @@ bool Game::isKingInCheck(Piece::Color const color)
     /* Check if king is attacked by a pawn */
     if (color == Piece::Color::WHITE)
     {
-        if (getPieceAtPos(kingPos + NORTH + EAST) == Piece::Type::BLACK_PAWN ||
-            getPieceAtPos(kingPos + NORTH + WEST) == Piece::Type::BLACK_PAWN)
+        if (((kingPos + Direction::Diagonal::NORTH_EAST).isValid() && getPieceAtPos(kingPos + Direction::Diagonal::NORTH_EAST) == Piece::Type::BLACK_PAWN) ||
+            ((kingPos + Direction::Diagonal::NORTH_WEST).isValid() && getPieceAtPos(kingPos + Direction::Diagonal::NORTH_WEST) == Piece::Type::BLACK_PAWN))
         {
             return true;
         }
     }
     else
     {
-        if (getPieceAtPos(kingPos + SOUTH + EAST) == Piece::Type::WHITE_PAWN ||
-            getPieceAtPos(kingPos + SOUTH + WEST) == Piece::Type::WHITE_PAWN)
+        if (((kingPos + Direction::Diagonal::SOUTH_EAST).isValid() && getPieceAtPos(kingPos + Direction::Diagonal::SOUTH_EAST) == Piece::Type::WHITE_PAWN) ||
+            ((kingPos + Direction::Diagonal::SOUTH_WEST).isValid() && getPieceAtPos(kingPos + Direction::Diagonal::SOUTH_WEST) == Piece::Type::WHITE_PAWN))
         {
             return true;
         }
@@ -186,13 +177,14 @@ bool Game::isKingInCheck(Piece::Color const color)
 
 std::vector<Move> Game::getLegalMovesForPos(int const pos)
 {
+    std::cout << "Getting legal moves for position " << pos << std::endl;
     if (!isPosWithinBoardLimits(pos))
     {
         return std::vector<Move>();
     }
 
     Piece::Type piece = board[pos];
-    if (piece == Piece::Type::NO_PIECE)
+    if (piece == Piece::Type::BLANK)
     {
         return std::vector<Move>();
     }
@@ -213,7 +205,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
     {
     case Piece::Type::WHITE_PAWN:
         /* 1. One step upwards */
-        if (getPieceAtPos(pos + BOARD_LENGTH) == Piece::Type::NO_PIECE)
+        if (getPieceAtPos(pos + BOARD_LENGTH) == Piece::Type::BLANK)
         {
             /* 1.1 Promotion */
             if (pos + BOARD_LENGTH + BOARD_LENGTH >= BOARD_SIZE)
@@ -228,7 +220,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
                 moves.push_back(Move(pos, pos + BOARD_LENGTH, piece));
 
                 /* 2. Two steps upwards */
-                if (pos >= BOARD_LENGTH && pos < 2 * BOARD_LENGTH && getPieceAtPos(pos + 2 * BOARD_LENGTH) == Piece::Type::NO_PIECE)
+                if (pos >= BOARD_LENGTH && pos < 2 * BOARD_LENGTH && getPieceAtPos(pos + 2 * BOARD_LENGTH) == Piece::Type::BLANK)
                 {
                     moves.push_back(Move(pos, pos + 2 * BOARD_LENGTH, piece));
                 }
@@ -237,7 +229,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
 
         /* 3. Capture left diagonal or En Passant */
         if ((getPieceAtPos(pos + BOARD_LENGTH - 1) != Piece::Type::INVALID &&
-             getPieceAtPos(pos + BOARD_LENGTH - 1) != Piece::Type::NO_PIECE && Piece::getColorOfPiece(getPieceAtPos(pos + BOARD_LENGTH - 1)) != color) ||
+             getPieceAtPos(pos + BOARD_LENGTH - 1) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(pos + BOARD_LENGTH - 1)) != color) ||
             pos + BOARD_LENGTH - 1 == enPassantPos)
         {
             /* Capture is a promotion */
@@ -256,7 +248,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
 
         /* 4. Capture right diagonal or En Passant */
         if ((getPieceAtPos(pos + BOARD_LENGTH + 1) != Piece::Type::INVALID &&
-             getPieceAtPos(pos + BOARD_LENGTH + 1) != Piece::Type::NO_PIECE &&
+             getPieceAtPos(pos + BOARD_LENGTH + 1) != Piece::Type::BLANK &&
              Piece::getColorOfPiece(getPieceAtPos(pos + BOARD_LENGTH + 1)) != color) ||
             pos + BOARD_LENGTH + 1 == enPassantPos)
         {
@@ -276,7 +268,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         break;
     case Piece::Type::BLACK_PAWN:
         /* 1. One step downards */
-        if (getPieceAtPos(pos - BOARD_LENGTH) == Piece::Type::NO_PIECE)
+        if (getPieceAtPos(pos - BOARD_LENGTH) == Piece::Type::BLANK)
         {
             /* 1.1 Promotion */
             if (pos - 2 * BOARD_LENGTH < 0)
@@ -291,7 +283,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
                 moves.push_back(Move(pos, pos - BOARD_LENGTH, piece));
 
                 /* 2. Two steps downwards */
-                if (pos >= BOARD_SIZE - 2 * BOARD_LENGTH && pos < BOARD_SIZE - BOARD_LENGTH && getPieceAtPos(pos - 2 * BOARD_LENGTH) == Piece::Type::NO_PIECE)
+                if (pos >= BOARD_SIZE - 2 * BOARD_LENGTH && pos < BOARD_SIZE - BOARD_LENGTH && getPieceAtPos(pos - 2 * BOARD_LENGTH) == Piece::Type::BLANK)
                 {
                     moves.push_back(Move(pos, pos - 2 * BOARD_LENGTH, piece));
                 }
@@ -300,7 +292,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
 
         /* 3. Capture left diagonal or En Passant */
         if ((getPieceAtPos(pos - BOARD_LENGTH - 1) != Piece::Type::INVALID &&
-             getPieceAtPos(pos - BOARD_LENGTH - 1) != Piece::Type::NO_PIECE && Piece::getColorOfPiece(getPieceAtPos(pos - BOARD_LENGTH - 1)) != color) ||
+             getPieceAtPos(pos - BOARD_LENGTH - 1) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(pos - BOARD_LENGTH - 1)) != color) ||
             pos - BOARD_LENGTH - 1 == enPassantPos)
         {
             /* Capture is a promotion */
@@ -319,7 +311,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
 
         /* 4. Capture right diagonal or En Passant */
         if ((getPieceAtPos(pos - BOARD_LENGTH + 1) != Piece::Type::INVALID &&
-             getPieceAtPos(pos - BOARD_LENGTH + 1) != Piece::Type::NO_PIECE &&
+             getPieceAtPos(pos - BOARD_LENGTH + 1) != Piece::Type::BLANK &&
              Piece::getColorOfPiece(getPieceAtPos(pos - BOARD_LENGTH + 1)) != color) ||
             pos - BOARD_LENGTH + 1 == enPassantPos)
         {
@@ -346,7 +338,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         for (int i = 0; i < 8; i++)
         {
             const int toPos = pos + directionIncrementals[i];
-            if (getPieceAtPos(toPos) == Piece::Type::NO_PIECE || Piece::getColorOfPiece(getPieceAtPos(toPos)) != color)
+            if (getPieceAtPos(toPos) == Piece::Type::BLANK || Piece::getColorOfPiece(getPieceAtPos(toPos)) != color)
             {
                 moves.push_back(Move(pos, toPos, piece));
             }
@@ -364,7 +356,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         for (int i = 0; i < 4; i++)
         {
             int tmpPos = pos + directionIncrementals[i];
-            while (getPieceAtPos(tmpPos) == Piece::Type::NO_PIECE)
+            while (getPieceAtPos(tmpPos) == Piece::Type::BLANK)
             {
                 moves.push_back(Move(pos, tmpPos, piece));
             }
@@ -389,7 +381,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         for (int i = 0; i < 4; i++)
         {
             int tmpPos = pos + directionIncrementals[i];
-            while (getPieceAtPos(tmpPos) == Piece::Type::NO_PIECE)
+            while (getPieceAtPos(tmpPos) == Piece::Type::BLANK)
             {
                 moves.push_back(Move(pos, tmpPos, piece));
             }
@@ -404,13 +396,13 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
     }
     case Piece::Type::WHITE_KING:
         /* Castling King side */
-        if (whiteCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK)
+        if (whiteCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::BLANK && getPieceAtPos(pos + 2) == Piece::Type::BLANK && getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK)
         {
             moves.push_back(Move(pos, pos + 2, piece));
         }
 
         /* Castling Queen side */
-        if (whiteCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 3) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK)
+        if (whiteCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::BLANK && getPieceAtPos(pos - 2) == Piece::Type::BLANK && getPieceAtPos(pos - 3) == Piece::Type::BLANK && getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK)
         {
             moves.push_back(Move(pos, pos - 2, piece));
         }
@@ -421,7 +413,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         for (int i = 0; i < 8; i++)
         {
             int const toPos = pos + directionIncrementals[i];
-            if (getPieceAtPos(toPos) == Piece::Type::NO_PIECE || (getPieceAtPos(toPos) != Piece::Type::INVALID && Piece::getColorOfPiece(getPieceAtPos(toPos)) != color))
+            if (getPieceAtPos(toPos) == Piece::Type::BLANK || (getPieceAtPos(toPos) != Piece::Type::INVALID && Piece::getColorOfPiece(getPieceAtPos(toPos)) != color))
             {
                 moves.push_back(Move(pos, toPos, piece));
             }
@@ -430,13 +422,13 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
         if (piece == Piece::Type::BLACK_KING)
         {
             /* Castling King side */
-            if (blackCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos + 3) == Piece::Type::BLACK_ROOK)
+            if (blackCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::BLANK && getPieceAtPos(pos + 2) == Piece::Type::BLANK && getPieceAtPos(pos + 3) == Piece::Type::BLACK_ROOK)
             {
                 moves.push_back(Move(pos, pos + 2, piece));
             }
 
             /* Castling Queen side */
-            if (blackCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 2) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 3) == Piece::Type::NO_PIECE && getPieceAtPos(pos - 4) == Piece::Type::BLACK_ROOK)
+            if (blackCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::BLANK && getPieceAtPos(pos - 2) == Piece::Type::BLANK && getPieceAtPos(pos - 3) == Piece::Type::BLANK && getPieceAtPos(pos - 4) == Piece::Type::BLACK_ROOK)
             {
                 moves.push_back(Move(pos, pos - 2, piece));
             }
@@ -464,14 +456,7 @@ std::vector<Move> Game::getLegalMovesForPos(int const pos)
 
 bool Game::makeMove(Move const move)
 {
-    /* Move validation */
-    std::vector<Move> const legalMoves = getLegalMovesForPos(move.from);
-    if (std::find(legalMoves.begin(), legalMoves.end(), move) == legalMoves.end())
-    {
-        std::cerr << "Move is not legal" << std::endl;
-        return false;
-    }
-
+    std::cout << "Making move: " << move.from << " -> " << move.to << std::endl;
     switch (move.piece)
     {
     case Piece::Type::WHITE_KING:
@@ -480,13 +465,13 @@ bool Game::makeMove(Move const move)
             if (move.to == move.from + 2)
             {
                 /* Castling king side */
-                board[move.to + 1] = Piece::Type::NO_PIECE;
+                board[move.to + 1] = Piece::Type::BLANK;
                 board[move.to - 1] = Piece::Type::WHITE_ROOK;
             }
             else if (move.to == move.from - 2)
             {
                 /* Castling queen side */
-                board[move.to - 2] = Piece::Type::NO_PIECE;
+                board[move.to - 2] = Piece::Type::BLANK;
                 board[move.to + 1] = Piece::Type::WHITE_ROOK;
             }
             whiteCastlingKingside = false;
@@ -500,13 +485,13 @@ bool Game::makeMove(Move const move)
             if (move.to == move.from + 2)
             {
                 /* Castling king side */
-                board[move.to + 1] = Piece::Type::NO_PIECE;
+                board[move.to + 1] = Piece::Type::BLANK;
                 board[move.to - 1] = Piece::Type::BLACK_ROOK;
             }
             else if (move.to == move.from - 2)
             {
                 /* Castling queen side */
-                board[move.to - 2] = Piece::Type::NO_PIECE;
+                board[move.to - 2] = Piece::Type::BLANK;
                 board[move.to + 1] = Piece::Type::BLACK_ROOK;
             }
             blackCastlingKingside = false;
@@ -538,7 +523,7 @@ bool Game::makeMove(Move const move)
         /* Promotion */
         if (move.to >= BOARD_SIZE - BOARD_LENGTH)
         {
-            board[move.from] = Piece::Type::NO_PIECE;
+            board[move.from] = Piece::Type::BLANK;
             board[move.to] = move.promotionPiece;
             passTurn();
             return true;
@@ -547,7 +532,7 @@ bool Game::makeMove(Move const move)
         if (move.to == enPassantPos)
         {
             // Capturing the en passant piece
-            board[move.to - BOARD_LENGTH] = Piece::Type::NO_PIECE;
+            board[move.to - BOARD_LENGTH] = Piece::Type::BLANK;
         }
         else if (move.to == move.from + BOARD_LENGTH + BOARD_LENGTH)
         {
@@ -558,7 +543,7 @@ bool Game::makeMove(Move const move)
         /* Promotion */
         if (move.to < BOARD_LENGTH)
         {
-            board[move.from] = Piece::Type::NO_PIECE;
+            board[move.from] = Piece::Type::BLANK;
             board[move.to] = move.promotionPiece;
             passTurn();
             return true;
@@ -567,7 +552,7 @@ bool Game::makeMove(Move const move)
         if (move.to == enPassantPos)
         {
             // Capturing the en passant piece
-            board[move.to + BOARD_LENGTH] = Piece::Type::NO_PIECE;
+            board[move.to + BOARD_LENGTH] = Piece::Type::BLANK;
         }
         else if (move.to == move.from - BOARD_LENGTH - BOARD_LENGTH)
         {
@@ -578,7 +563,7 @@ bool Game::makeMove(Move const move)
         throw std::runtime_error("Invalid piece type");
     }
 
-    board[move.from] = Piece::Type::NO_PIECE;
+    board[move.from] = Piece::Type::BLANK;
     board[move.to] = move.piece;
     passTurn();
     return true;

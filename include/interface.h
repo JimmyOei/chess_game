@@ -12,6 +12,7 @@
 #include "piece.h"
 #include "player.h"
 #include "playerhuman.h"
+#include "logger.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -21,18 +22,18 @@
 
 #define NUM_OF_PIECES 12
 
-#define DARK_PAWN_IMG "./pieces/darkPawn.png"
-#define LIGHT_PAWN_IMG "./pieces/lightPawn.png"
-#define DARK_KNIGT_IMG "./pieces/darkKnight.png"
-#define LIGHT_KNIGHT_IMG "./pieces/lightKnight.png"
-#define DARK_BISHOP_IMG "./pieces/darkBishop.png"
-#define LIGHT_BISHOP_IMG "./pieces/lightBishop.png"
-#define DARK_ROOK_IMG "./pieces/darkRook.png"
-#define LIGHT_ROOK_IMG "./pieces/lightRook.png"
-#define DARK_QUEEN_IMG "./pieces/darkQueen.png"
-#define LIGHT_QUEEN_IMG "./pieces/lightQueen.png"
-#define DARK_KING_IMG "./pieces/darkKing.png"
-#define LIGHT_KING_IMG "./pieces/lightKing.png"
+#define DARK_PAWN_IMG "../pieces/darkPawn.png"
+#define LIGHT_PAWN_IMG "../pieces/lightPawn.png"
+#define DARK_KNIGT_IMG "../pieces/darkKnight.png"
+#define LIGHT_KNIGHT_IMG "../pieces/lightKnight.png"
+#define DARK_BISHOP_IMG "../pieces/darkBishop.png"
+#define LIGHT_BISHOP_IMG "../pieces/lightBishop.png"
+#define DARK_ROOK_IMG "../pieces/darkRook.png"
+#define LIGHT_ROOK_IMG "../pieces/lightRook.png"
+#define DARK_QUEEN_IMG "../pieces/darkQueen.png"
+#define LIGHT_QUEEN_IMG "../pieces/lightQueen.png"
+#define DARK_KING_IMG "../pieces/darkKing.png"
+#define LIGHT_KING_IMG "../pieces/lightKing.png"
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 

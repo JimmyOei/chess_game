@@ -16,8 +16,7 @@ namespace Piece
   enum Type
   {
     /* General */
-    NO_PIECE = 0b00000000,
-    INVALID = 0b11111111,
+    BLANK = 0b00000000,
     PAWN = 0b00000001,
     KNIGHT = 0b00000010,
     BISHOP = 0b00000100,
@@ -41,6 +40,34 @@ namespace Piece
     BLACK_QUEEN = 0b01010000,
     BLACK_KING = 0b01100000
   };
+
+  inline std::ostream& operator<<(std::ostream& os, Type type) {
+    switch (type){
+      case NO_PIECE: return os << "No Piece";
+      case INVALID: return os << "Invalid Piece";  
+      case PAWN: return os << "Pawn";  
+      case KNIGHT: return os << "Knight";  
+      case BISHOP: return os << "Bishop";  
+      case ROOK: return os << "Rook";  
+      case QUEEN: return os << "Queen";  
+      case KING: return os << "King";  
+      case WHITE_PAWN: return os << "White Pawn";  
+      case WHITE_KNIGHT: return os << "White Knight";  
+      case WHITE_BISHOP: return os << "White Bishop";  
+      case WHITE_ROOK: return os << "White Rook";  
+      case WHITE_QUEEN: return os << "White Queen";  
+      case WHITE_KING: return os << "White King";  
+      case BLACK_PAWN: return os << "Black Pawn";  
+      case BLACK_KNIGHT: return os << "Black Knight";  
+      case BLACK_BISHOP: return os << "Black Bishop";  
+      case BLACK_ROOK: return os << "Black Rook";  
+      case BLACK_QUEEN: return os << "Black Queen";  
+      case BLACK_KING: return os << "Black King";  
+      default: return os << "Unknown Piece"; 
+    }
+  }
+
+  
 
   /**
    * @brief enum class for the color of the pieces
