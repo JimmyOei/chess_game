@@ -22,18 +22,18 @@ class logger
 public:
   /**
    * @brief constructor for the logger
-   * 
+   *
    * @param logLevel log level to log at
    */
   logger(LogLevel logLevel = LogLevel::ERROR)
   {
-    _buffer << logLevel << " : ";
+    _buffer << "[" << LogLevelToString(logLevel) << "]" << " : ";
   }
 
   /**
    * @brief operator<< overload for the logger
    *        logs the value to the buffer
-   * 
+   *
    * @param value value to log
    * @return logger& reference to the logger
    */
@@ -55,9 +55,24 @@ public:
 
 private:
   std::ostringstream _buffer;
+
+  char const *LogLevelToString(LogLevel logLevel)
+  {
+    switch (logLevel)
+    {
+    case LogLevel::DEBUG:
+      return "DEBUG";
+    case LogLevel::INFO:
+      return "INFO";
+    case LogLevel::WARNING:
+      return "WARNING";
+    case LogLevel::ERROR:
+      return "ERROR";
+    }
+  }
 };
 
-#define log(level)       \
+#define log(level)        \
   if (level >= LOG_LEVEL) \
   logger(level)
 

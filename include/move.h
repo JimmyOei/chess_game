@@ -2,6 +2,7 @@
 #define MOVE_H
 
 #include "piece.h"
+#include "position.h"
 
 /**
  * @brief struct for a move
@@ -13,12 +14,12 @@
  */
 struct Move
 {
-    int from;
-    int to;
+    Position from;
+    Position to;
     Piece::Type piece;
-    Piece::Type promotionPiece = Piece::Type::NO_PIECE;
+    Piece::Type promotionPiece = Piece::Type::BLANK;
 
-    Move(int from, int to, Piece::Type piece, Piece::Type promotionPiece = Piece::Type::NO_PIECE)
+    Move(Position from, Position to, Piece::Type piece, Piece::Type promotionPiece = Piece::Type::BLANK)
         : from(from), to(to), piece(piece), promotionPiece(promotionPiece) {}
 
     bool operator==(Move const &other) const

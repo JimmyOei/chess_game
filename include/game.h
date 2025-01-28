@@ -8,12 +8,9 @@
 #include "move.h"
 #include "position.h"
 #include "direction.h"
+#include "logger.h"
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
-
-/* board */
-#define BOARD_LENGTH 8
-#define BOARD_SIZE BOARD_LENGTH * BOARD_LENGTH
 
 class Game
 {
@@ -92,7 +89,7 @@ public:
      * @param pos position to get the legal moves for
      * @return vector of legal moves for the given position
     */
-    std::vector<Move> getLegalMovesForPos(int const pos);
+    std::vector<Move> getLegalMovesForPos(Position const pos);
 
     /**
      * @brief makes a move on the board

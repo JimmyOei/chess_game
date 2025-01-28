@@ -13,6 +13,7 @@
 #include "player.h"
 #include "playerhuman.h"
 #include "logger.h"
+#include "position.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -93,7 +94,7 @@ private:
     Piece::Type dragPiece;
     int dragPieceTextureMouseX;
     int dragPieceTextureMouseY;
-    int dragPiecePos;
+    Position dragPiecePos;
     std::vector<Move> dragPieceLegalMoves;
 
     void menuGamemode(Piece::Color const color);

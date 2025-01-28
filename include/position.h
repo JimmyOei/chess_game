@@ -4,9 +4,11 @@
 #include "game.h"
 #include "direction.h"
 
+#include <iostream>
+
 /**
  * @brief Class for a position on the chess board
- * 
+ *
  * This class is used to represent a position on the chess board.
  * It is used to represent the position of a piece on the board.
  */
@@ -34,28 +36,50 @@ public:
     return *this;
   }
 
+  bool operator==(int const &rhs) const
+  {
+    return _pos == rhs;
+  }
+
+  bool operator==(Position const &other) const
+  {
+    return _pos == other._pos;
+  }
+
   bool isValid() const
   {
     return _pos >= 0 && _pos < BOARD_SIZE;
   }
 
+  int getRow() const
+  {
+    return (_pos / BOARD_LENGTH) + 1;
+  }
+
+  int getColumn() const
+  {
+    return (_pos % BOARD_LENGTH) + 1;
+  }
+
   /**
    * @brief gives the position in chess notation
-   * 
+   *
    * @return std::string position in chess notation
    */
   std::string toChessNotation() const
   {
-    return std::string(1, 'a' + (_pos % BOARD_LENGTH)) + std::to_string(BOARD_LENGTH + (_pos / BOARD_LENGTH));
-  }
-
-  std::ostream &operator<<(std::ostream &os) const
-  {
-    return os << toChessNotation();
+    return std::string(1, 'a' + (_pos % BOARD_LENGTH)) + std::to_string((_pos / BOARD_LENGTH)+1);
   }
 
 private:
   int _pos;
+
+  friend std::ostream &operator<<(std::ostream &os, Position const &pos);
 };
+
+inline std::ostream &operator<<(std::ostream &os, const Position& p)
+{
+  return os << p.toChessNotation();
+}
 
 #endif

@@ -8,8 +8,8 @@ Interface::Interface() : window(nullptr),
                          boardStartingX(0),
                          boardStartingY(0),
                          running(false),
-                         dragPiece(Piece::Type::NO_PIECE),
-                         dragPiecePos(-1),
+                         dragPiece(Piece::Type::BLANK),
+                         dragPiecePos(Position(-1)),
                          dragPieceLegalMoves(std::vector<Move>()),
                          game(std::make_unique<Game>())
 {
@@ -228,7 +228,7 @@ void Interface::eventHandler(SDL_Event event)
     case SDL_MOUSEBUTTONDOWN:
         if (event.button.button == SDL_BUTTON_LEFT)
         {
-            if (dragPiece == Piece::Type::NO_PIECE)
+            if (dragPiece == Piece::Type::BLANK)
             {
                 std::cout << "Picking up piece" << std::endl;
                 int mouseX, mouseY;
@@ -238,7 +238,7 @@ void Interface::eventHandler(SDL_Event event)
         }
         break;
     case SDL_MOUSEBUTTONUP:
-        if (dragPiece != Piece::Type::NO_PIECE)
+        if (dragPiece != Piece::Type::BLANK)
         {   
             std::cout << "Releasing piece" << std::endl;
             int mouseX, mouseY;
@@ -262,7 +262,7 @@ void Interface::render()
     renderBoard();
     renderState();
 
-    if (dragPiece != Piece::Type::NO_PIECE)
+    if (dragPiece != Piece::Type::BLANK)
     {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
@@ -326,7 +326,6 @@ void Interface::renderBoard()
     boardStartingY = ((screenHeight - (squareEdgeLength * BOARD_LENGTH)) / 2) * (screenHeight > squareEdgeLength);
 
     int pos = 0;
-    int i = 0;
     for (int y = BOARD_LENGTH - 1; y >= 0; y--)
     {
         for (int x = 0; x < BOARD_LENGTH; x++)
@@ -339,9 +338,10 @@ void Interface::renderBoard()
             if ((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1))
             {
                 /* Painting the color of the white square */
-                if (i < dragPieceLegalMoves.size() && pos++ == dragPieceLegalMoves.at(i).to)
+                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move& move) {
+                    return move.to == pos;
+                }) != dragPieceLegalMoves.end())
                 {
-                    i++;
                     SDL_SetRenderDrawColor(renderer, 228, 228, 150, 255);
                 }
                 else
@@ -352,9 +352,10 @@ void Interface::renderBoard()
             else
             {
                 /* Painting the color of the black square */
-                if (i < dragPieceLegalMoves.size() && pos++ == dragPieceLegalMoves.at(i).to)
+                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move& move) {
+                    return move.to == pos;
+                }) != dragPieceLegalMoves.end())
                 {
-                    i++;
                     SDL_SetRenderDrawColor(renderer, 108, 140, 26, 255);
                 }
                 else
@@ -362,6 +363,7 @@ void Interface::renderBoard()
                     SDL_SetRenderDrawColor(renderer, 118, 150, 86, 255);
                 }
             }
+            pos++;
             SDL_RenderFillRect(renderer, &rect);
         }
     }
@@ -381,7 +383,7 @@ void Interface::renderState()
             }
             Piece::Type piece = game->getPieceAtPos(pos++);
 
-            if (piece == Piece::Type::NO_PIECE)
+            if (piece == Piece::Type::BLANK)
             {
                 continue;
             }
@@ -414,11 +416,16 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdgeLength;
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdgeLength;
         dragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
+        if(!dragPiecePos.isValid()) {
+            dragPiece = Piece::Type::BLANK;
+            dragPiecePos = -1;
+            return;
+        }
         dragPiece = game->getPieceAtPos(dragPiecePos);
 
-        if (dragPiece == Piece::Type::NO_PIECE || dragPiece == Piece::Type::INVALID || game->getTurn() != Piece::getColorOfPiece(dragPiece))
+        if (dragPiece == Piece::Type::BLANK || game->getTurn() != Piece::getColorOfPiece(dragPiece))
         {
-            dragPiece = Piece::Type::NO_PIECE;
+            dragPiece = Piece::Type::BLANK;
             dragPiecePos = -1;
             return;
         } // there is no piece at this square or it's of the opponent's color
@@ -472,7 +479,7 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY)
     }
 
     // reset dragPiece variables
-    dragPiece = Piece::Type::NO_PIECE;
+    dragPiece = Piece::Type::BLANK;
     dragPiecePos = -1;
     dragPieceLegalMoves.clear();
 }

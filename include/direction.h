@@ -3,6 +3,10 @@
 
 #include "game.h"
 
+/* board */
+#define BOARD_LENGTH 8
+#define BOARD_SIZE BOARD_LENGTH * BOARD_LENGTH
+
 /**
  * @brief namespace for the directions on the chess board
  */

@@ -2,6 +2,7 @@
 #define PIECE_H
 
 #include <stdint.h>
+#include <iostream>
 
 /**
  * @brief Enum class for the pieces in the chess game
@@ -41,33 +42,77 @@ namespace Piece
     BLACK_KING = 0b01100000
   };
 
-  inline std::ostream& operator<<(std::ostream& os, Type type) {
-    switch (type){
-      case NO_PIECE: return os << "No Piece";
-      case INVALID: return os << "Invalid Piece";  
-      case PAWN: return os << "Pawn";  
-      case KNIGHT: return os << "Knight";  
-      case BISHOP: return os << "Bishop";  
-      case ROOK: return os << "Rook";  
-      case QUEEN: return os << "Queen";  
-      case KING: return os << "King";  
-      case WHITE_PAWN: return os << "White Pawn";  
-      case WHITE_KNIGHT: return os << "White Knight";  
-      case WHITE_BISHOP: return os << "White Bishop";  
-      case WHITE_ROOK: return os << "White Rook";  
-      case WHITE_QUEEN: return os << "White Queen";  
-      case WHITE_KING: return os << "White King";  
-      case BLACK_PAWN: return os << "Black Pawn";  
-      case BLACK_KNIGHT: return os << "Black Knight";  
-      case BLACK_BISHOP: return os << "Black Bishop";  
-      case BLACK_ROOK: return os << "Black Rook";  
-      case BLACK_QUEEN: return os << "Black Queen";  
-      case BLACK_KING: return os << "Black King";  
-      default: return os << "Unknown Piece"; 
+  // std::ostream& operator<<(std::ostream& os, const Type& type) {
+  //   switch (type){
+  //     case BLANK: return os << "No Piece";
+  //     case PAWN: return os << "Pawn";
+  //     case KNIGHT: return os << "Knight";
+  //     case BISHOP: return os << "Bishop";
+  //     case ROOK: return os << "Rook";
+  //     case QUEEN: return os << "Queen";
+  //     case KING: return os << "King";
+  //     case WHITE_PAWN: return os << "White Pawn";
+  //     case WHITE_KNIGHT: return os << "White Knight";
+  //     case WHITE_BISHOP: return os << "White Bishop";
+  //     case WHITE_ROOK: return os << "White Rook";
+  //     case WHITE_QUEEN: return os << "White Queen";
+  //     case WHITE_KING: return os << "White King";
+  //     case BLACK_PAWN: return os << "Black Pawn";
+  //     case BLACK_KNIGHT: return os << "Black Knight";
+  //     case BLACK_BISHOP: return os << "Black Bishop";
+  //     case BLACK_ROOK: return os << "Black Rook";
+  //     case BLACK_QUEEN: return os << "Black Queen";
+  //     case BLACK_KING: return os << "Black King";
+  //     default: return os << "Invalid Piece";
+  //   }
+  // }
+
+  static inline std::string pieceToString(Type const piece)
+  {
+    switch (piece)
+    {
+    case BLANK:
+      return "No Piece";
+    case PAWN:
+      return "Pawn";
+    case KNIGHT:
+      return "Knight";
+    case BISHOP:
+      return "Bishop";
+    case ROOK:
+      return "Rook";
+    case QUEEN:
+      return "Queen";
+    case KING:
+      return "King";
+    case WHITE_PAWN:
+      return "White Pawn";
+    case WHITE_KNIGHT:
+      return "White Knight";
+    case WHITE_BISHOP:
+      return "White Bishop";
+    case WHITE_ROOK:
+      return "White Rook";
+    case WHITE_QUEEN:
+      return "White Queen";
+    case WHITE_KING:
+      return "White King";
+    case BLACK_PAWN:
+      return "Black Pawn";
+    case BLACK_KNIGHT:
+      return "Black Knight";
+    case BLACK_BISHOP:
+      return "Black Bishop";
+    case BLACK_ROOK:
+      return "Black Rook";
+    case BLACK_QUEEN:
+      return "Black Queen";
+    case BLACK_KING:
+      return "Black King";
+    default:
+      return "Invalid Piece";
     }
   }
-
-  
 
   /**
    * @brief enum class for the color of the pieces
