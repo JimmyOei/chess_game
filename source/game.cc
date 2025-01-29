@@ -47,7 +47,7 @@ Game::Game(Game const &game)
       whiteKingPos(game.whiteKingPos),
       blackKingPos(game.blackKingPos)
 {
-    memcpy(board, game.board, BOARD_SIZE);
+    std::copy(game.board, game.board + BOARD_SIZE, board);
 }
 
 void Game::passTurn()
@@ -110,33 +110,39 @@ bool Game::isKingInCheck(Piece::Color const color)
     for (auto const cardinal : Direction::Cardinals)
     {
         Position tmpPos = kingPos + cardinal;
-        while (tmpPos.isValid() && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
-        {
-            tmpPos += cardinal;
-        }
+       while (tmpPos.isValid() && (tmpPos.getRow() == Position(tmpPos + cardinal).getRow() || tmpPos.getColumn() == Position(tmpPos + cardinal).getColumn()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
+            {
+                tmpPos += cardinal;
+            }
 
         if (
+            tmpPos != kingPos &&
             tmpPos.isValid() &&
+            getPieceAtPos(tmpPos) != Piece::Type::BLANK &&
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
-            Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::ROOK)
+            (Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::QUEEN ||
+             Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::ROOK))
         {
             return true;
         }
     }
 
     /* Check if king is attacked by a bishop */
-    for (auto const diagonals : Direction::Diagonals)
+    for (auto const diagonal : Direction::Diagonals)
     {
-        Position tmpPos = kingPos + diagonals;
-        while (tmpPos.isValid() && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
+        Position tmpPos = kingPos;
+        while (tmpPos.isValid() && abs(tmpPos.getColumn() - Position(tmpPos + diagonal).getColumn()) == abs(tmpPos.getRow() - Position(tmpPos + diagonal).getRow()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
         {
-            tmpPos += diagonals;
+            tmpPos += diagonal;
         }
 
         if (
+            tmpPos != kingPos &&
             tmpPos.isValid() &&
+            getPieceAtPos(tmpPos) != Piece::Type::BLANK &&
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
-            Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::BISHOP)
+            (Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::QUEEN ||
+             Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::BISHOP))
         {
             return true;
         }
@@ -147,6 +153,7 @@ bool Game::isKingInCheck(Piece::Color const color)
     {
         Position const tmpPos = kingPos + knightMove;
         if (tmpPos.isValid() &&
+            abs(tmpPos.getColumn() - kingPos.getColumn()) <= 2 &&
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
             Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::KNIGHT)
         {
@@ -335,7 +342,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
         for (auto &knightMove : Direction::KnightMoves)
         {
             const Position toPos = pos + knightMove;
-            if (toPos.isValid() && (getPieceAtPos(toPos) == Piece::Type::BLANK || Piece::getColorOfPiece(getPieceAtPos(toPos)) != color))
+            if (toPos.isValid() && abs(toPos.getColumn() - pos.getColumn()) <= 2 && abs(toPos.getRow() - pos.getRow()) <= 2 && (getPieceAtPos(toPos) == Piece::Type::BLANK || Piece::getColorOfPiece(getPieceAtPos(toPos)) != color))
             {
                 moves.push_back(Move(pos, toPos, piece));
             }
@@ -351,14 +358,14 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
         for (auto &diagonal : Direction::Diagonals)
         {
             Position tmpPos = pos + diagonal;
-            while (tmpPos.isValid() && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
+            if (abs(tmpPos.getColumn() - pos.getColumn()) != abs(tmpPos.getRow() - pos.getRow()))
+            {
+                continue;
+            }
+            while (tmpPos.isValid() && abs(tmpPos.getColumn() - Position(tmpPos + diagonal).getColumn()) == abs(tmpPos.getRow() - Position(tmpPos + diagonal).getRow()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
             {
                 moves.push_back(Move(pos, tmpPos, piece));
                 tmpPos += diagonal;
-                if (tmpPos.getColumn() == BOARD_LENGTH || tmpPos.getColumn() == 1 || tmpPos.getRow() == BOARD_LENGTH || tmpPos.getRow() == 1)
-                {
-                    break;
-                }
             }
 
             if (tmpPos.isValid() &&
@@ -368,7 +375,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
             }
         }
 
-        if (piece == Piece::Type::WHITE_BISHOP || piece == Piece::Type::BLACK_BISHOP)
+        if (Piece::getPieceTypeWithoutColor(piece) == Piece::Type::BISHOP)
         {
             break;
         }
@@ -379,14 +386,14 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
         for (auto &cardinal : Direction::Cardinals)
         {
             Position tmpPos = pos + cardinal;
-            while (tmpPos.isValid() && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
+            if ((tmpPos.getRow() != pos.getRow() && tmpPos.getColumn() != pos.getColumn()))
+            {
+                continue;
+            }
+            while (tmpPos.isValid() && (tmpPos.getRow() == Position(tmpPos + cardinal).getRow() || tmpPos.getColumn() == Position(tmpPos + cardinal).getColumn()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
             {
                 moves.push_back(Move(pos, tmpPos, piece));
                 tmpPos += cardinal;
-                if (tmpPos.getColumn() == BOARD_LENGTH || tmpPos.getColumn() == 1 || tmpPos.getRow() == BOARD_LENGTH || tmpPos.getRow() == 1)
-                {
-                    break;
-                }
             }
 
             if (tmpPos.isValid() &&
@@ -464,7 +471,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
         }
     }
 
-    return moves;
+    return legalMoves;
 }
 
 bool Game::makeMove(Move const move)

@@ -77,9 +77,10 @@ public:
     Piece::Type getPieceAtPos(Position const pos);
 
     /**
-     * @brief getter for if the king of color who's turn it is, is in check
+     * @brief checks if the king of a given color is in check
      * 
-     * @return true if the king of the color who's turn it is, is in check, else false
+     * @param color color of the king to check
+     * @return true if the king is in check, otherwise false
      */
     bool isKingInCheck(Piece::Color const color);
 

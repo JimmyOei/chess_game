@@ -51,6 +51,11 @@ public:
     return _pos >= 0 && _pos < BOARD_SIZE;
   }
 
+  bool isAtEdge() const
+  {
+    return _pos % BOARD_LENGTH == 0 || _pos % BOARD_LENGTH == BOARD_LENGTH - 1 || _pos < BOARD_LENGTH || _pos >= BOARD_SIZE - BOARD_LENGTH;
+  }
+
   int getRow() const
   {
     return (_pos / BOARD_LENGTH) + 1;

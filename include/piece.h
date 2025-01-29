@@ -144,6 +144,19 @@ namespace Piece
   {
     return static_cast<Piece::Type>(static_cast<uint8_t>(piece) & 0b00111111);
   };
+
+  static inline std::string colorToString(Color const color)
+  {
+    switch (color)
+    {
+    case WHITE:
+      return "White";
+    case BLACK:
+      return "Black";
+    default:
+      return "Invalid Color";
+    }
+  }
 };
 
 #endif
