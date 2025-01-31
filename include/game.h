@@ -98,12 +98,14 @@ public:
      * @param move move to make
      * @return true if the move is legal and made, otherwise false
      */
-    bool makeMove(Move const move);
+    void makeMove(Move const move);
 
     /**
      * @brief prints the current game of the board to stdout for debugging
      */
     void printGame();
+
+    bool isGameOver();
 
 private:
     /**
@@ -119,7 +121,7 @@ private:
      * @brief passes turn and resetting the booleans enPassant
      *          and check to false
      */
-    void passTurn();
+    void passTurn(Position newEnPassantPos);
 
     /**
      * @brief initiates the game to the standard chess starting position
@@ -136,10 +138,6 @@ private:
     bool blackCastlingKingside;
     Position whiteKingPos;
     Position blackKingPos;
-
-    // NOT IMPLEMENTED YET
-    // int halfMoveClock;
-    // int fullMoveNumber;
 };
 
 #endif

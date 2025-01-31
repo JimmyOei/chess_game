@@ -42,31 +42,6 @@ namespace Piece
     BLACK_KING = 0b01100000
   };
 
-  // std::ostream& operator<<(std::ostream& os, const Type& type) {
-  //   switch (type){
-  //     case BLANK: return os << "No Piece";
-  //     case PAWN: return os << "Pawn";
-  //     case KNIGHT: return os << "Knight";
-  //     case BISHOP: return os << "Bishop";
-  //     case ROOK: return os << "Rook";
-  //     case QUEEN: return os << "Queen";
-  //     case KING: return os << "King";
-  //     case WHITE_PAWN: return os << "White Pawn";
-  //     case WHITE_KNIGHT: return os << "White Knight";
-  //     case WHITE_BISHOP: return os << "White Bishop";
-  //     case WHITE_ROOK: return os << "White Rook";
-  //     case WHITE_QUEEN: return os << "White Queen";
-  //     case WHITE_KING: return os << "White King";
-  //     case BLACK_PAWN: return os << "Black Pawn";
-  //     case BLACK_KNIGHT: return os << "Black Knight";
-  //     case BLACK_BISHOP: return os << "Black Bishop";
-  //     case BLACK_ROOK: return os << "Black Rook";
-  //     case BLACK_QUEEN: return os << "Black Queen";
-  //     case BLACK_KING: return os << "Black King";
-  //     default: return os << "Invalid Piece";
-  //   }
-  // }
-
   static inline std::string pieceToString(Type const piece)
   {
     switch (piece)
@@ -114,6 +89,45 @@ namespace Piece
     }
   }
 
+  static inline char pieceToChar(Type const piece)
+  {
+    switch (piece)
+    {
+    case WHITE_PAWN:
+      return 'P';
+    case WHITE_KNIGHT:
+      return 'N';
+    case WHITE_BISHOP:
+      return 'B';
+    case WHITE_ROOK:
+      return 'R';
+    case WHITE_QUEEN:
+      return 'Q';
+    case WHITE_KING:
+      return 'K';
+    case BLACK_PAWN:
+      return 'p';
+    case BLACK_KNIGHT:
+      return 'n';
+    case BLACK_BISHOP:
+      return 'b';
+    case BLACK_ROOK:
+      return 'r';
+    case BLACK_QUEEN:
+      return 'q';
+    case BLACK_KING:
+      return 'k';
+    default:
+      return ' ';
+    }
+  }
+
+  static inline std::ostream &operator<<(std::ostream &os, Piece::Type const piece)
+  {
+    os << pieceToString(piece);
+    return os;
+  }
+
   /**
    * @brief enum class for the color of the pieces
    */
@@ -156,6 +170,12 @@ namespace Piece
     default:
       return "Invalid Color";
     }
+  }
+
+  static inline std::ostream &operator<<(std::ostream &os, Color const color)
+  {
+    os << colorToString(color);
+    return os;
   }
 };
 

@@ -70,6 +70,8 @@ public:
 
     void render();
 
+
+
 private:
     std::unique_ptr<Game> game;
 
@@ -103,7 +105,7 @@ private:
 
     bool menu();
 
-    uint8_t menuPawnPromotion();
+    Piece::Type menuPawnPromotion();
 
     /**
      * @brief loads the textures for the pieces into the texturePieces unordered map

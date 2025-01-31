@@ -28,4 +28,14 @@ struct Move
     }
 };
 
+static inline std::ostream &operator<<(std::ostream &os, Move const &move)
+{
+    os << Piece::pieceToChar(move.piece) << move.from << "-" << move.to;
+    if (move.promotionPiece != Piece::Type::BLANK)
+    {
+        os << " -> " << Piece::pieceToChar(move.promotionPiece);
+    }
+    return os;
+}
+
 #endif

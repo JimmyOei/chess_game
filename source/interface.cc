@@ -147,38 +147,39 @@ bool Interface::menu()
     }
 }
 
-uint8_t Interface::menuPawnPromotion()
+Piece::Type Interface::menuPawnPromotion()
 {
-    // bool const colorOfDragPiece = getColorOfPiece(dragPiece);
-    // while (true)
-    // {
-    //     std::string input;
-    //     std::cout << ">> Input the first letter of the piece you would like to promote your pawn to" << std::endl
-    //               << ">> \"q\": queen | \"r\": rook | \"b\": bishop | \"k\": knight" << std::endl
-    //               << std::endl;
-    //     getline(std::cin, input);
-    //     if (input.length() == 1)
-    //     {
-    //         switch (input[0])
-    //         {
-    //         case 'k':
-    //         case 'K':
-    //             return colorOfDragPiece ? WHITE_KNIGHT : BLACK_KNIGHT;
-    //         case 'b':
-    //         case 'B':
-    //             return colorOfDragPiece ? WHITE_BISHOP : BLACK_BISHOP;
-    //         case 'r':
-    //         case 'R':
-    //             return colorOfDragPiece ? WHITE_ROOK : BLACK_ROOK;
-    //         case 'q':
-    //         case 'Q':
-    //             return colorOfDragPiece ? WHITE_QUEEN : BLACK_QUEEN;
-    //         }
-    //     }
-    //     std::cout << ">> Invalid input, please try again" << std::endl
-    //               << std::endl;
-    // }
-    return 0;
+    bool const colorOfDragPiece = getColorOfPiece(dragPiece);
+    while (true)
+    {
+        std::string input;
+        std::cout << std::endl
+                  << ">> Input the first letter of the piece you would like to promote your pawn to" << std::endl
+                  << ">> \"q\": queen | \"r\": rook | \"b\": bishop | \"k\": knight" << std::endl
+                  << std::endl;
+        getline(std::cin, input);
+        if (input.length() == 1)
+        {
+            switch (input[0])
+            {
+            case 'k':
+            case 'K':
+                return colorOfDragPiece ? Piece::WHITE_KNIGHT : Piece::BLACK_KNIGHT;
+            case 'b':
+            case 'B':
+                return colorOfDragPiece ? Piece::WHITE_BISHOP : Piece::BLACK_BISHOP;
+            case 'r':
+            case 'R':
+                return colorOfDragPiece ? Piece::WHITE_ROOK : Piece::BLACK_ROOK;
+            case 'q':
+            case 'Q':
+                return colorOfDragPiece ? Piece::WHITE_QUEEN : Piece::BLACK_QUEEN;
+            }
+        }
+        std::cout << ">> Invalid input, please try again" << std::endl
+                  << std::endl;
+    }
+    return colorOfDragPiece ? Piece::WHITE_QUEEN : Piece::BLACK_QUEEN;
 }
 
 void Interface::initiate()
@@ -239,8 +240,7 @@ void Interface::eventHandler(SDL_Event event)
         break;
     case SDL_MOUSEBUTTONUP:
         if (dragPiece != Piece::Type::BLANK)
-        {   
-            std::cout << "Releasing piece" << std::endl;
+        {
             int mouseX, mouseY;
             SDL_GetMouseState(&mouseX, &mouseY);
             releaseDragPiece(mouseX, mouseY);
@@ -338,9 +338,8 @@ void Interface::renderBoard()
             if ((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1))
             {
                 /* Painting the color of the white square */
-                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move& move) {
-                    return move.to == pos;
-                }) != dragPieceLegalMoves.end())
+                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move &move)
+                                 { return move.to == pos; }) != dragPieceLegalMoves.end())
                 {
                     SDL_SetRenderDrawColor(renderer, 228, 228, 150, 255);
                 }
@@ -352,9 +351,8 @@ void Interface::renderBoard()
             else
             {
                 /* Painting the color of the black square */
-                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move& move) {
-                    return move.to == pos;
-                }) != dragPieceLegalMoves.end())
+                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move &move)
+                                 { return move.to == pos; }) != dragPieceLegalMoves.end())
                 {
                     SDL_SetRenderDrawColor(renderer, 108, 140, 26, 255);
                 }
@@ -406,7 +404,7 @@ void Interface::resizeWindow(int const height, int const width)
 
 void Interface::pickupDragPiece(int const mouseX, int const mouseY)
 {
-    log(LogLevel::DEBUG) << "Picking up piece";
+    log(LogLevel::DEBUG) << "Picking up piece at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
 
@@ -416,7 +414,8 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdgeLength;
         dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdgeLength;
         dragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
-        if(!dragPiecePos.isValid()) {
+        if (!dragPiecePos.isValid())
+        {
             dragPiece = Piece::Type::BLANK;
             dragPiecePos = -1;
             return;
@@ -431,7 +430,7 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         } // there is no piece at this square or it's of the opponent's color
         dragPieceLegalMoves = game->getLegalMovesForPos(dragPiecePos);
     }
-    log(LogLevel::INFO) << "Picked up piece: " << dragPiece << " at position: " << dragPiecePos;
+    log(LogLevel::INFO) << "Picked up piece " << dragPiece << " at " << dragPiecePos;
 }
 
 void Interface::renderDragPiece(int const mouseX, int const mouseY)
@@ -465,17 +464,34 @@ void Interface::renderDragPiece(int const mouseX, int const mouseY)
 
 void Interface::releaseDragPiece(int const mouseX, int const mouseY)
 {
+    log(LogLevel::DEBUG) << "Releasing piece " << dragPiece << " at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
     int const newDragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
 
-    for (int i = 0; i < dragPieceLegalMoves.size(); i++)
+    for (auto &legalMove : dragPieceLegalMoves)
     {
-        if (dragPieceLegalMoves.at(i).to == newDragPiecePos)
+        if (legalMove.to == newDragPiecePos)
         {
-            game->makeMove(dragPieceLegalMoves.at(i));
+            if ((Piece::getColorOfPiece(dragPiece) == Piece::Color::WHITE && legalMove.to.getRow() == BOARD_LENGTH) ||
+                (Piece::getColorOfPiece(dragPiece) == Piece::Color::BLACK && legalMove.to.getRow() == 1))
+            {
+                // Promotion
+                const Move promotionMove(legalMove.from, legalMove.to, legalMove.piece, menuPawnPromotion());
+                game->makeMove(promotionMove);
+                log(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << promotionMove << " with promotion to " << promotionMove.promotionPiece;
+                break;
+            }
+
+            game->makeMove(legalMove);
+            log(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << legalMove;
             break;
         }
+    }
+
+    if(game->isGameOver()) {
+        std::cout << "Game over! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won." << std::endl;
+        running = false;
     }
 
     // reset dragPiece variables
