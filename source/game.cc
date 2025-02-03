@@ -109,14 +109,15 @@ bool Game::isKingInCheck(Piece::Color const color)
     /* Check if king is attacked by a rook */
     for (auto const cardinal : Direction::Cardinals)
     {
+        Position prevPos = kingPos;
         Position tmpPos = kingPos + cardinal;
-       while (tmpPos.isValid() && (tmpPos.getRow() == Position(tmpPos + cardinal).getRow() || tmpPos.getColumn() == Position(tmpPos + cardinal).getColumn()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
-            {
-                tmpPos += cardinal;
-            }
+        while (tmpPos.isValid() && (prevPos.getRow() == Position(tmpPos).getRow() || prevPos.getColumn() == Position(tmpPos).getColumn()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
+        {
+            prevPos = tmpPos;
+            tmpPos += cardinal;
+        }
 
         if (
-            tmpPos != kingPos &&
             tmpPos.isValid() &&
             getPieceAtPos(tmpPos) != Piece::Type::BLANK &&
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
@@ -130,14 +131,15 @@ bool Game::isKingInCheck(Piece::Color const color)
     /* Check if king is attacked by a bishop */
     for (auto const diagonal : Direction::Diagonals)
     {
-        Position tmpPos = kingPos;
-        while (tmpPos.isValid() && abs(tmpPos.getColumn() - Position(tmpPos + diagonal).getColumn()) == abs(tmpPos.getRow() - Position(tmpPos + diagonal).getRow()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
+        Position prevPos = kingPos;
+        Position tmpPos = kingPos + diagonal;
+        while (tmpPos.isValid() && abs(prevPos.getColumn() - tmpPos.getColumn()) == abs(prevPos.getRow() - tmpPos.getRow()) && getPieceAtPos(tmpPos) == Piece::Type::BLANK)
         {
+            prevPos = tmpPos;
             tmpPos += diagonal;
         }
 
         if (
-            tmpPos != kingPos &&
             tmpPos.isValid() &&
             getPieceAtPos(tmpPos) != Piece::Type::BLANK &&
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
@@ -202,7 +204,6 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
     }
 
     log(LogLevel::DEBUG) << "Getting legal moves for position " << pos << " " << piece;
-    std::cout << "En Passant piece: " << enPassantPos << std::endl;
 
     std::vector<Move> moves;
     switch (piece)
@@ -235,8 +236,9 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
 
         /* 3. Capture left diagonal or En Passant */
         tmpPos = pos + Direction::Diagonal::NORTH_WEST;
-        if (tmpPos.isValid() && ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
-                                 tmpPos == enPassantPos))
+        if (tmpPos.isValid() &&
+            abs(pos.getColumn() - tmpPos.getColumn()) == abs(pos.getRow() - tmpPos.getRow()) &&
+            ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) || tmpPos == enPassantPos))
         {
             /* Capture is a promotion */
             if (tmpPos.getRow() == BOARD_LENGTH)
@@ -254,8 +256,10 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
 
         /* 4. Capture right diagonal or En Passant */
         tmpPos = pos + Direction::Diagonal::NORTH_EAST;
-        if (tmpPos.isValid() && ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
-                                 tmpPos == enPassantPos))
+        if (tmpPos.isValid() &&
+            abs(pos.getColumn() - tmpPos.getColumn()) == abs(pos.getRow() - tmpPos.getRow()) &&
+            ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
+             tmpPos == enPassantPos))
         {
             /* Capture is a promotion */
             if (tmpPos + Direction::Cardinal::NORTH >= BOARD_SIZE)
@@ -300,8 +304,10 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
 
         /* 3. Capture left diagonal or En Passant */
         tmpPos = pos + Direction::Diagonal::SOUTH_WEST;
-        if (tmpPos.isValid() && ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
-                                 tmpPos == enPassantPos))
+        if (tmpPos.isValid() &&
+            abs(pos.getColumn() - tmpPos.getColumn()) == abs(pos.getRow() - tmpPos.getRow()) &&
+            ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
+             tmpPos == enPassantPos))
         {
             /* Capture is a promotion */
             if (tmpPos.getRow() == 1)
@@ -319,8 +325,10 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
 
         /* 4. Capture right diagonal or En Passant */
         tmpPos = pos + Direction::Diagonal::SOUTH_EAST;
-        if (tmpPos.isValid() && ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
-                                 tmpPos == enPassantPos))
+        if (tmpPos.isValid() &&
+            abs(pos.getColumn() - tmpPos.getColumn()) == abs(pos.getRow() - tmpPos.getRow()) &&
+            ((getPieceAtPos(tmpPos) != Piece::Type::BLANK && Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
+             tmpPos == enPassantPos))
         {
             /* Capture is a promotion */
             if (tmpPos + Direction::Cardinal::SOUTH >= BOARD_SIZE)
@@ -590,13 +598,20 @@ void Game::makeMove(Move const move)
     return;
 }
 
-bool Game::isGameOver() {
-    if(isKingInCheck(turn)) {
+bool Game::isGameOver()
+{
+    bool isCheck = isKingInCheck(turn);
+    std::cout << "Is king in check: " << isCheck << std::endl;
+    if (isKingInCheck(turn))
+    {
         std::vector<Move> legalMoves;
-        for(int i = 0; i < BOARD_SIZE; i++) {
-            if(Piece::getColorOfPiece(board[i]) == turn && board[i] != Piece::Type::BLANK) {
-                std::vector<Move> moves = getLegalMovesForPos(i);
-                if(!moves.empty()) {
+        for (int i = 0; i < BOARD_SIZE; i++)
+        {
+            if (Piece::getColorOfPiece(board[i]) == turn && board[i] != Piece::Type::BLANK)
+            {
+                std::vector<Move> moves = getLegalMovesForPos(Position(i));
+                if (!moves.empty())
+                {
                     return false;
                 }
             }

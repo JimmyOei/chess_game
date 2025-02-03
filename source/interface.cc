@@ -491,7 +491,6 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY)
 
     if(game->isGameOver()) {
         std::cout << "Game over! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won." << std::endl;
-        running = false;
     }
 
     // reset dragPiece variables
