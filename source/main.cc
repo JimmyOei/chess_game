@@ -21,12 +21,17 @@ int main(int argc, char *argv[])
     {
         frameStart = SDL_GetTicks();
 
+        if (!interface->isGameOver())
+        {
+            interface->handlePlayerTurn();
+        }
+        interface->render();
+
         if (SDL_WaitEvent(&event) != 0)
         {
             interface->eventHandler(event);
             interface->render();
         }
-
         frameTime = SDL_GetTicks() - frameStart;
 
         if (frameDelay > frameStart)

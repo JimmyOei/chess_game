@@ -72,7 +72,7 @@ private:
   }
 };
 
-#define log(level)        \
+#define logIt(level)        \
   if (level >= LOG_LEVEL) \
   logger(level)
 

@@ -12,6 +12,7 @@
 #include "piece.h"
 #include "player.h"
 #include "playerhuman.h"
+#include "playerenginerandom.h"
 #include "logger.h"
 #include "position.h"
 
@@ -64,15 +65,19 @@ public:
      */
     bool isRunning();
 
+    bool isGameOver();
+
     void initiate();
+
+    void handlePlayerTurn();
 
     void eventHandler(SDL_Event event);
 
     void render();
 
-
-
 private:
+    std::unique_ptr<Player> playerWhite;
+    std::unique_ptr<Player> playerBlack;
     std::unique_ptr<Game> game;
 
     SDL_Window *window;
@@ -92,6 +97,7 @@ private:
 
     // bool for if the interface is running
     bool running;
+    bool gameOver;
 
     Piece::Type dragPiece;
     int dragPieceTextureMouseX;

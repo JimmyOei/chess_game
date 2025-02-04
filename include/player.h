@@ -8,7 +8,9 @@ class Player
 public:
   virtual ~Player() = default;
 
-  virtual Move getMove(const Game *game) = 0;
+  virtual Move getMove(Game *game) = 0;
+
+  virtual bool isHuman() const { return false; };
 };
 
 #endif

@@ -8,10 +8,13 @@ Interface::Interface() : window(nullptr),
                          boardStartingX(0),
                          boardStartingY(0),
                          running(false),
+                         gameOver(false),
                          dragPiece(Piece::Type::BLANK),
                          dragPiecePos(Position(-1)),
                          dragPieceLegalMoves(std::vector<Move>()),
-                         game(std::make_unique<Game>())
+                         game(std::make_unique<Game>()),
+                         playerWhite(std::make_unique<PlayerHuman>()),
+                         playerBlack(std::make_unique<PlayerEngineRandom>())
 {
 }
 
@@ -45,38 +48,43 @@ bool Interface::isRunning()
     return running;
 }
 
+bool Interface::isGameOver()
+{
+    return gameOver;
+}
+
 void Interface::menuGamemode(Piece::Color const color)
 {
-    // while (true)
-    // {
-    //     std::string inputGamemode;
-    //     if (color)
-    //     {
-    //         std::cout << ">> Input the gamemode for white" << std::endl;
-    //     }
-    //     else
-    //     {
-    //         std::cout << ">> Input the gamemode for black" << std::endl;
-    //     }
-    //     std::cout << ">> \"1\": player | \"2\": random move computer" << std::endl
-    //               << std::endl;
-    //     getline(std::cin, inputGamemode);
-    //     std::cout << std::endl;
-    //     if (inputGamemode.length() == 1)
-    //     {
-    //         switch (inputGamemode[0])
-    //         {
-    //         case '1':
-    //             game->setGamemode(color, 1);
-    //             return;
-    //         case '2':
-    //             game->setGamemode(color, 2);
-    //             return;
-    //         }
-    //     }
-    //     std::cerr << ">> Invalid input, please try again" << std::endl
-    //               << std::endl;
-    // }
+    while (true)
+    {
+        std::string playerInput;
+        if (color == Piece::Color::WHITE)
+        {
+            std::cout << ">> Input the player for white" << std::endl;
+        }
+        else
+        {
+            std::cout << ">> Input the player for black" << std::endl;
+        }
+        std::cout << ">> \"1\": human player | \"2\": random move engine" << std::endl
+                  << std::endl;
+        getline(std::cin, playerInput);
+        std::cout << std::endl;
+        if (playerInput.length() == 1)
+        {
+            switch (playerInput[0])
+            {
+            case '1':
+                color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerHuman>() : playerBlack = std::make_unique<PlayerHuman>();
+                return;
+            case '2':
+                color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerEngineRandom>() : playerBlack = std::make_unique<PlayerEngineRandom>();
+                return;
+            }
+        }
+        std::cerr << ">> Invalid input, please try again" << std::endl
+                  << std::endl;
+    }
 }
 
 void Interface::menuFEN()
@@ -109,8 +117,8 @@ bool Interface::menu()
     {
         std::string input;
         std::cout << ">> What would you like to do? (Input a letter)" << std::endl
-                  << "\"P\": Play a Chess game" << std::endl
-                  << "\"C\": Change the starting position of the Chess game" << std::endl
+                  << "\"S\": Start the Chess game" << std::endl
+                  << "\"P\": Change the Player types" << std::endl
                   << "\"Q\": Quit program" << std::endl
                   << std::endl;
         getline(std::cin, input);
@@ -119,13 +127,16 @@ bool Interface::menu()
         {
             switch (input[0])
             {
+            case 'S':
+            case 's':
+                std::cout << "The game will begin. Good luck!" << std::endl
+                          << std::endl;
+                return true;
             case 'P':
             case 'p':
                 menuGamemode(Piece::Color::WHITE);
                 menuGamemode(Piece::Color::BLACK);
-                std::cout << "The game will begin. Good luck!" << std::endl
-                          << std::endl;
-                return true;
+                break;
             case 'C':
             case 'c':
                 menuFEN();
@@ -227,7 +238,7 @@ void Interface::eventHandler(SDL_Event event)
         }
         break;
     case SDL_MOUSEBUTTONDOWN:
-        if (event.button.button == SDL_BUTTON_LEFT)
+        if (event.button.button == SDL_BUTTON_LEFT && !gameOver)
         {
             if (dragPiece == Piece::Type::BLANK)
             {
@@ -314,6 +325,32 @@ SDL_Texture *Interface::getTexturePiece(Piece::Type piece)
     }
 
     return texturePieces[piece];
+}
+
+void Interface::handlePlayerTurn()
+{
+    if (game->isGameOver())
+    {
+        std::cout << "Checkmate! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won." << std::endl;
+        gameOver = true;
+        return;
+    }
+    if (game->getTurn() == Piece::Color::WHITE)
+    {
+        if (!playerWhite->isHuman())
+        {
+            Move move = playerWhite->getMove(game.get());
+            game->makeMove(move);
+        }
+    }
+    else
+    {
+        if (!playerBlack->isHuman())
+        {
+            Move move = playerBlack->getMove(game.get());
+            game->makeMove(move);
+        }
+    }
 }
 
 void Interface::renderBoard()
@@ -404,7 +441,7 @@ void Interface::resizeWindow(int const height, int const width)
 
 void Interface::pickupDragPiece(int const mouseX, int const mouseY)
 {
-    log(LogLevel::DEBUG) << "Picking up piece at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
+    logIt(LogLevel::DEBUG) << "Picking up piece at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
 
@@ -417,7 +454,7 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         if (!dragPiecePos.isValid())
         {
             dragPiece = Piece::Type::BLANK;
-            dragPiecePos = -1;
+            dragPiecePos = Position(-1);
             return;
         }
         dragPiece = game->getPieceAtPos(dragPiecePos);
@@ -430,7 +467,7 @@ void Interface::pickupDragPiece(int const mouseX, int const mouseY)
         } // there is no piece at this square or it's of the opponent's color
         dragPieceLegalMoves = game->getLegalMovesForPos(dragPiecePos);
     }
-    log(LogLevel::INFO) << "Picked up piece " << dragPiece << " at " << dragPiecePos;
+    logIt(LogLevel::INFO) << "Picked up piece " << dragPiece << " at " << dragPiecePos;
 }
 
 void Interface::renderDragPiece(int const mouseX, int const mouseY)
@@ -464,7 +501,7 @@ void Interface::renderDragPiece(int const mouseX, int const mouseY)
 
 void Interface::releaseDragPiece(int const mouseX, int const mouseY)
 {
-    log(LogLevel::DEBUG) << "Releasing piece " << dragPiece << " at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
+    logIt(LogLevel::DEBUG) << "Releasing piece " << dragPiece << " at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
     int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
     int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
     int const newDragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
@@ -473,28 +510,24 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY)
     {
         if (legalMove.to == newDragPiecePos)
         {
-            if ((Piece::getColorOfPiece(dragPiece) == Piece::Color::WHITE && legalMove.to.getRow() == BOARD_LENGTH) ||
-                (Piece::getColorOfPiece(dragPiece) == Piece::Color::BLACK && legalMove.to.getRow() == 1))
+            if ((dragPiece == Piece::WHITE_PAWN && legalMove.to.getRow() == BOARD_LENGTH) ||
+                (dragPiece == Piece::BLACK_PAWN && legalMove.to.getRow() == 1))
             {
                 // Promotion
                 const Move promotionMove(legalMove.from, legalMove.to, legalMove.piece, menuPawnPromotion());
                 game->makeMove(promotionMove);
-                log(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << promotionMove << " with promotion to " << promotionMove.promotionPiece;
+                logIt(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << promotionMove << " with promotion to " << promotionMove.promotionPiece;
                 break;
             }
 
             game->makeMove(legalMove);
-            log(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << legalMove;
+            logIt(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << legalMove;
             break;
         }
     }
 
-    if(game->isGameOver()) {
-        std::cout << "Game over! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won." << std::endl;
-    }
-
     // reset dragPiece variables
     dragPiece = Piece::Type::BLANK;
-    dragPiecePos = -1;
+    dragPiecePos = Position(-1);
     dragPieceLegalMoves.clear();
 }
