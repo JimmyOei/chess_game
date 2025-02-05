@@ -339,16 +339,32 @@ void Interface::handlePlayerTurn()
     {
         if (!playerWhite->isHuman())
         {
-            Move move = playerWhite->getMove(game.get());
+            Move move = playerWhite->getMove(Game(*game));
             game->makeMove(move);
+            if (move.promotionPiece != Piece::Type::BLANK)
+            {
+                logIt(LogLevel::INFO) << "Player Engine White made move " << move << " with promotion to " << move.promotionPiece;
+            }
+            else
+            {
+                logIt(LogLevel::INFO) << "Player Engine White made move " << move;
+            }
         }
     }
     else
     {
         if (!playerBlack->isHuman())
         {
-            Move move = playerBlack->getMove(game.get());
+            Move move = playerBlack->getMove(Game(*game));
             game->makeMove(move);
+            if (move.promotionPiece != Piece::Type::BLANK)
+            {
+                logIt(LogLevel::INFO) << "Player Engine Black made move " << move << " with promotion to " << move.promotionPiece;
+            }
+            else
+            {
+                logIt(LogLevel::INFO) << "Player Engine Black made move " << move;
+            }
         }
     }
 }
@@ -516,12 +532,12 @@ void Interface::releaseDragPiece(int const mouseX, int const mouseY)
                 // Promotion
                 const Move promotionMove(legalMove.from, legalMove.to, legalMove.piece, menuPawnPromotion());
                 game->makeMove(promotionMove);
-                logIt(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << promotionMove << " with promotion to " << promotionMove.promotionPiece;
+                logIt(LogLevel::INFO) << "Player Human " << Piece::getColorOfPiece(legalMove.piece) << " made move " << promotionMove << " with promotion to " << promotionMove.promotionPiece;
                 break;
             }
 
             game->makeMove(legalMove);
-            logIt(LogLevel::INFO) << Piece::getColorOfPiece(legalMove.piece) << " made move " << legalMove;
+            logIt(LogLevel::INFO) << "Player Human " << Piece::getColorOfPiece(legalMove.piece) << " made move " << legalMove;
             break;
         }
     }

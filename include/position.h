@@ -73,7 +73,7 @@ public:
    */
   std::string toChessNotation() const
   {
-    return std::string(1, 'a' + (_pos % BOARD_LENGTH)) + std::to_string((_pos / BOARD_LENGTH)+1);
+    return std::string(1, 'a' + getColumn() - 1) + std::to_string(getRow());
   }
 
 private:

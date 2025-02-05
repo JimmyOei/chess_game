@@ -10,13 +10,13 @@
 class PlayerEngineRandom : public Player
 {
 public:
-  Move getMove(Game *game) override
+  Move getMove(Game game) override
   {
     logIt(LogLevel::INFO) << "Engine is making a random move";
     std::vector<Move> allLegalMoves;
     for (int i = 0; i < BOARD_SIZE; i++)
     {
-      std::vector<Move> legalMoves = game->getLegalMovesForPos(i);
+      std::vector<Move> legalMoves = game.getLegalMovesForPos(i);
       if(legalMoves.size() > 0) {
         allLegalMoves.insert(allLegalMoves.end(), legalMoves.begin(), legalMoves.end());
       }

@@ -116,17 +116,17 @@ bool Game::isKingInCheck(Piece::Color const color)
             prevPos = tmpPos;
             tmpPos += cardinal;
         }
-        tmpPos -= cardinal;
 
-        if (
-            tmpPos.isValid() &&
-            getPieceAtPos(tmpPos) != Piece::Type::BLANK &&
-            Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
-            (Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::QUEEN ||
-             Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::ROOK))
+        if (tmpPos.isValid())
         {
-            std::cout << "Rook or Queen attacking king " << tmpPos << std::endl;
-            return true;
+            Piece::Type piece = getPieceAtPos(tmpPos);
+            if (
+                Piece::getColorOfPiece(piece) != color &&
+                (Piece::getPieceTypeWithoutColor(piece) == Piece::Type::QUEEN ||
+                 Piece::getPieceTypeWithoutColor(piece) == Piece::Type::ROOK))
+            {
+                return true;
+            }
         }
     }
 
@@ -140,17 +140,17 @@ bool Game::isKingInCheck(Piece::Color const color)
             prevPos = tmpPos;
             tmpPos += diagonal;
         }
-        tmpPos -= diagonal;
 
-        if (
-            tmpPos.isValid() &&
-            getPieceAtPos(tmpPos) != Piece::Type::BLANK &&
-            Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color &&
-            (Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::QUEEN ||
-             Piece::getPieceTypeWithoutColor(getPieceAtPos(tmpPos)) == Piece::Type::BISHOP))
+        if (tmpPos.isValid())
         {
-            std::cout << "Bishop or Queen attacking king " << tmpPos << std::endl;
-            return true;
+            Piece::Type piece = getPieceAtPos(tmpPos);
+            if (
+                Piece::getColorOfPiece(piece) != color &&
+                (Piece::getPieceTypeWithoutColor(piece) == Piece::Type::QUEEN ||
+                 Piece::getPieceTypeWithoutColor(piece) == Piece::Type::BISHOP))
+            {
+                return true;
+            }
         }
     }
 
@@ -446,16 +446,19 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
     }
     case Piece::Type::WHITE_KING:
     {
-        /* Castling King side */
-        if (whiteCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::BLANK && getPieceAtPos(pos + 2) == Piece::Type::BLANK && getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK)
+        if (!isKingInCheck(color))
         {
-            moves.push_back(Move(pos, pos + 2, piece));
-        }
+            /* Castling King side */
+            if (whiteCastlingKingside && getPieceAtPos(pos + 1) == Piece::Type::BLANK && getPieceAtPos(pos + 2) == Piece::Type::BLANK && getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK)
+            {
+                moves.push_back(Move(pos, pos + 2, piece));
+            }
 
-        /* Castling Queen side */
-        if (whiteCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::BLANK && getPieceAtPos(pos - 2) == Piece::Type::BLANK && getPieceAtPos(pos - 3) == Piece::Type::BLANK && getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK)
-        {
-            moves.push_back(Move(pos, pos - 2, piece));
+            /* Castling Queen side */
+            if (whiteCastlingQueenside && getPieceAtPos(pos - 1) == Piece::Type::BLANK && getPieceAtPos(pos - 2) == Piece::Type::BLANK && getPieceAtPos(pos - 3) == Piece::Type::BLANK && getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK)
+            {
+                moves.push_back(Move(pos, pos - 2, piece));
+            }
         }
     }
     case Piece::Type::BLACK_KING:
@@ -478,7 +481,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos)
             }
         }
 
-        if (piece == Piece::Type::BLACK_KING)
+        if (piece == Piece::Type::BLACK_KING && !isKingInCheck(color))
         {
             /* Castling King side */
             if (blackCastlingKingside && getPieceAtPos(pos + Direction::Cardinal::EAST) == Piece::Type::BLANK && getPieceAtPos(pos + 2 * Direction::Cardinal::EAST) == Piece::Type::BLANK && getPieceAtPos(pos + 3 * Direction::Cardinal::EAST) == Piece::Type::BLACK_ROOK)
@@ -631,7 +634,6 @@ void Game::makeMove(Move const move)
 bool Game::isGameOver()
 {
     bool isCheck = isKingInCheck(turn);
-    std::cout << "Is king in check: " << isCheck << std::endl;
     if (isKingInCheck(turn))
     {
         std::vector<Move> legalMoves;
