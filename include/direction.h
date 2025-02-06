@@ -1,7 +1,7 @@
 #ifndef DIRECTION_H
 #define DIRECTION_H
 
-#include "game.h"
+#include <array>
 
 /* board */
 #define BOARD_LENGTH 8

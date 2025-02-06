@@ -12,6 +12,7 @@ include_directories(include /opt/homebrew/include)
 set(SOURCES  
     source/main.cc  
     source/game.cc  
+    source/playerengineminimax.cc
     source/interface.cc  
 )  
 

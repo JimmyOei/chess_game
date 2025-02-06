@@ -1,6 +1,8 @@
 #ifndef MOVE_H
 #define MOVE_H
 
+#include <iostream>
+
 #include "piece.h"
 #include "position.h"
 
@@ -19,8 +21,23 @@ struct Move
     Piece::Type piece;
     Piece::Type promotionPiece = Piece::Type::BLANK;
 
+    Move(): from(-1), to(-1), piece(Piece::Type::BLANK), promotionPiece(Piece::Type::BLANK) {}
+
     Move(Position from, Position to, Piece::Type piece, Piece::Type promotionPiece = Piece::Type::BLANK)
         : from(from), to(to), piece(piece), promotionPiece(promotionPiece) {}
+
+    Move(const Move& other) : from(other.from), to(other.to), piece(other.piece), promotionPiece(other.promotionPiece) {}
+
+    Move(Move&& other) : from(other.from), to(other.to), piece(other.piece), promotionPiece(other.promotionPiece) {}
+
+    Move &operator=(const Move &other)
+    {
+        from = other.from;
+        to = other.to;
+        piece = other.piece;
+        promotionPiece = other.promotionPiece;
+        return *this;
+    }
 
     bool operator==(Move const &other) const
     {

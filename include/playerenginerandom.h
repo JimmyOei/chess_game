@@ -4,15 +4,13 @@
 #include <random>
 
 #include "player.h"
-#include "move.h"
-#include "logger.h"
 
 class PlayerEngineRandom : public Player
 {
 public:
   Move getMove(Game game) override
   {
-    logIt(LogLevel::INFO) << "Engine is making a random move";
+    logIt(LogLevel::INFO) << "Player Engine Random is calculating a random move";
     std::vector<Move> allLegalMoves;
     for (int i = 0; i < BOARD_SIZE; i++)
     {

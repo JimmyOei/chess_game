@@ -66,7 +66,7 @@ void Interface::menuGamemode(Piece::Color const color)
         {
             std::cout << ">> Input the player for black" << std::endl;
         }
-        std::cout << ">> \"1\": human player | \"2\": random move engine" << std::endl
+        std::cout << ">> \"1\": human player | \"2\": random move engine | \"3\": minimax engine" << std::endl
                   << std::endl;
         getline(std::cin, playerInput);
         std::cout << std::endl;
@@ -79,6 +79,9 @@ void Interface::menuGamemode(Piece::Color const color)
                 return;
             case '2':
                 color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerEngineRandom>() : playerBlack = std::make_unique<PlayerEngineRandom>();
+                return;
+            case '3':
+                color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerEngineMiniMax>() : playerBlack = std::make_unique<PlayerEngineMiniMax>();
                 return;
             }
         }

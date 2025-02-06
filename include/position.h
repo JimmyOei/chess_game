@@ -1,10 +1,9 @@
 #ifndef POSITION_H
 #define POSITION_H
 
-#include "game.h"
-#include "direction.h"
-
 #include <iostream>
+
+#include "direction.h"
 
 /**
  * @brief Class for a position on the chess board

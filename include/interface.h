@@ -9,12 +9,10 @@
 #include <vector>
 
 #include "game.h"
-#include "piece.h"
 #include "player.h"
 #include "playerhuman.h"
 #include "playerenginerandom.h"
-#include "logger.h"
-#include "position.h"
+#include "playerengineminimax.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -83,7 +81,7 @@ private:
     SDL_Window *window;
     SDL_Renderer *renderer;
 
-    std::unordered_map<Piece::Type, SDL_Texture*> texturePieces;
+    std::unordered_map<Piece::Type, SDL_Texture *> texturePieces;
 
     int screenWidth;
     int screenHeight;
@@ -121,7 +119,7 @@ private:
 
     /**
      * @brief getter for the texture of a piece
-     * 
+     *
      * @param piece piece to get the texture of
      * @return SDL_Texture* texture of the piece
      *          or throws an invalid argument exception if the piece is not found

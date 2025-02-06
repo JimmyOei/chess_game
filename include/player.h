@@ -2,7 +2,7 @@
 #define PLAYER_H
 
 #include "move.h"
-
+#include "game.h"
 class Player
 {
 public:
