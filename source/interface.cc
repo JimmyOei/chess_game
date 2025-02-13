@@ -334,7 +334,7 @@ void Interface::handlePlayerTurn()
 {
     if (game->isGameOver())
     {
-        std::cout << "Checkmate! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won." << std::endl;
+        logIt(LogLevel::INFO) << "Checkmate! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won.";
         gameOver = true;
         return;
     }

@@ -59,8 +59,13 @@ void Game::passTurn(Position newEnPassantPos = -1)
     else
     {
         turn = Piece::Color::WHITE;
+        moveCounter++;
     }
     enPassantPos = newEnPassantPos;
+}
+
+int Game::getMoveCounter() {
+    return moveCounter;
 }
 
 Piece::Color Game::getTurn()
@@ -117,7 +122,7 @@ bool Game::isKingInCheck(Piece::Color const color)
             tmpPos += cardinal;
         }
 
-        if (tmpPos.isValid())
+        if (tmpPos.isValid() && (prevPos.getRow() == tmpPos.getRow() || prevPos.getColumn() == tmpPos.getColumn()))
         {
             Piece::Type piece = getPieceAtPos(tmpPos);
             if (
@@ -141,7 +146,7 @@ bool Game::isKingInCheck(Piece::Color const color)
             tmpPos += diagonal;
         }
 
-        if (tmpPos.isValid())
+        if (tmpPos.isValid() && abs(prevPos.getColumn() - tmpPos.getColumn()) == abs(prevPos.getRow() - tmpPos.getRow()))
         {
             Piece::Type piece = getPieceAtPos(tmpPos);
             if (

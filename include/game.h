@@ -45,6 +45,8 @@ public:
      */
     Piece::Color getTurn();
 
+    int getMoveCounter();
+
     /**
      * @brief getter for the position of the en passant pawn
      */
@@ -138,6 +140,8 @@ private:
     bool blackCastlingKingside;
     Position whiteKingPos;
     Position blackKingPos;
+
+    int moveCounter = 0;
 };
 
 #endif

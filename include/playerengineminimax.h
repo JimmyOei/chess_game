@@ -3,6 +3,8 @@
 
 #include "player.h"
 
+#define DEFAULT_MAX_DEPTH 4
+
 class PlayerEngineMiniMax : public Player
 {
 public:
@@ -16,6 +18,14 @@ private:
   int maxDepth;
 
   int evaluateGame(Game game);
+
+  int evaluatePieceMobility(Game game);
+
+  int evaluatePieceDevelopment(Game game);
+
+  int evaluatePawnStructure(Game game);
+
+  int evaluatePieceValue(Game game);
 
   std::vector<Move> getAllLegalMoves(Game game);
 

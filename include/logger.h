@@ -1,7 +1,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#define LOG_LEVEL LogLevel::DEBUG
+#define LOG_LEVEL LogLevel::INFO
 
 #include <iostream>
 #include <sstream>

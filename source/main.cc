@@ -2,6 +2,9 @@
 
 #include "../include/interface.h"
 
+#define TARGET_FPS 60
+#define ENGINE_DELAY 1000
+
 int main(int argc, char *argv[])
 {
     std::cout << "---------========== Chess Game ==========----------" << std::endl
@@ -9,9 +12,10 @@ int main(int argc, char *argv[])
               << "  Programmed in C++, with SDL 2.0                " << std::endl
               << "-------------------------------------------------" << std::endl
               << std::endl;
-    int const frameDelay = 1000 / 60;
+    int const frameDelay = 1000 / TARGET_FPS;
     Interface *interface = new Interface;
     Uint32 frameStart;
+    Uint32 lastEngineMove = SDL_GetTicks();
     int frameTime;
     SDL_Event event;
 
@@ -21,20 +25,23 @@ int main(int argc, char *argv[])
     {
         frameStart = SDL_GetTicks();
 
-        if (!interface->isGameOver())
+        /* Process engine moves */
+        if (!interface->isGameOver() && frameStart - lastEngineMove >= ENGINE_DELAY)
         {
+            lastEngineMove = frameStart;
             interface->handlePlayerTurn();
         }
         interface->render();
 
-        if (SDL_WaitEvent(&event) != 0)
+        /* Event handling */
+        while (SDL_PollEvent(&event))
         {
             interface->eventHandler(event);
-            interface->render();
         }
-        frameTime = SDL_GetTicks() - frameStart;
 
-        if (frameDelay > frameStart)
+        /* Frame timing */
+        frameTime = SDL_GetTicks() - frameStart;
+        if (frameDelay > frameTime)
         {
             SDL_Delay(frameDelay - frameTime);
         }
