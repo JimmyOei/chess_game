@@ -14,6 +14,7 @@ set(SOURCES
     source/game.cc  
     source/playerengineminimax.cc
     source/interface.cc  
+    source/testsuite.cc
 )  
 
 # Create the executable  

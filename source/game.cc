@@ -12,6 +12,8 @@ void Game::initGame()
     blackCastlingKingside = true;
     whiteKingPos = 0;
     blackKingPos = 0;
+    result = Result::ONGOING;
+    moveCounter = 1;
 
     for (int i = 0; i < BOARD_SIZE; i++)
     {
@@ -45,7 +47,9 @@ Game::Game(Game const &game)
       blackCastlingQueenside(game.blackCastlingQueenside),
       blackCastlingKingside(game.blackCastlingKingside),
       whiteKingPos(game.whiteKingPos),
-      blackKingPos(game.blackKingPos)
+      blackKingPos(game.blackKingPos),
+      moveCounter(game.moveCounter),
+      result(game.result)
 {
     std::copy(game.board, game.board + BOARD_SIZE, board);
 }
@@ -64,8 +68,14 @@ void Game::passTurn(Position newEnPassantPos = -1)
     enPassantPos = newEnPassantPos;
 }
 
-int Game::getMoveCounter() {
+int Game::getMoveCounter()
+{
     return moveCounter;
+}
+
+Result Game::getResult()
+{
+    return result;
 }
 
 Piece::Color Game::getTurn()
@@ -105,6 +115,36 @@ Piece::Type Game::getPieceAtPos(Position const pos)
     }
 
     return board[pos];
+}
+
+std::vector<std::pair<Piece::Type, Position>> Game::getAllPiecesForColor(Piece::Color const color)
+{
+    std::vector<std::pair<Piece::Type, Position>> pieces;
+    for (int i = 0; i < BOARD_SIZE; i++)
+    {
+        if (board[i] != Piece::Type::BLANK && Piece::getColorOfPiece(board[i]) == color)
+        {
+            pieces.push_back(std::make_pair(board[i], Position(i)));
+        }
+    }
+    return pieces;
+}
+
+std::vector<Move> Game::getAllLegalMoves()
+{
+    std::vector<Move> allLegalMoves;
+    std::vector<std::pair<Piece::Type, Position>> allPieces = getAllPiecesForColor(getTurn());
+
+    for (auto [piece, pos] : allPieces)
+    {
+        std::vector<Move> legalMoves = getLegalMovesForPos(pos);
+        if (legalMoves.size() > 0)
+        {
+            allLegalMoves.insert(allLegalMoves.end(), legalMoves.begin(), legalMoves.end());
+        }
+    }
+
+    return allLegalMoves;
 }
 
 bool Game::isKingInCheck(Piece::Color const color)
@@ -638,6 +678,11 @@ void Game::makeMove(Move const move)
 
 bool Game::isGameOver()
 {
+    if (result != Result::ONGOING)
+    {
+        return true;
+    }
+
     bool isCheck = isKingInCheck(turn);
     if (isKingInCheck(turn))
     {
@@ -653,8 +698,46 @@ bool Game::isGameOver()
                 }
             }
         }
+        result = turn == Piece::Color::WHITE ? Result::BLACK_WIN : Result::WHITE_WIN;
         return true;
     }
+
+    /* Draws */
+    std::vector<std::pair<Piece::Type, Position>> whitePieces = getAllPiecesForColor(Piece::Color::WHITE);
+    std::vector<std::pair<Piece::Type, Position>> blackPieces = getAllPiecesForColor(Piece::Color::BLACK);
+    if (whitePieces.size() == 1 && blackPieces.size() == 1)
+    {
+        result = Result::DRAW;
+        return true;
+    }
+    else if (whitePieces.size() == 1 && blackPieces.size() == 2)
+    {
+        if (blackPieces[0].first == Piece::Type::BLACK_KNIGHT || blackPieces[1].first == Piece::Type::BLACK_KNIGHT || blackPieces[0].first == Piece::Type::BLACK_BISHOP || blackPieces[1].first == Piece::Type::BLACK_BISHOP)
+        {
+            result = Result::DRAW;
+            return true;
+        }
+    }
+    else if (whitePieces.size() == 2 && blackPieces.size() == 1)
+    {
+        if (whitePieces[0].first == Piece::Type::WHITE_KNIGHT || whitePieces[1].first == Piece::Type::WHITE_KNIGHT || whitePieces[0].first == Piece::Type::WHITE_BISHOP || whitePieces[1].first == Piece::Type::WHITE_BISHOP)
+        {
+            result = Result::DRAW;
+            return true;
+        }
+    }
+    else if (whitePieces.size() == 2 && blackPieces.size() == 2)
+    {
+        if (((whitePieces[0].first == Piece::Type::WHITE_BISHOP || blackPieces[1].first == Piece::Type::BLACK_BISHOP) ||
+             (whitePieces[0].first == Piece::Type::WHITE_KNIGHT || blackPieces[1].first == Piece::Type::BLACK_KNIGHT)) &&
+            ((blackPieces[0].first == Piece::Type::BLACK_BISHOP || blackPieces[1].first == Piece::Type::BLACK_BISHOP) ||
+             (blackPieces[0].first == Piece::Type::BLACK_KNIGHT || blackPieces[1].first == Piece::Type::BLACK_KNIGHT)))
+        {
+            result = Result::DRAW;
+            return true;
+        }
+    }
+
     return false;
 }
 

@@ -16,7 +16,7 @@ std::vector<Move> PlayerEngineMiniMax::getAllLegalMoves(Game game)
     }
   }
 
-  if(allLegalMoves.size() == 0)
+  if (allLegalMoves.size() == 0)
   {
     logIt(LogLevel::ERROR) << "Engine has no legal moves to make";
     throw std::runtime_error("Engine has no legal moves to make");
@@ -119,56 +119,39 @@ int PlayerEngineMiniMax::evaluatePieceMobility(Game game)
   return score;
 }
 
-int PlayerEngineMiniMax::evaluatePieceDevelopment(Game game)
+int PlayerEngineMiniMax::evaluatePiecePlacement(Game game)
 {
-  if(game.getMoveCounter() > 15) {
-    return 0;
-  }
-
+  // TODO
+  return 0;
   int score = 0;
-  if(game.getPieceAtPos(4) == Piece::Type::WHITE_KING) {
-    score -= 5;
-  }
-  if(game.getPieceAtPos(60) == Piece::Type::BLACK_KING) {
-    score += 5;
-  }
 
-  if(game.getPieceAtPos(1) == Piece::Type::WHITE_KNIGHT) {
-    score -= 5;
-  }
-  if(game.getPieceAtPos(2) == Piece::Type::WHITE_BISHOP) {
-    score -= 5;
-  }
-  if(game.getPieceAtPos(3) == Piece::Type::WHITE_QUEEN) {
-    score -= 5;
-  }
-  if(game.getPieceAtPos(5) == Piece::Type::WHITE_BISHOP) {
-    score -= 5;
-  }
-  if(game.getPieceAtPos(6) == Piece::Type::WHITE_KNIGHT) {
-    score -= 5;
-  }
+  for (int i = 0; i < BOARD_SIZE; i++)
+  {
+    Piece::Type piece = game.getPieceAtPos(i);
 
-  if(game.getPieceAtPos(57) == Piece::Type::BLACK_KNIGHT) {
-    score += 5;
-  }
-  if(game.getPieceAtPos(58) == Piece::Type::BLACK_BISHOP) {
-    score += 5;
-  }
-  if(game.getPieceAtPos(59) == Piece::Type::BLACK_QUEEN) {
-    score += 5;
-  }
-  if(game.getPieceAtPos(61) == Piece::Type::BLACK_BISHOP) {
-    score += 5;
-  }
-  if(game.getPieceAtPos(62) == Piece::Type::BLACK_KNIGHT) {
-    score += 5;
+    if (piece == Piece::Type::BLANK)
+    {
+      continue;
+    }
+
+    switch (piece)
+    {
+    case Piece::Type::WHITE_PAWN:
+      break;
+    case Piece::Type::BLACK_PAWN:
+
+      break;
+
+    default:
+      break;
+    }
   }
 
   return score;
 }
 
-int PlayerEngineMiniMax::evaluatePawnStructure(Game game) {
+int PlayerEngineMiniMax::evaluatePawnStructure(Game game)
+{
   int score = 0;
 
   /* Check double pawns */
@@ -189,11 +172,11 @@ int PlayerEngineMiniMax::evaluatePawnStructure(Game game) {
     }
     if (whitePawns > 1)
     {
-      score -= 5*(whitePawns-1);
+      score -= 5 * (whitePawns - 1);
     }
     if (blackPawns > 1)
     {
-      score += 5*(blackPawns-1);
+      score += 5 * (blackPawns - 1);
     }
   }
 
@@ -206,7 +189,7 @@ int PlayerEngineMiniMax::evaluateGame(Game game)
 
   score += evaluatePieceValue(game);
   score += evaluatePieceMobility(game);
-  score += evaluatePieceDevelopment(game);
+  score += evaluatePiecePlacement(game);
   score += evaluatePawnStructure(game);
 
   if (game.isGameOver())

@@ -21,7 +21,7 @@ private:
 
   int evaluatePieceMobility(Game game);
 
-  int evaluatePieceDevelopment(Game game);
+  int evaluatePiecePlacement(Game game);
 
   int evaluatePawnStructure(Game game);
 

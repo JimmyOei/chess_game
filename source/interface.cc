@@ -9,6 +9,7 @@ Interface::Interface() : window(nullptr),
                          boardStartingY(0),
                          running(false),
                          gameOver(false),
+                         testSuite(TestSuite()),
                          dragPiece(Piece::Type::BLANK),
                          dragPiecePos(Position(-1)),
                          dragPieceLegalMoves(std::vector<Move>()),
@@ -122,7 +123,9 @@ bool Interface::menu()
         std::cout << ">> What would you like to do? (Input a letter)" << std::endl
                   << "\"S\": Start the Chess game" << std::endl
                   << "\"P\": Change the Player types" << std::endl
-                  << "\"Q\": Quit program" << std::endl
+                  << "\"T\": Open the Test menu" << std::endl
+                  << "\"Q\": Quit program"
+                  << std::endl
                   << std::endl;
         getline(std::cin, input);
         std::cout << std::endl;
@@ -144,6 +147,10 @@ bool Interface::menu()
             case 'c':
                 menuFEN();
                 render();
+                break;
+            case 'T':
+            case 't':
+                testSuite.menu();
                 break;
             case 'Q':
             case 'q':
@@ -241,6 +248,11 @@ void Interface::eventHandler(SDL_Event event)
         }
         break;
     case SDL_MOUSEBUTTONDOWN:
+        if (game->getTurn() == Piece::Color::WHITE ? !playerWhite->isHuman() : !playerBlack->isHuman())
+        {
+            break;
+        }
+
         if (event.button.button == SDL_BUTTON_LEFT && !gameOver)
         {
             if (dragPiece == Piece::Type::BLANK)
@@ -253,6 +265,11 @@ void Interface::eventHandler(SDL_Event event)
         }
         break;
     case SDL_MOUSEBUTTONUP:
+        if (game->getTurn() == Piece::Color::WHITE ? !playerWhite->isHuman() : !playerBlack->isHuman())
+        {
+            break;
+        }
+
         if (dragPiece != Piece::Type::BLANK)
         {
             int mouseX, mouseY;
@@ -334,7 +351,21 @@ void Interface::handlePlayerTurn()
 {
     if (game->isGameOver())
     {
-        logIt(LogLevel::INFO) << "Checkmate! " << ((game->getTurn() == Piece::Color::WHITE) ? Piece::Color::BLACK : Piece::Color::WHITE) << " won.";
+        switch (game->getResult())
+        {
+        case Result::WHITE_WIN:
+            logIt(LogLevel::INFO) << "Game over. White wins!";
+            break;
+        case Result::BLACK_WIN:
+            logIt(LogLevel::INFO) << "Game over. Black wins!";
+            break;
+        case Result::DRAW:
+            logIt(LogLevel::INFO) << "Game over. Draw!";
+            break;
+        default:
+            logIt(LogLevel::ERROR) << "Game over. Game still says it's ongoing. This should not happen.";
+            throw std::invalid_argument("Game over. Game still says it's ongoing. This should not happen.");
+        }
         gameOver = true;
         return;
     }

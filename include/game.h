@@ -12,6 +12,14 @@
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
+enum Result
+{
+    WHITE_WIN,
+    BLACK_WIN,
+    DRAW,
+    ONGOING
+};
+
 class Game
 {
 public:
@@ -47,6 +55,8 @@ public:
 
     int getMoveCounter();
 
+    Result getResult();
+
     /**
      * @brief getter for the position of the en passant pawn
      */
@@ -79,24 +89,34 @@ public:
     Piece::Type getPieceAtPos(Position const pos);
 
     /**
+     * @brief gets all pieces of a given color
+     *
+     * @param color color of the pieces to get
+     * @return vector of all pieces of the given color as a pair of the piece type and the position
+     */
+    std::vector<std::pair<Piece::Type, Position>> getAllPiecesForColor(Piece::Color const color);
+
+    std::vector<Move> getAllLegalMoves();
+
+    /**
      * @brief checks if the king of a given color is in check
-     * 
+     *
      * @param color color of the king to check
      * @return true if the king is in check, otherwise false
      */
     bool isKingInCheck(Piece::Color const color);
 
-    /** 
+    /**
      * @brief gets all legal moves for a given position
-     * 
+     *
      * @param pos position to get the legal moves for
      * @return vector of legal moves for the given position
-    */
+     */
     std::vector<Move> getLegalMovesForPos(Position const pos);
 
     /**
      * @brief makes a move on the board
-     * 
+     *
      * @param move move to make
      * @return true if the move is legal and made, otherwise false
      */
@@ -141,7 +161,8 @@ private:
     Position whiteKingPos;
     Position blackKingPos;
 
-    int moveCounter = 0;
+    int moveCounter;
+    Result result;
 };
 
 #endif

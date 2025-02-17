@@ -12,6 +12,7 @@
 #include "playerhuman.h"
 #include "playerenginerandom.h"
 #include "playerengineminimax.h"
+#include "testsuite.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -76,6 +77,7 @@ private:
     std::unique_ptr<Player> playerWhite;
     std::unique_ptr<Player> playerBlack;
     std::unique_ptr<Game> game;
+    TestSuite testSuite;
 
     SDL_Window *window;
     SDL_Renderer *renderer;
