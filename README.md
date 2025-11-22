@@ -9,12 +9,6 @@ Below is the installation process for ubuntu:
 3. Compile: `make`
 4. Run: `./Chess_game`
 
-## TODO
-- end interface (implement mate, winning the game)
-
-*Ideas*
-- random move opponent
-
 ## License
 
 The chess pieces in this project are made by Cburnett and unchanged.
