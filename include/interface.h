@@ -1,15 +1,18 @@
-#ifndef INTERFACE_H 
+#ifndef INTERFACE_H
 #define INTERFACE_H
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#include <iostream>
 #include <stdint.h>
 #include <vector>
 
-#include "state.h"
 #include "game.h"
+#include "player.h"
+#include "playerhuman.h"
+#include "playerenginerandom.h"
+#include "playerengineminimax.h"
+#include "testsuite.h"
 
 #define MIN_SCREEN_WIDTH 500
 #define MIN_SCREEN_HEIGHT 500
@@ -19,82 +22,122 @@
 
 #define NUM_OF_PIECES 12
 
-#define DARK_PAWN_IMG "./pieces/darkPawn.png"
-#define LIGHT_PAWN_IMG "./pieces/lightPawn.png"
-#define DARK_KNIGT_IMG "./pieces/darkKnight.png"
-#define LIGHT_KNIGHT_IMG "./pieces/lightKnight.png"
-#define DARK_BISHOP_IMG "./pieces/darkBishop.png"
-#define LIGHT_BISHOP_IMG "./pieces/lightBishop.png"
-#define DARK_ROOK_IMG "./pieces/darkRook.png"
-#define LIGHT_ROOK_IMG "./pieces/lightRook.png"
-#define DARK_QUEEN_IMG "./pieces/darkQueen.png"
-#define LIGHT_QUEEN_IMG "./pieces/lightQueen.png"
-#define DARK_KING_IMG "./pieces/darkKing.png"
-#define LIGHT_KING_IMG "./pieces/lightKing.png"
+#define DARK_PAWN_IMG "../pieces/darkPawn.png"
+#define LIGHT_PAWN_IMG "../pieces/lightPawn.png"
+#define DARK_KNIGT_IMG "../pieces/darkKnight.png"
+#define LIGHT_KNIGHT_IMG "../pieces/lightKnight.png"
+#define DARK_BISHOP_IMG "../pieces/darkBishop.png"
+#define LIGHT_BISHOP_IMG "../pieces/lightBishop.png"
+#define DARK_ROOK_IMG "../pieces/darkRook.png"
+#define LIGHT_ROOK_IMG "../pieces/lightRook.png"
+#define DARK_QUEEN_IMG "../pieces/darkQueen.png"
+#define LIGHT_QUEEN_IMG "../pieces/lightQueen.png"
+#define DARK_KING_IMG "../pieces/darkKing.png"
+#define LIGHT_KING_IMG "../pieces/lightKing.png"
 
 #define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
-// TODO: en passant implementation different
-class Interface {
-    public: 
-        Interface();
+/**
+ * @brief Interface class for the chess game
+ *
+ * This class is responsible for the graphical user interface of the chess game.
+ * It uses SDL2 and SDL2_image for rendering and handling events.
+ */
+class Interface
+{
+public:
+    /**
+     * @brief constructor for the interface object
+     */
+    Interface();
 
-        ~Interface();
+    /**
+     * @brief destructor for the interface object
+     *
+     * Cleans up SDL and SDL_image
+     */
+    ~Interface();
 
-        bool isRunning();
+    /**
+     * @brief getter for if the interface is running
+     */
+    bool isRunning();
 
-        void initiate();
+    bool isGameOver();
 
-        void eventHandler(SDL_Event event);
+    void initiate();
 
-        void render();
+    void handlePlayerTurn();
 
-    private:
-        Game* game;
+    void eventHandler(SDL_Event event);
 
-        SDL_Window* window;
-        SDL_Renderer* renderer;
-        
-        SDL_Texture* pieces[NUM_OF_PIECES];
+    void render();
 
-        int screenWidth;
-        int screenHeight;
+private:
+    std::unique_ptr<Player> playerWhite;
+    std::unique_ptr<Player> playerBlack;
+    std::unique_ptr<Game> game;
+    TestSuite testSuite;
 
-        int squareEdge;
-        int boardStartingX;
-        int boardStartingY;
+    SDL_Window *window;
+    SDL_Renderer *renderer;
 
-        bool running;
+    std::unordered_map<Piece::Type, SDL_Texture *> texturePieces;
 
-        uint8_t dragPieceByte;
-        int dragPieceTextureMouseX;
-        int dragPieceTextureMouseY;
-        int dragPiecePos;
-        std::vector<int>* dragPieceLegalMoves;
+    int screenWidth;
+    int screenHeight;
 
-        void menuGamemode(bool const color);
+    // Length of an edge of a square on the board
+    int squareEdgeLength;
 
-        void menuFEN();
+    // Top left square position of the board on the window
+    int boardStartingX;
+    int boardStartingY;
 
-        bool menu();
+    // bool for if the interface is running
+    bool running;
+    bool gameOver;
 
-        uint8_t menuPawnPromotion();
+    Piece::Type dragPiece;
+    int dragPieceTextureMouseX;
+    int dragPieceTextureMouseY;
+    Position dragPiecePos;
+    std::vector<Move> dragPieceLegalMoves;
 
-        void loadPieces();
+    void menuGamemode(Piece::Color const color);
 
-        SDL_Texture* getTexturePieceFromByte(uint8_t byte);
+    void menuFEN();
 
-        void renderBoard();
+    bool menu();
 
-        void renderState();
+    Piece::Type menuPawnPromotion();
 
-        void resizeWindow(int const height, int const width);
+    /**
+     * @brief loads the textures for the pieces into the texturePieces unordered map
+     *          as SDL_Texture pointers
+     */
+    void loadTexturePieces();
 
-        void pickupDragPiece(int const mouseX, int const mouseY);
+    /**
+     * @brief getter for the texture of a piece
+     *
+     * @param piece piece to get the texture of
+     * @return SDL_Texture* texture of the piece
+     *          or throws an invalid argument exception if the piece is not found
+     */
+    SDL_Texture *getTexturePiece(Piece::Type piece);
 
-        void renderDragPiece(int const mouseX, int const mouseY);
+    void renderBoard();
 
-        void releaseDragPiece(int const mouseX, int const mouseY);
+    void renderState();
+
+    void resizeWindow(int const height, int const width);
+
+    void pickupDragPiece(int const mouseX, int const mouseY);
+
+    void renderDragPiece(int const mouseX, int const mouseY);
+
+    void releaseDragPiece(int const mouseX, int const mouseY);
 };
 
 #endif

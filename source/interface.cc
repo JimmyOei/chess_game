@@ -1,208 +1,300 @@
 #include "../include/interface.h"
 
-
-Interface::Interface() {
-    window = nullptr;
-    renderer = nullptr;
-    for(int i = 0; i < NUM_OF_PIECES; i++) {
-        pieces[i] = nullptr;
-    }
-    screenWidth = STARTING_SCREEN_WIDTH;
-    screenHeight = STARTING_SCREEN_HEIGHT;
-    squareEdge = 0;
-    boardStartingX = 0;
-    boardStartingY = 0;
-    running = false;
-    dragPieceByte = NO_PIECE;
-    dragPiecePos = -1;
-    dragPieceLegalMoves = nullptr;
-    game = new Game;
+Interface::Interface() : window(nullptr),
+                         renderer(nullptr),
+                         screenWidth(STARTING_SCREEN_WIDTH),
+                         screenHeight(STARTING_SCREEN_HEIGHT),
+                         squareEdgeLength(0),
+                         boardStartingX(0),
+                         boardStartingY(0),
+                         running(false),
+                         gameOver(false),
+                         testSuite(TestSuite()),
+                         dragPiece(Piece::Type::BLANK),
+                         dragPiecePos(Position(-1)),
+                         dragPieceLegalMoves(std::vector<Move>()),
+                         game(std::make_unique<Game>()),
+                         playerWhite(std::make_unique<PlayerHuman>()),
+                         playerBlack(std::make_unique<PlayerEngineRandom>())
+{
 }
 
-Interface::~Interface() {
-    if(window) {
+Interface::~Interface()
+{
+    /* Destroy window */
+    if (window)
+    {
         SDL_DestroyWindow(window);
     }
-    if(renderer) {
+
+    /* Destroy renderer */
+    if (renderer)
+    {
         SDL_DestroyRenderer(renderer);
     }
-    for(int i = 0; i < NUM_OF_PIECES; i++) {
-        if(pieces[i]) {
-            SDL_DestroyTexture(pieces[i]);
-        }
+
+    /* Destroy all SDL textures */
+    for (auto &[piece, texture] : texturePieces)
+    {
+        SDL_DestroyTexture(texture);
     }
+
+    /* Quit IMG and SDL */
     IMG_Quit();
     SDL_Quit();
-    if(game) {
-        delete game;
-    }
-    if(dragPieceLegalMoves) {
-        delete dragPieceLegalMoves;
-    }
 };
 
-bool Interface::isRunning() {
+bool Interface::isRunning()
+{
     return running;
 }
 
-void Interface::menuGamemode(bool const color) {
-    while(true) {
-        std::string inputGamemode;
-        if(color) {
-            std::cout << ">> Input the gamemode for white" << std::endl;
+bool Interface::isGameOver()
+{
+    return gameOver;
+}
+
+void Interface::menuGamemode(Piece::Color const color)
+{
+    while (true)
+    {
+        std::string playerInput;
+        if (color == Piece::Color::WHITE)
+        {
+            std::cout << ">> Input the player for white" << std::endl;
         }
-        else{
-            std::cout << ">> Input the gamemode for black" << std::endl;
+        else
+        {
+            std::cout << ">> Input the player for black" << std::endl;
         }
-        std::cout << ">> \"1\": player | \"2\": random move computer" << std::endl << std::endl;
-        getline(std::cin, inputGamemode);
+        std::cout << ">> \"1\": human player | \"2\": random move engine | \"3\": minimax engine" << std::endl
+                  << std::endl;
+        getline(std::cin, playerInput);
         std::cout << std::endl;
-        if(inputGamemode.length() == 1) {
-            switch(inputGamemode[0]) {
-                case '1':
-                    game->setGamemode(color, 1);
-                    return;
-                case '2':
-                    game->setGamemode(color, 2);
-                    return;
+        if (playerInput.length() == 1)
+        {
+            switch (playerInput[0])
+            {
+            case '1':
+                color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerHuman>() : playerBlack = std::make_unique<PlayerHuman>();
+                return;
+            case '2':
+                color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerEngineRandom>() : playerBlack = std::make_unique<PlayerEngineRandom>();
+                return;
+            case '3':
+                color == Piece::Color::WHITE ? playerWhite = std::make_unique<PlayerEngineMiniMax>() : playerBlack = std::make_unique<PlayerEngineMiniMax>();
+                return;
             }
         }
-        std::cerr << ">> Invalid input, please try again" << std::endl << std::endl;
+        std::cerr << ">> Invalid input, please try again" << std::endl
+                  << std::endl;
     }
 }
 
-void Interface::menuFEN() {
-    while(true) {
-        std::string FEN;
-        std::cout << ">> Input a FEN-notation for the game or \"default\" for the standard opening position" << std::endl
-                  << ">> Example of expected input: \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3\"" << std::endl << std::endl;
-        getline(std::cin, FEN);
-        std::cout << std::endl;
-        if(FEN == "default") {
-            FEN = STANDARD_OPENING_FEN;
-        }
-        if(game->state->setStateFromFEN(FEN)) {
-            return;
-        } // correct FEN notation
-        std::cerr << ">> The given FEN-notation is invalid: " << FEN << std::endl 
-                  << ">> Please try again " << std::endl << std::endl;
-    }
+void Interface::menuFEN()
+{
+    // while (true)
+    // {
+    //     std::string FEN;
+    //     std::cout << ">> Input a FEN-notation for the game or \"default\" for the standard opening position" << std::endl
+    //               << ">> Example of expected input: \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3\"" << std::endl
+    //               << std::endl;
+    //     getline(std::cin, FEN);
+    //     std::cout << std::endl;
+    //     if (FEN == "default")
+    //     {
+    //         FEN = STANDARD_OPENING_FEN;
+    //     }
+    //     if (game->state->setStateFromFEN(FEN))
+    //     {
+    //         return;
+    //     } // correct FEN notation
+    //     std::cerr << ">> The given FEN-notation is invalid: " << FEN << std::endl
+    //               << ">> Please try again " << std::endl
+    //               << std::endl;
+    // }
 }
 
-bool Interface::menu() {
-    while(true) {
+bool Interface::menu()
+{
+    while (true)
+    {
         std::string input;
-        std::cout << ">> What would you like to do? (Input a letter)" << std::endl 
-                  << "\"P\": Play a Chess game" << std::endl
-                  << "\"C\": Change the starting position of the Chess game" << std::endl
-                  << "\"Q\": Quit program" << std::endl
+        std::cout << ">> What would you like to do? (Input a letter)" << std::endl
+                  << "\"S\": Start the Chess game" << std::endl
+                  << "\"P\": Change the Player types" << std::endl
+                  << "\"T\": Open the Test menu" << std::endl
+                  << "\"Q\": Quit program"
+                  << std::endl
                   << std::endl;
         getline(std::cin, input);
         std::cout << std::endl;
-        if(input.length() == 1) {
-            switch(input[0]) {
-                case 'P': case 'p':
-                    menuGamemode(WHITE);
-                    menuGamemode(BLACK);
-                    std::cout << "The game will begin. Good luck!" << std::endl << std::endl;
-                    return true;
-                case 'C': case 'c': menuFEN(); render(); break;
-                case 'Q': case 'q': return false;
-                default:
-                    std::cout << "Invalid input, please try again" << std::endl << std::endl;
+        if (input.length() == 1)
+        {
+            switch (input[0])
+            {
+            case 'S':
+            case 's':
+                std::cout << "The game will begin. Good luck!" << std::endl
+                          << std::endl;
+                return true;
+            case 'P':
+            case 'p':
+                menuGamemode(Piece::Color::WHITE);
+                menuGamemode(Piece::Color::BLACK);
+                break;
+            case 'C':
+            case 'c':
+                menuFEN();
+                render();
+                break;
+            case 'T':
+            case 't':
+                testSuite.menu();
+                break;
+            case 'Q':
+            case 'q':
+                return false;
+            default:
+                std::cout << "Invalid input, please try again" << std::endl
+                          << std::endl;
             }
         }
-        else {
-            std::cout << "Invalid input, please try again" << std::endl << std::endl;
+        else
+        {
+            std::cout << "Invalid input, please try again" << std::endl
+                      << std::endl;
         }
-
     }
 }
 
-uint8_t Interface::menuPawnPromotion() {
-    bool const colorOfDragPiece = getColorOfPiece(dragPieceByte);
-    while(true) {
+Piece::Type Interface::menuPawnPromotion()
+{
+    bool const colorOfDragPiece = getColorOfPiece(dragPiece);
+    while (true)
+    {
         std::string input;
-        std::cout << ">> Input the first letter of the piece you would like to promote your pawn to" << std::endl
-                  << ">> \"q\": queen | \"r\": rook | \"b\": bishop | \"k\": knight" << std::endl << std::endl;
+        std::cout << std::endl
+                  << ">> Input the first letter of the piece you would like to promote your pawn to" << std::endl
+                  << ">> \"q\": queen | \"r\": rook | \"b\": bishop | \"k\": knight" << std::endl
+                  << std::endl;
         getline(std::cin, input);
-        if(input.length() == 1) {
-            switch(input[0]) {
-                case 'k': case 'K': return colorOfDragPiece ? WHITE_KNIGHT : BLACK_KNIGHT;
-                case 'b': case 'B': return colorOfDragPiece ? WHITE_BISHOP : BLACK_BISHOP;
-                case 'r': case 'R': return colorOfDragPiece ? WHITE_ROOK : BLACK_ROOK;
-                case 'q': case 'Q': return colorOfDragPiece ? WHITE_QUEEN : BLACK_QUEEN;
+        if (input.length() == 1)
+        {
+            switch (input[0])
+            {
+            case 'k':
+            case 'K':
+                return colorOfDragPiece ? Piece::WHITE_KNIGHT : Piece::BLACK_KNIGHT;
+            case 'b':
+            case 'B':
+                return colorOfDragPiece ? Piece::WHITE_BISHOP : Piece::BLACK_BISHOP;
+            case 'r':
+            case 'R':
+                return colorOfDragPiece ? Piece::WHITE_ROOK : Piece::BLACK_ROOK;
+            case 'q':
+            case 'Q':
+                return colorOfDragPiece ? Piece::WHITE_QUEEN : Piece::BLACK_QUEEN;
             }
         }
-        std::cout << ">> Invalid input, please try again" << std::endl << std::endl;
+        std::cout << ">> Invalid input, please try again" << std::endl
+                  << std::endl;
     }
+    return colorOfDragPiece ? Piece::WHITE_QUEEN : Piece::BLACK_QUEEN;
 }
 
-void Interface::initiate() {
-    if(!menu()) {
-        return;
-    }
-    game->state->setStateFromFEN(STANDARD_OPENING_FEN);
-
-    if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        std::cerr << "Failed to initiate SDL: " << SDL_GetError() << std::endl << std::endl;
+void Interface::initiate()
+{
+    if (!menu())
+    {
         return;
     }
 
-    if(IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG) {
-       std::cerr << "Failed to initiate IMG: " << SDL_GetError() << std::endl << std::endl;
-       return;
+    /* Initiate SDL */
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    {
+        std::cerr << "Failed to initiate SDL: " << SDL_GetError() << std::endl
+                  << std::endl;
+        return;
     }
 
-    window = SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-                                     screenWidth, screenHeight, SDL_WINDOW_RESIZABLE);
+    /* Initiate SDL_Img */
+    if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
+    {
+        std::cerr << "Failed to initiate IMG: " << SDL_GetError() << std::endl
+                  << std::endl;
+        return;
+    }
+
+    /* Set up game window */
+    window = SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                              screenWidth, screenHeight, SDL_WINDOW_RESIZABLE);
     SDL_SetWindowMinimumSize(window, MIN_SCREEN_WIDTH, MIN_SCREEN_HEIGHT);
     renderer = SDL_CreateRenderer(window, -1, 0);
 
-    loadPieces();
+    loadTexturePieces();
 
     running = true;
 }
 
-void Interface::eventHandler(SDL_Event event) {
-    switch(event.type) {
-        case SDL_WINDOWEVENT:
-            if(event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED) {
-                resizeWindow(event.window.data2, event.window.data1);
-            }
+void Interface::eventHandler(SDL_Event event)
+{
+    switch (event.type)
+    {
+    case SDL_WINDOWEVENT:
+        if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+        {
+            resizeWindow(event.window.data2, event.window.data1);
+        }
+        break;
+    case SDL_MOUSEBUTTONDOWN:
+        if (game->getTurn() == Piece::Color::WHITE ? !playerWhite->isHuman() : !playerBlack->isHuman())
+        {
             break;
-        case SDL_MOUSEBUTTONDOWN:
-            if(event.button.button == SDL_BUTTON_LEFT) {
-                if(dragPieceByte == NO_PIECE) {
-                    int mouseX, mouseY;
-                    SDL_GetMouseState(&mouseX, &mouseY);
-                    pickupDragPiece(mouseX, mouseY);
-                }
-            }
-            break;
-        case SDL_MOUSEBUTTONUP:
-            if(dragPieceByte != NO_PIECE) {
+        }
+
+        if (event.button.button == SDL_BUTTON_LEFT && !gameOver)
+        {
+            if (dragPiece == Piece::Type::BLANK)
+            {
+                std::cout << "Picking up piece" << std::endl;
                 int mouseX, mouseY;
                 SDL_GetMouseState(&mouseX, &mouseY);
-                releaseDragPiece(mouseX, mouseY);
+                pickupDragPiece(mouseX, mouseY);
             }
+        }
+        break;
+    case SDL_MOUSEBUTTONUP:
+        if (game->getTurn() == Piece::Color::WHITE ? !playerWhite->isHuman() : !playerBlack->isHuman())
+        {
             break;
-        case SDL_QUIT:
-            running = false;
-            break;
-        default:
-            break;
+        }
+
+        if (dragPiece != Piece::Type::BLANK)
+        {
+            int mouseX, mouseY;
+            SDL_GetMouseState(&mouseX, &mouseY);
+            releaseDragPiece(mouseX, mouseY);
+        }
+        break;
+    case SDL_QUIT:
+        running = false;
+        break;
+    default:
+        break;
     }
 }
 
-void Interface::render() {
+void Interface::render()
+{
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
-    
+    SDL_RenderClear(renderer);
+
     renderBoard();
     renderState();
 
-    if(dragPieceByte != NO_PIECE) {
+    if (dragPiece != Piece::Type::BLANK)
+    {
         int mouseX, mouseY;
         SDL_GetMouseState(&mouseX, &mouseY);
         renderDragPiece(mouseX, mouseY);
@@ -211,195 +303,281 @@ void Interface::render() {
     SDL_RenderPresent(renderer);
 }
 
-void Interface::loadPieces() {
-    char* PNGLocations[NUM_OF_PIECES];
-    PNGLocations[0] = (char*)DARK_PAWN_IMG;
-    PNGLocations[1] = (char*)LIGHT_PAWN_IMG;
-    PNGLocations[2] = (char*)DARK_KNIGT_IMG;
-    PNGLocations[3] = (char*)LIGHT_KNIGHT_IMG;
-    PNGLocations[4] = (char*)DARK_BISHOP_IMG;
-    PNGLocations[5] = (char*)LIGHT_BISHOP_IMG;
-    PNGLocations[6] = (char*)DARK_ROOK_IMG;
-    PNGLocations[7] = (char*)LIGHT_ROOK_IMG;
-    PNGLocations[8] = (char*)DARK_QUEEN_IMG;
-    PNGLocations[9] = (char*)LIGHT_QUEEN_IMG;
-    PNGLocations[10] = (char*)DARK_KING_IMG;
-    PNGLocations[11] = (char*)LIGHT_KING_IMG;
+void Interface::loadTexturePieces()
+{
+    std::unordered_map<Piece::Type, char *> PNGLocations;
+    PNGLocations[Piece::Type::BLACK_PAWN] = (char *)DARK_PAWN_IMG;
+    PNGLocations[Piece::Type::WHITE_PAWN] = (char *)LIGHT_PAWN_IMG;
+    PNGLocations[Piece::Type::BLACK_KNIGHT] = (char *)DARK_KNIGT_IMG;
+    PNGLocations[Piece::Type::WHITE_KNIGHT] = (char *)LIGHT_KNIGHT_IMG;
+    PNGLocations[Piece::Type::BLACK_BISHOP] = (char *)DARK_BISHOP_IMG;
+    PNGLocations[Piece::Type::WHITE_BISHOP] = (char *)LIGHT_BISHOP_IMG;
+    PNGLocations[Piece::Type::BLACK_ROOK] = (char *)DARK_ROOK_IMG;
+    PNGLocations[Piece::Type::WHITE_ROOK] = (char *)LIGHT_ROOK_IMG;
+    PNGLocations[Piece::Type::BLACK_QUEEN] = (char *)DARK_QUEEN_IMG;
+    PNGLocations[Piece::Type::WHITE_QUEEN] = (char *)LIGHT_QUEEN_IMG;
+    PNGLocations[Piece::Type::BLACK_KING] = (char *)DARK_KING_IMG;
+    PNGLocations[Piece::Type::WHITE_KING] = (char *)LIGHT_KING_IMG;
 
-    for(int i = 0; i < NUM_OF_PIECES; i++) {
-        SDL_Surface* image = IMG_Load(PNGLocations[i]);
-        if(!image) {
-            std::cerr << "Failed to load image from: " << PNGLocations[i] << std::endl;
+    for (auto &[piece, PNGLocation] : PNGLocations)
+    {
+        SDL_Surface *image = IMG_Load(PNGLocation);
+        if (!image)
+        {
+            std::cerr << "Failed to load image from: " << PNGLocation << std::endl;
+            throw std::invalid_argument("Failed to load image.");
         }
-        pieces[i] = SDL_CreateTextureFromSurface(renderer, image);
-        if(pieces[i] == NULL) {
+        texturePieces[piece] = SDL_CreateTextureFromSurface(renderer, image);
+        if (texturePieces[piece] == nullptr)
+        {
             std::cerr << "Failed to create texture from image: " << SDL_GetError() << std::endl;
+            throw std::invalid_argument("Failed to create texture from image.");
         }
         SDL_FreeSurface(image);
     }
 }
 
-SDL_Texture* Interface::getTexturePieceFromByte(uint8_t byte) {
-    // Mapping the byte for a piece to its corresponding index in the 'pieces' array
-    switch(byte) {
-        case BLACK_PAWN: return pieces[0];
-        case WHITE_PAWN: return pieces[1];
-        case BLACK_KNIGHT: return pieces[2];
-        case WHITE_KNIGHT: return pieces[3];
-        case BLACK_BISHOP: return pieces[4];
-        case WHITE_BISHOP: return pieces[5];
-        case BLACK_ROOK: return pieces[6];
-        case WHITE_ROOK: return pieces[7];
-        case BLACK_QUEEN: return pieces[8];
-        case WHITE_QUEEN: return pieces[9];
-        case BLACK_KING: return pieces[10];
-        default: return pieces[11];
+SDL_Texture *Interface::getTexturePiece(Piece::Type piece)
+{
+    if (texturePieces.find(piece) == texturePieces.end())
+    {
+        throw std::invalid_argument("Failed to find texture for piece.");
+    }
+
+    return texturePieces[piece];
+}
+
+void Interface::handlePlayerTurn()
+{
+    if (game->isGameOver())
+    {
+        switch (game->getResult())
+        {
+        case Result::WHITE_WIN:
+            logIt(LogLevel::INFO) << "Game over. White wins!";
+            break;
+        case Result::BLACK_WIN:
+            logIt(LogLevel::INFO) << "Game over. Black wins!";
+            break;
+        case Result::DRAW:
+            logIt(LogLevel::INFO) << "Game over. Draw!";
+            break;
+        default:
+            logIt(LogLevel::ERROR) << "Game over. Game still says it's ongoing. This should not happen.";
+            throw std::invalid_argument("Game over. Game still says it's ongoing. This should not happen.");
+        }
+        gameOver = true;
+        return;
+    }
+    if (game->getTurn() == Piece::Color::WHITE)
+    {
+        if (!playerWhite->isHuman())
+        {
+            Move move = playerWhite->getMove(Game(*game));
+            game->makeMove(move);
+            if (move.promotionPiece != Piece::Type::BLANK)
+            {
+                logIt(LogLevel::INFO) << "Player Engine White made move " << move << " with promotion to " << move.promotionPiece;
+            }
+            else
+            {
+                logIt(LogLevel::INFO) << "Player Engine White made move " << move;
+            }
+        }
+    }
+    else
+    {
+        if (!playerBlack->isHuman())
+        {
+            Move move = playerBlack->getMove(Game(*game));
+            game->makeMove(move);
+            if (move.promotionPiece != Piece::Type::BLANK)
+            {
+                logIt(LogLevel::INFO) << "Player Engine Black made move " << move << " with promotion to " << move.promotionPiece;
+            }
+            else
+            {
+                logIt(LogLevel::INFO) << "Player Engine Black made move " << move;
+            }
+        }
     }
 }
 
-void Interface::renderBoard() {
-    squareEdge = (screenHeight * (screenHeight < screenWidth) 
-                         + screenWidth * (screenHeight >= screenWidth)) / BOARD_LENGTH;
+void Interface::renderBoard()
+{
+    // Length of an edge of a square on the board
+    squareEdgeLength = (screenHeight * (screenHeight < screenWidth) + screenWidth * (screenHeight >= screenWidth)) / BOARD_LENGTH;
 
-    boardStartingX = ((screenWidth - (squareEdge * BOARD_LENGTH)) / 2) * (screenWidth > squareEdge);
-    boardStartingY = ((screenHeight - (squareEdge * BOARD_LENGTH)) / 2) * (screenHeight > squareEdge);
+    // Top left square position of the board on the window
+    boardStartingX = ((screenWidth - (squareEdgeLength * BOARD_LENGTH)) / 2) * (screenWidth > squareEdgeLength);
+    boardStartingY = ((screenHeight - (squareEdgeLength * BOARD_LENGTH)) / 2) * (screenHeight > squareEdgeLength);
 
     int pos = 0;
-    int i = 0;
-    for(int y = BOARD_LENGTH-1; y >= 0; y--) {
-        for(int x = 0; x < BOARD_LENGTH; x++) {
+    for (int y = BOARD_LENGTH - 1; y >= 0; y--)
+    {
+        for (int x = 0; x < BOARD_LENGTH; x++)
+        {
             SDL_Rect rect;
-            rect.w = squareEdge;
-            rect.h = squareEdge;
-            rect.x = boardStartingX + x*squareEdge;
-            rect.y = boardStartingY + y*squareEdge;
-            if((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1)) {
-                if(dragPieceLegalMoves && i < dragPieceLegalMoves->size() 
-                   && pos++ == dragPieceLegalMoves->at(i)) {
-                    i++;
+            rect.w = squareEdgeLength;
+            rect.h = squareEdgeLength;
+            rect.x = boardStartingX + x * squareEdgeLength;
+            rect.y = boardStartingY + y * squareEdgeLength;
+            if ((x % 2 == 0 && y % 2 == 0) || (x % 2 == 1 && y % 2 == 1))
+            {
+                /* Painting the color of the white square */
+                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move &move)
+                                 { return move.to == pos; }) != dragPieceLegalMoves.end())
+                {
                     SDL_SetRenderDrawColor(renderer, 228, 228, 150, 255);
-                } // legal move square
-                else {
+                }
+                else
+                {
                     SDL_SetRenderDrawColor(renderer, 238, 238, 210, 255);
                 }
-            } // white plane
-            else {
-                if(dragPieceLegalMoves && i < dragPieceLegalMoves->size() 
-                   && pos++ == dragPieceLegalMoves->at(i)) {
-                    i++;
+            }
+            else
+            {
+                /* Painting the color of the black square */
+                if (std::find_if(dragPieceLegalMoves.begin(), dragPieceLegalMoves.end(), [pos](const Move &move)
+                                 { return move.to == pos; }) != dragPieceLegalMoves.end())
+                {
                     SDL_SetRenderDrawColor(renderer, 108, 140, 26, 255);
-                } // legal move square
-                else {
+                }
+                else
+                {
                     SDL_SetRenderDrawColor(renderer, 118, 150, 86, 255);
                 }
-            } // black plane
+            }
+            pos++;
             SDL_RenderFillRect(renderer, &rect);
         }
     }
 }
 
-void Interface::renderState() {
+void Interface::renderState()
+{
     int pos = 0;
-    for(int y = BOARD_LENGTH-1; y >= 0; y--) {
-        for(int x = 0; x < BOARD_LENGTH; x++) {
-            if(pos == dragPiecePos) {
+    for (int y = BOARD_LENGTH - 1; y >= 0; y--)
+    {
+        for (int x = 0; x < BOARD_LENGTH; x++)
+        {
+            if (pos == dragPiecePos)
+            {
                 pos++;
                 continue;
             }
-            uint8_t byteFromByteBoard = game->state->getPieceAt(pos++);
+            Piece::Type piece = game->getPieceAtPos(pos++);
 
-            if(byteFromByteBoard == NO_PIECE) {
+            if (piece == Piece::Type::BLANK)
+            {
                 continue;
             }
-            
+
             SDL_Rect rect;
-            rect.w = squareEdge;
-            rect.h = squareEdge;
-            rect.x = boardStartingX + x*squareEdge;
-            rect.y = boardStartingY + y*squareEdge;
-            SDL_RenderCopy(renderer, getTexturePieceFromByte(byteFromByteBoard), NULL, &rect);
+            rect.w = squareEdgeLength;
+            rect.h = squareEdgeLength;
+            rect.x = boardStartingX + x * squareEdgeLength;
+            rect.y = boardStartingY + y * squareEdgeLength;
+            SDL_RenderCopy(renderer, getTexturePiece(piece), NULL, &rect);
         }
     }
 }
 
-void Interface::resizeWindow(int const height, int const width) {
-    screenHeight = height * (height > MIN_SCREEN_HEIGHT) 
-                   + MIN_SCREEN_HEIGHT * (height <= MIN_SCREEN_HEIGHT);
-    screenWidth = width * (width > MIN_SCREEN_WIDTH) 
-                  + MIN_SCREEN_WIDTH * (width <= MIN_SCREEN_WIDTH);
+void Interface::resizeWindow(int const height, int const width)
+{
+    screenHeight = height * (height > MIN_SCREEN_HEIGHT) + MIN_SCREEN_HEIGHT * (height <= MIN_SCREEN_HEIGHT);
+    screenWidth = width * (width > MIN_SCREEN_WIDTH) + MIN_SCREEN_WIDTH * (width <= MIN_SCREEN_WIDTH);
 }
 
-void Interface::pickupDragPiece(int const mouseX, int const mouseY) {
-    int const squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
-    int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
+void Interface::pickupDragPiece(int const mouseX, int const mouseY)
+{
+    logIt(LogLevel::DEBUG) << "Picking up piece at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
+    int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
+    int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
 
     // if mouse coords are inside chess board, try to pick up a piece
-    if((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH)) {
-        dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdge;
-        dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdge;
-        dragPiecePos = squareXOfMouse + (BOARD_LENGTH-squareYOfMouse-1)*BOARD_LENGTH;
-        dragPieceByte = game->state->getPieceAt(dragPiecePos);
+    if ((squareXOfMouse >= 0 && squareXOfMouse < BOARD_LENGTH) && (squareYOfMouse >= 0 && squareYOfMouse < BOARD_LENGTH))
+    {
+        dragPieceTextureMouseX = (mouseX - boardStartingX) % squareEdgeLength;
+        dragPieceTextureMouseY = (mouseY - boardStartingY) % squareEdgeLength;
+        dragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
+        if (!dragPiecePos.isValid())
+        {
+            dragPiece = Piece::Type::BLANK;
+            dragPiecePos = Position(-1);
+            return;
+        }
+        dragPiece = game->getPieceAtPos(dragPiecePos);
 
-        if(dragPieceByte == NO_PIECE || game->state->getTurn() != getColorOfPiece(dragPieceByte)) {
-            dragPieceByte = NO_PIECE;
+        if (dragPiece == Piece::Type::BLANK || game->getTurn() != Piece::getColorOfPiece(dragPiece))
+        {
+            dragPiece = Piece::Type::BLANK;
             dragPiecePos = -1;
             return;
         } // there is no piece at this square or it's of the opponent's color
-        dragPieceLegalMoves = game->getLegalMoves(dragPieceByte, dragPiecePos);
+        dragPieceLegalMoves = game->getLegalMovesForPos(dragPiecePos);
     }
+    logIt(LogLevel::INFO) << "Picked up piece " << dragPiece << " at " << dragPiecePos;
 }
 
-void Interface::renderDragPiece(int const mouseX, int const mouseY) {
+void Interface::renderDragPiece(int const mouseX, int const mouseY)
+{
     SDL_Rect rect;
-    rect.w = squareEdge;
-    rect.h = squareEdge;
+    rect.w = squareEdgeLength;
+    rect.h = squareEdgeLength;
     rect.x = mouseX - dragPieceTextureMouseX;
     rect.y = mouseY - dragPieceTextureMouseY;
 
     // Conditions for preventing dragging outside of chess board
-    if(rect.x < boardStartingX - (squareEdge / 2)) {
-        rect.x = boardStartingX - (squareEdge / 2);
+    if (rect.x < boardStartingX - (squareEdgeLength / 2))
+    {
+        rect.x = boardStartingX - (squareEdgeLength / 2);
     }
-    else if(rect.x > (boardStartingX + BOARD_LENGTH*squareEdge - (squareEdge / 2))) {
-        rect.x = boardStartingX + BOARD_LENGTH*squareEdge - (squareEdge / 2);
+    else if (rect.x > (boardStartingX + BOARD_LENGTH * squareEdgeLength - (squareEdgeLength / 2)))
+    {
+        rect.x = boardStartingX + BOARD_LENGTH * squareEdgeLength - (squareEdgeLength / 2);
     }
-    if(rect.y < boardStartingY - (squareEdge / 2)) {
-        rect.y = boardStartingY - (squareEdge / 2);
+    if (rect.y < boardStartingY - (squareEdgeLength / 2))
+    {
+        rect.y = boardStartingY - (squareEdgeLength / 2);
     }
-    else if(rect.y > (boardStartingY + BOARD_LENGTH*squareEdge - (squareEdge / 2))) {
-        rect.y = boardStartingY + BOARD_LENGTH*squareEdge - (squareEdge / 2);
+    else if (rect.y > (boardStartingY + BOARD_LENGTH * squareEdgeLength - (squareEdgeLength / 2)))
+    {
+        rect.y = boardStartingY + BOARD_LENGTH * squareEdgeLength - (squareEdgeLength / 2);
     }
 
-    SDL_RenderCopy(renderer, getTexturePieceFromByte(dragPieceByte), NULL, &rect);
+    SDL_RenderCopy(renderer, getTexturePiece(dragPiece), NULL, &rect);
 }
 
+void Interface::releaseDragPiece(int const mouseX, int const mouseY)
+{
+    logIt(LogLevel::DEBUG) << "Releasing piece " << dragPiece << " at mouse coordinates (x, y): (" << mouseX << ", " << mouseY << ")";
+    int const squareXOfMouse = (mouseX - boardStartingX) / squareEdgeLength;
+    int const squareYOfMouse = (mouseY - boardStartingY) / squareEdgeLength;
+    int const newDragPiecePos = squareXOfMouse + (BOARD_LENGTH - squareYOfMouse - 1) * BOARD_LENGTH;
 
-void Interface::releaseDragPiece(int const mouseX, int const mouseY) {
-    int const squareXOfMouse = (mouseX - boardStartingX) / squareEdge;
-    int const squareYOfMouse = (mouseY - boardStartingY) / squareEdge;
-    int const newDragPiecePos = squareXOfMouse + (BOARD_LENGTH-squareYOfMouse-1)*BOARD_LENGTH;
-
-    for(int i = 0; i < dragPieceLegalMoves->size(); i++) {
-        if(dragPieceLegalMoves->at(i) == newDragPiecePos) {
-            if(dragPieceByte == WHITE_PAWN && newDragPiecePos >= (BOARD_SIZE-BOARD_LENGTH)) {
-                game->state->movePiece(menuPawnPromotion(), dragPiecePos, newDragPiecePos);
-            } // pawn promotion (for now only queen)
-            else if(dragPieceByte == BLACK_PAWN && newDragPiecePos < BOARD_LENGTH) {
-                game->state->movePiece(menuPawnPromotion(), dragPiecePos, newDragPiecePos);
-            } // pawn promotion (for now only queen)
-            else {
-                game->state->movePiece(dragPieceByte, dragPiecePos, newDragPiecePos);
+    for (auto &legalMove : dragPieceLegalMoves)
+    {
+        if (legalMove.to == newDragPiecePos)
+        {
+            if ((dragPiece == Piece::WHITE_PAWN && legalMove.to.getRow() == BOARD_LENGTH) ||
+                (dragPiece == Piece::BLACK_PAWN && legalMove.to.getRow() == 1))
+            {
+                // Promotion
+                const Move promotionMove(legalMove.from, legalMove.to, legalMove.piece, menuPawnPromotion());
+                game->makeMove(promotionMove);
+                logIt(LogLevel::INFO) << "Player Human " << Piece::getColorOfPiece(legalMove.piece) << " made move " << promotionMove << " with promotion to " << promotionMove.promotionPiece;
+                break;
             }
-            game->state->passTurn();
-            game->state->setSpecialMovesData(dragPieceByte, dragPiecePos, newDragPiecePos);
 
+            game->makeMove(legalMove);
+            logIt(LogLevel::INFO) << "Player Human " << Piece::getColorOfPiece(legalMove.piece) << " made move " << legalMove;
             break;
         }
     }
 
     // reset dragPiece variables
-    dragPieceByte = NO_PIECE;
-    dragPiecePos = -1;
-    delete dragPieceLegalMoves;
-    dragPieceLegalMoves = nullptr;
+    dragPiece = Piece::Type::BLANK;
+    dragPiecePos = Position(-1);
+    dragPieceLegalMoves.clear();
 }
