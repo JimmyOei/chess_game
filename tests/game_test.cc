@@ -2,9 +2,9 @@
 // generation works from the start position. Rule and perft tests follow in
 // step 2 of the migration.
 
-#include <gtest/gtest.h>
-
 #include "game.h"
+
+#include <gtest/gtest.h>
 
 namespace {
 

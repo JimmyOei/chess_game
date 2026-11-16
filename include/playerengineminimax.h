@@ -5,16 +5,15 @@
 
 #define DEFAULT_MAX_DEPTH 4
 
-class PlayerEngineMiniMax : public Player
-{
-public:
+class PlayerEngineMiniMax : public Player {
+ public:
   PlayerEngineMiniMax();
 
   PlayerEngineMiniMax(int maxDepth);
 
   Move getMove(Game game) override;
 
-private:
+ private:
   int maxDepth;
 
   int evaluateGame(Game game);
@@ -29,7 +28,8 @@ private:
 
   std::vector<Move> getAllLegalMoves(Game game);
 
-  std::pair<Move, int> miniMax(Game game, int depth, int alpha, int beta, bool isMaximizingPlayer);
+  std::pair<Move, int> miniMax(Game game, int depth, int alpha, int beta,
+                               bool isMaximizingPlayer);
 };
 
 #endif

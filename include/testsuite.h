@@ -6,13 +6,14 @@
 
 #include "game.h"
 
-class TestSuite
-{
-public:
+class TestSuite {
+ public:
   void menu();
 
-private:
-  void testPossiblePositions(Game game, int currentDepth, int totalDepth, std::unordered_map<int, int> &gameCounts, std::unordered_map<int, int> &checkmateCounts);
+ private:
+  void testPossiblePositions(Game game, int currentDepth, int totalDepth,
+                             std::unordered_map<int, int> &gameCounts,
+                             std::unordered_map<int, int> &checkmateCounts);
 };
 
 #endif

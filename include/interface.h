@@ -3,17 +3,17 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-
 #include <stdint.h>
+
 #include <memory>
 #include <unordered_map>
 #include <vector>
 
 #include "game.h"
 #include "player.h"
-#include "playerhuman.h"
-#include "playerenginerandom.h"
 #include "playerengineminimax.h"
+#include "playerenginerandom.h"
+#include "playerhuman.h"
 #include "testsuite.h"
 
 #define MIN_SCREEN_WIDTH 500
@@ -37,7 +37,8 @@
 #define DARK_KING_IMG "../pieces/darkKing.png"
 #define LIGHT_KING_IMG "../pieces/lightKing.png"
 
-#define STANDARD_OPENING_FEN "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
+#define STANDARD_OPENING_FEN \
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"
 
 /**
  * @brief Interface class for the chess game
@@ -45,101 +46,100 @@
  * This class is responsible for the graphical user interface of the chess game.
  * It uses SDL2 and SDL2_image for rendering and handling events.
  */
-class Interface
-{
-public:
-    /**
-     * @brief constructor for the interface object
-     */
-    Interface();
+class Interface {
+ public:
+  /**
+   * @brief constructor for the interface object
+   */
+  Interface();
 
-    /**
-     * @brief destructor for the interface object
-     *
-     * Cleans up SDL and SDL_image
-     */
-    ~Interface();
+  /**
+   * @brief destructor for the interface object
+   *
+   * Cleans up SDL and SDL_image
+   */
+  ~Interface();
 
-    /**
-     * @brief getter for if the interface is running
-     */
-    bool isRunning();
+  /**
+   * @brief getter for if the interface is running
+   */
+  bool isRunning();
 
-    bool isGameOver();
+  bool isGameOver();
 
-    void initiate();
+  void initiate();
 
-    void handlePlayerTurn();
+  void handlePlayerTurn();
 
-    void eventHandler(SDL_Event event);
+  void eventHandler(SDL_Event event);
 
-    void render();
+  void render();
 
-private:
-    std::unique_ptr<Player> playerWhite;
-    std::unique_ptr<Player> playerBlack;
-    std::unique_ptr<Game> game;
-    TestSuite testSuite;
+ private:
+  std::unique_ptr<Player> playerWhite;
+  std::unique_ptr<Player> playerBlack;
+  std::unique_ptr<Game> game;
+  TestSuite testSuite;
 
-    SDL_Window *window;
-    SDL_Renderer *renderer;
+  SDL_Window *window;
+  SDL_Renderer *renderer;
 
-    std::unordered_map<Piece::Type, SDL_Texture *> texturePieces;
+  std::unordered_map<Piece::Type, SDL_Texture *> texturePieces;
 
-    int screenWidth;
-    int screenHeight;
+  int screenWidth;
+  int screenHeight;
 
-    // Length of an edge of a square on the board
-    int squareEdgeLength;
+  // Length of an edge of a square on the board
+  int squareEdgeLength;
 
-    // Top left square position of the board on the window
-    int boardStartingX;
-    int boardStartingY;
+  // Top left square position of the board on the window
+  int boardStartingX;
+  int boardStartingY;
 
-    // bool for if the interface is running
-    bool running;
-    bool gameOver;
+  // bool for if the interface is running
+  bool running;
+  bool gameOver;
 
-    Piece::Type dragPiece;
-    int dragPieceTextureMouseX;
-    int dragPieceTextureMouseY;
-    Position dragPiecePos;
-    std::vector<Move> dragPieceLegalMoves;
+  Piece::Type dragPiece;
+  int dragPieceTextureMouseX;
+  int dragPieceTextureMouseY;
+  Position dragPiecePos;
+  std::vector<Move> dragPieceLegalMoves;
 
-    void menuGamemode(Piece::Color const color);
+  void menuGamemode(Piece::Color const color);
 
-    void menuFEN();
+  void menuFEN();
 
-    bool menu();
+  bool menu();
 
-    Piece::Type menuPawnPromotion();
+  Piece::Type menuPawnPromotion();
 
-    /**
-     * @brief loads the textures for the pieces into the texturePieces unordered map
-     *          as SDL_Texture pointers
-     */
-    void loadTexturePieces();
+  /**
+   * @brief loads the textures for the pieces into the texturePieces unordered
+   * map as SDL_Texture pointers
+   */
+  void loadTexturePieces();
 
-    /**
-     * @brief getter for the texture of a piece
-     *
-     * @param piece piece to get the texture of
-     * @return SDL_Texture* texture of the piece
-     *          or throws an invalid argument exception if the piece is not found
-     */
-    SDL_Texture *getTexturePiece(Piece::Type piece);
+  /**
+   * @brief getter for the texture of a piece
+   *
+   * @param piece piece to get the texture of
+   * @return SDL_Texture* texture of the piece
+   *          or throws an invalid argument exception if the piece is not found
+   */
+  SDL_Texture *getTexturePiece(Piece::Type piece);
 
-    void renderBoard();
+  void renderBoard();
 
-    void renderState();
+  void renderState();
 
-    void resizeWindow(int const height, int const width);
+  void resizeWindow(int const height, int const width);
 
-    void pickupDragPiece(int const mouseX, int const mouseY);
+  void pickupDragPiece(int const mouseX, int const mouseY);
 
-    void renderDragPiece(int const mouseX, int const mouseY);
+  void renderDragPiece(int const mouseX, int const mouseY);
 
-    void releaseDragPiece(int const mouseX, int const mouseY);
+  void releaseDragPiece(int const mouseX, int const mouseY);
 };
 
 #endif

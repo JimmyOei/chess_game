@@ -9,24 +9,16 @@
 /**
  * @brief Enum class for the log levels
  */
-enum LogLevel
-{
-  DEBUG,
-  INFO,
-  WARNING,
-  ERROR
-};
+enum LogLevel { DEBUG, INFO, WARNING, ERROR };
 
-class logger
-{
-public:
+class logger {
+ public:
   /**
    * @brief constructor for the logger
    *
    * @param logLevel log level to log at
    */
-  logger(LogLevel logLevel = LogLevel::ERROR)
-  {
+  logger(LogLevel logLevel = LogLevel::ERROR) {
     _buffer << "[" << LogLevelToString(logLevel) << "]" << " : ";
   }
 
@@ -38,8 +30,7 @@ public:
    * @return logger& reference to the logger
    */
   template <typename T>
-  logger &operator<<(T const &value)
-  {
+  logger &operator<<(T const &value) {
     _buffer << value;
     return *this;
   }
@@ -47,33 +38,29 @@ public:
   /**
    * @brief destructor for the logger, logs the buffer to stderr
    */
-  ~logger()
-  {
+  ~logger() {
     _buffer << std::endl;
     std::cerr << _buffer.str();
   }
 
-private:
+ private:
   std::ostringstream _buffer;
 
-  char const *LogLevelToString(LogLevel logLevel)
-  {
-    switch (logLevel)
-    {
-    case LogLevel::DEBUG:
-      return "DEBUG";
-    case LogLevel::INFO:
-      return "INFO";
-    case LogLevel::WARNING:
-      return "WARNING";
-    case LogLevel::ERROR:
-      return "ERROR";
+  char const *LogLevelToString(LogLevel logLevel) {
+    switch (logLevel) {
+      case LogLevel::DEBUG:
+        return "DEBUG";
+      case LogLevel::INFO:
+        return "INFO";
+      case LogLevel::WARNING:
+        return "WARNING";
+      case LogLevel::ERROR:
+        return "ERROR";
     }
   }
 };
 
-#define logIt(level)        \
-  if (level >= LOG_LEVEL) \
-  logger(level)
+#define logIt(level) \
+  if (level >= LOG_LEVEL) logger(level)
 
 #endif
