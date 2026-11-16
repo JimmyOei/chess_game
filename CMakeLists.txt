@@ -117,3 +117,7 @@ include(GoogleTest)
 add_executable(game_test tests/game_test.cc)
 target_link_libraries(game_test PRIVATE chess_options chess_core GTest::gtest_main)
 gtest_discover_tests(game_test PROPERTIES TIMEOUT 60)
+
+add_executable(perft_test tests/perft_test.cc)
+target_link_libraries(perft_test PRIVATE chess_options chess_core GTest::gtest_main)
+gtest_discover_tests(perft_test PROPERTIES TIMEOUT 300)
