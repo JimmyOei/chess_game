@@ -1,5 +1,7 @@
 #include "../include/testsuite.h"
 
+#include <chrono>
+
 void TestSuite::testPossiblePositions(Game game, int currentDepth, int totalDepth, std::unordered_map<int, int> &gameCounts, std::unordered_map<int, int> &checkmateCounts)
 {
   std::vector<Move> allLegalMoves = game.getAllLegalMoves();

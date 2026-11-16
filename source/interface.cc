@@ -1,5 +1,7 @@
 #include "../include/interface.h"
 
+#include <algorithm>
+
 Interface::Interface() : window(nullptr),
                          renderer(nullptr),
                          screenWidth(STARTING_SCREEN_WIDTH),

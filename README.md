@@ -2,12 +2,25 @@
 
 This is a personal project. I am creating a chess game in C++ with SDL 2.0.
 
-## Dev How to run
-Below is the installation process for ubuntu:
-1. Get GNU compiler tools and GDB debugger: `apt update ; apt install build-essential gdb`
-2. Get SDL2 and SDL2_image library: `apt install libsdl2-dev libsdl2-image-dev`
-3. Compile: `make`
-4. Run: `./Chess_game`
+## Building and running
+
+Tested on Ubuntu 24.04 under WSL2.
+
+1. Install the compiler, build tools and SDL2:
+   ```bash
+   sudo apt update
+   sudo apt install build-essential gdb cmake ninja-build pkg-config libsdl2-dev libsdl2-image-dev
+   ```
+2. Configure, build and test:
+   ```bash
+   cmake --preset debug
+   cmake --build --preset debug
+   ctest --preset debug
+   ```
+3. Run the game (it loads the piece images relative to its directory):
+   ```bash
+   cd build/debug/bin && ./chess_game
+   ```
 
 ## License
 

@@ -36,3 +36,10 @@
 
 Chess_game
 build
+# Build directories
+build/
+
+# Tooling
+compile_commands.json
+.cache/
+Testing/

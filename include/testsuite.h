@@ -2,6 +2,7 @@
 #define TEST_SUITE_H
 
 #include <iostream>
+#include <unordered_map>
 
 #include "game.h"
 

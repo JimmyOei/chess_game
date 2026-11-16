@@ -5,6 +5,8 @@
 #include <SDL2/SDL_image.h>
 
 #include <stdint.h>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "game.h"

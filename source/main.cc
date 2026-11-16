@@ -8,8 +8,7 @@
 int main(int argc, char *argv[])
 {
     std::cout << "---------========== Chess Game ==========----------" << std::endl
-              << "  Made By James Montyn at github.com/JamesMontyn " << std::endl
-              << "  Programmed in C++, with SDL 2.0                " << std::endl
+              << "  Made By Jimmy Oei at github.com/JimmyOei" << std::endl
               << "-------------------------------------------------" << std::endl
               << std::endl;
     int const frameDelay = 1000 / TARGET_FPS;

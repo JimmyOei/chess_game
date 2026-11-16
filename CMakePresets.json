@@ -1,0 +1,59 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug + ASan/UBSan",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CHESS_SANITIZERS": "ON"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release (-O3, native) — for benchmarks",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CHESS_NATIVE": "ON"
+      }
+    },
+    {
+      "name": "profile",
+      "displayName": "RelWithDebInfo + frame pointers — for perf",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CHESS_NATIVE": "ON"
+      }
+    },
+    {
+      "name": "debug-clang",
+      "displayName": "Debug + ASan/UBSan (clang)",
+      "inherits": "debug",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "profile", "configurePreset": "profile" },
+    { "name": "debug-clang", "configurePreset": "debug-clang" }
+  ],
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

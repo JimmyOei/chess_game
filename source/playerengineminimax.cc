@@ -1,5 +1,7 @@
 #include "../include/playerengineminimax.h"
 
+#include <climits>
+
 PlayerEngineMiniMax::PlayerEngineMiniMax() : maxDepth(DEFAULT_MAX_DEPTH) {};
 
 PlayerEngineMiniMax::PlayerEngineMiniMax(int maxDepth) : maxDepth(maxDepth) {};
