@@ -22,6 +22,21 @@ Tested on Ubuntu 24.04 under WSL2.
    cd build/debug/bin && ./chess_game
    ```
 
+`ctest --preset release` also runs the deep perft tests, which are too slow
+under the debug build's sanitizers.
+
+## Code layout
+
+All code is in the `chess` namespace.
+
+- `src/core/`: board types, the `Game` rules and move generation, and perft.
+  No SDL, so it can be tested headless.
+- `src/player/`: the `Player` interface, the human player, and the random and
+  minimax engines.
+- `src/ui/`: the SDL window, the console menus and `main`.
+- `src/util/`: the logger.
+- `tests/`: GoogleTest tests, one file per class, plus perft.
+
 ## License
 
 The chess pieces in this project are made by Cburnett and unchanged.

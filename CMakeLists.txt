@@ -41,22 +41,6 @@ target_compile_options(chess_options INTERFACE
     $<$<CONFIG:RelWithDebInfo>:-fno-omit-frame-pointer>)
 
 # ---------------------------------------------------------------------------
-# Legacy sources: written before chess_options existed. They still get every
-# warning, but not -Werror (source-file options come after the target's, so
-# -Wno-error wins). Remove files from this list as they are cleaned up, and
-# delete the list once it is empty.
-# ---------------------------------------------------------------------------
-set(CHESS_LEGACY_SOURCES
-    source/game.cc
-    source/playerengineminimax.cc
-    source/testsuite.cc
-    source/interface.cc
-    source/main.cc
-)
-set_source_files_properties(${CHESS_LEGACY_SOURCES}
-    PROPERTIES COMPILE_OPTIONS -Wno-error)
-
-# ---------------------------------------------------------------------------
 # SDL2 + SDL2_image (apt: libsdl2-dev libsdl2-image-dev).
 # Wrapped in a SYSTEM target so -Werror ignores warnings in SDL's headers.
 # ---------------------------------------------------------------------------
@@ -71,23 +55,20 @@ set_target_properties(PkgConfig::SDL2 PROPERTIES SYSTEM ON)
 # Game logic: board, move generation, engines. No SDL, so it can be tested
 # and benchmarked headless.
 add_library(chess_core STATIC
-    source/game.cc
-    source/playerengineminimax.cc
-    source/testsuite.cc
+    src/core/game.cc
+    src/core/perft.cc
+    src/player/player_engine_minimax.cc
 )
 target_link_libraries(chess_core PRIVATE chess_options)
-target_include_directories(chess_core PUBLIC include)
-# Temporary: consumers see the legacy headers as system headers, so their
-# warnings don't break -Werror in new code (the tests). Remove once the
-# headers are warning-clean.
-set_target_properties(chess_core PROPERTIES SYSTEM ON)
+target_include_directories(chess_core PUBLIC src)
 
 # SDL front end. The piece images are loaded from "../pieces/" relative to the
 # working directory, so the binary goes in bin/ with a copy of pieces/ next to
 # it: run it as `cd build/<preset>/bin && ./chess_game`.
 add_executable(chess_game
-    source/main.cc
-    source/interface.cc
+    src/ui/main.cc
+    src/ui/interface.cc
+    src/ui/perft_menu.cc
 )
 target_link_libraries(chess_game PRIVATE chess_options chess_core PkgConfig::SDL2)
 set_target_properties(chess_game PROPERTIES
@@ -117,6 +98,10 @@ include(GoogleTest)
 add_executable(game_test tests/game_test.cc)
 target_link_libraries(game_test PRIVATE chess_options chess_core GTest::gtest_main)
 gtest_discover_tests(game_test PROPERTIES TIMEOUT 60)
+
+add_executable(position_test tests/position_test.cc)
+target_link_libraries(position_test PRIVATE chess_options chess_core GTest::gtest_main)
+gtest_discover_tests(position_test)
 
 add_executable(perft_test tests/perft_test.cc)
 target_link_libraries(perft_test PRIVATE chess_options chess_core GTest::gtest_main)

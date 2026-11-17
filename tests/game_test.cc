@@ -1,7 +1,7 @@
 // Rule tests for Game. The expectations follow the FIDE
 // Laws of Chess, not the current implementation, so a failure is a rules bug.
 
-#include "game.h"
+#include "core/game.h"
 
 #include <gtest/gtest.h>
 
@@ -12,137 +12,149 @@
 #include <string_view>
 #include <vector>
 
-#include "move.h"
-#include "piece.h"
-#include "position.h"
+#include "core/move.h"
+#include "core/piece.h"
+#include "core/position.h"
 
+namespace chess {
 namespace {
 
 // Board index of a square in algebraic notation, e.g. Sq("e4"). Index 0 is a1
 // and indices run along the rank first (b1 = 1, a2 = 8).
 Position Sq(std::string_view square) {
-  return {(square[1] - '1') * BOARD_LENGTH + (square[0] - 'a')};
+  return Position::FromColumnRow(square[0] - 'a' + 1, square[1] - '1' + 1);
 }
 
 bool HasMove(const std::vector<Move>& moves, std::string_view from,
-             std::string_view to, Piece::Type promotion = Piece::Type::BLANK) {
+             std::string_view to, Piece promotion = Piece::kNone) {
   return std::ranges::any_of(moves, [&](const Move& m) {
     return m.from == Sq(from) && m.to == Sq(to) &&
-           m.promotionPiece == promotion;
+           m.promotion_piece == promotion;
   });
 }
 
-std::vector<Move> MovesFrom(Game& game, std::string_view from) {
-  return game.getLegalMovesForPos(Sq(from));
+std::vector<Move> MovesFrom(const Game& game, std::string_view from) {
+  return game.GetLegalMovesForPos(Sq(from));
 }
 
 // Plays the move from -> to if it is among the legal moves. Use as
 // ASSERT_TRUE(Play(...)) so a test stops at the first illegal move.
 testing::AssertionResult Play(Game& game, std::string_view from,
                               std::string_view to,
-                              Piece::Type promotion = Piece::Type::BLANK) {
-  const std::vector<Move> moves = game.getAllLegalMoves();
+                              Piece promotion = Piece::kNone) {
+  const std::vector<Move> moves = game.GetAllLegalMoves();
   auto it = std::ranges::find_if(moves, [&](const Move& m) {
     return m.from == Sq(from) && m.to == Sq(to) &&
-           m.promotionPiece == promotion;
+           m.promotion_piece == promotion;
   });
   if (it == moves.end()) {
     return testing::AssertionFailure() << from << to << " is not legal";
   }
-  game.makeMove(*it);
+  game.MakeMove(*it);
   return testing::AssertionSuccess();
 }
 
 // --- Start position -------------------------------------------------------
 
 TEST(GameTest, StartPositionHasTwentyLegalMoves) {
-  Game game;
-  EXPECT_EQ(game.getAllLegalMoves().size(), 20u);
+  Game const game;
+  EXPECT_EQ(game.GetAllLegalMoves().size(), 20u);
 }
 
 TEST(GameTest, StartPositionFromFenHasTwentyLegalMoves) {
-  Game game(STANDARD_OPENING_FEN);
-  EXPECT_EQ(game.getAllLegalMoves().size(), 20u);
+  Game const game(kStandardOpeningFen);
+  EXPECT_EQ(game.GetAllLegalMoves().size(), 20u);
 }
 
 // --- FEN parsing ----------------------------------------------------------
 
 TEST(GameFenTest, ParsesSideToMove) {
-  Game game("4k3/8/8/8/8/8/8/4K3 b - - 0 1");
-  EXPECT_EQ(game.getTurn(), Piece::Color::BLACK);
+  Game const game("4k3/8/8/8/8/8/8/4K3 b - - 0 1");
+  EXPECT_EQ(game.GetTurn(), Color::kBlack);
 }
 
 TEST(GameFenTest, ParsesPiecePlacement) {
-  Game game("4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
-  EXPECT_EQ(game.getPieceAtPos(Sq("a1")), Piece::Type::WHITE_ROOK);
-  EXPECT_EQ(game.getPieceAtPos(Sq("e1")), Piece::Type::WHITE_KING);
-  EXPECT_EQ(game.getPieceAtPos(Sq("h1")), Piece::Type::WHITE_ROOK);
-  EXPECT_EQ(game.getPieceAtPos(Sq("e8")), Piece::Type::BLACK_KING);
-  EXPECT_EQ(game.getKingPosOfPiece(Piece::Color::WHITE), Sq("e1"));
-  EXPECT_EQ(game.getKingPosOfPiece(Piece::Color::BLACK), Sq("e8"));
+  Game const game("4k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+  EXPECT_EQ(game.GetPieceAtPos(Sq("a1")), Piece::kWhiteRook);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e1")), Piece::kWhiteKing);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("h1")), Piece::kWhiteRook);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e8")), Piece::kBlackKing);
+  EXPECT_EQ(game.GetKingPos(Color::kWhite), Sq("e1"));
+  EXPECT_EQ(game.GetKingPos(Color::kBlack), Sq("e8"));
+}
+
+TEST(GameFenTest, RejectsFenWithoutKings) {
+  // An invalid FEN leaves an empty board (see Game(std::string_view)).
+  const Game game("8/8/8/8/8/8/8/R7 w - - 0 1");
+  EXPECT_EQ(game.GetPieceAtPos(Sq("a1")), Piece::kNone);
 }
 
 TEST(GameFenTest, ParsesAllCastlingRights) {
-  Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
-  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::WHITE));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::WHITE));
-  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
+  Game const game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+  EXPECT_TRUE(game.GetCastlingKingSide(Color::kWhite));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kWhite));
+  EXPECT_TRUE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kBlack));
 }
 
 TEST(GameFenTest, ParsesNoCastlingRights) {
-  Game game("r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1");
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::WHITE));
-  EXPECT_FALSE(game.getCastlingQueenSide(Piece::Color::WHITE));
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_FALSE(game.getCastlingQueenSide(Piece::Color::BLACK));
+  Game const game("r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1");
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kWhite));
+  EXPECT_FALSE(game.GetCastlingQueenSide(Color::kWhite));
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_FALSE(game.GetCastlingQueenSide(Color::kBlack));
 }
 
 TEST(GameFenTest, ParsesPartialCastlingRights) {
-  Game game("r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1");
-  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::WHITE));
-  EXPECT_FALSE(game.getCastlingQueenSide(Piece::Color::WHITE));
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
+  Game const game("r3k2r/8/8/8/8/8/8/R3K2R w Kq - 0 1");
+  EXPECT_TRUE(game.GetCastlingKingSide(Color::kWhite));
+  EXPECT_FALSE(game.GetCastlingQueenSide(Color::kWhite));
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kBlack));
+}
+
+TEST(GameFenTest, ParsesMissingEnPassantSquare) {
+  const Game game("4k3/8/8/3pP3/8/8/8/4K3 w - - 0 1");
+  EXPECT_FALSE(game.GetEnPassantPos().has_value());
 }
 
 TEST(GameFenTest, ParsesEnPassantSquare) {
-  Game game("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1");
-  EXPECT_EQ(game.getEnPassantPos(), Sq("d6"));
+  Game const game("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1");
+  EXPECT_EQ(game.GetEnPassantPos(), Sq("d6"));
 }
 
 // --- Castling -------------------------------------------------------------
 
 TEST(GameCastlingTest, WhiteCanCastleBothWays) {
-  Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+  Game const game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e1");
   EXPECT_TRUE(HasMove(moves, "e1", "g1"));
   EXPECT_TRUE(HasMove(moves, "e1", "c1"));
 }
 
 TEST(GameCastlingTest, BlackCanCastleBothWays) {
-  Game game("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1");
+  Game const game("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e8");
   EXPECT_TRUE(HasMove(moves, "e8", "g8"));
   EXPECT_TRUE(HasMove(moves, "e8", "c8"));
 }
 
 TEST(GameCastlingTest, NoCastlingWithoutRights) {
-  Game game("r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1");
+  Game const game("r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e1");
   EXPECT_FALSE(HasMove(moves, "e1", "g1"));
   EXPECT_FALSE(HasMove(moves, "e1", "c1"));
 }
 
 TEST(GameCastlingTest, NoCastlingWhenBlocked) {
-  Game game("r3k2r/8/8/8/8/8/8/RN2K1NR w KQkq - 0 1");
+  Game const game("r3k2r/8/8/8/8/8/8/RN2K1NR w KQkq - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e1");
   EXPECT_FALSE(HasMove(moves, "e1", "g1"));
   EXPECT_FALSE(HasMove(moves, "e1", "c1"));
 }
 
 TEST(GameCastlingTest, NoCastlingOutOfCheck) {
-  Game game("4k3/8/8/8/4r3/8/8/R3K2R w KQ - 0 1");
+  Game const game("4k3/8/8/8/4r3/8/8/R3K2R w KQ - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e1");
   EXPECT_FALSE(HasMove(moves, "e1", "g1"));
   EXPECT_FALSE(HasMove(moves, "e1", "c1"));
@@ -150,7 +162,7 @@ TEST(GameCastlingTest, NoCastlingOutOfCheck) {
 
 TEST(GameCastlingTest, NoCastlingThroughAttackedSquare) {
   // The black rook on f8 attacks f1, which the king passes over.
-  Game game("4kr2/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+  Game const game("4kr2/8/8/8/8/8/8/R3K2R w KQ - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e1");
   EXPECT_FALSE(HasMove(moves, "e1", "g1"));
   EXPECT_TRUE(HasMove(moves, "e1", "c1"));
@@ -158,84 +170,84 @@ TEST(GameCastlingTest, NoCastlingThroughAttackedSquare) {
 
 TEST(GameCastlingTest, BlackNoCastlingThroughAttackedSquare) {
   // The white rook on d1 attacks d8, which the black king passes over.
-  Game game("r3k2r/8/8/8/8/8/8/3RK3 b kq - 0 1");
+  Game const game("r3k2r/8/8/8/8/8/8/3RK3 b kq - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e8");
   EXPECT_FALSE(HasMove(moves, "e8", "c8"));
   EXPECT_TRUE(HasMove(moves, "e8", "g8"));
 }
 
 TEST(GameCastlingTest, NoCastlingIntoCheck) {
-  Game game("4k1r1/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+  Game const game("4k1r1/8/8/8/8/8/8/R3K2R w KQ - 0 1");
   EXPECT_FALSE(HasMove(MovesFrom(game, "e1"), "e1", "g1"));
 }
 
 TEST(GameCastlingTest, QueensideAllowedWhenOnlyB1IsAttacked) {
   // b1 is crossed by the rook, not the king, so an attack there is fine.
-  Game game("1r2k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
+  Game const game("1r2k3/8/8/8/8/8/8/R3K2R w KQ - 0 1");
   EXPECT_TRUE(HasMove(MovesFrom(game, "e1"), "e1", "c1"));
 }
 
 TEST(GameCastlingTest, KingsideCastlingMovesTheRook) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
   ASSERT_TRUE(Play(game, "e1", "g1"));
-  EXPECT_EQ(game.getPieceAtPos(Sq("g1")), Piece::Type::WHITE_KING);
-  EXPECT_EQ(game.getPieceAtPos(Sq("f1")), Piece::Type::WHITE_ROOK);
-  EXPECT_EQ(game.getPieceAtPos(Sq("h1")), Piece::Type::BLANK);
-  EXPECT_EQ(game.getPieceAtPos(Sq("e1")), Piece::Type::BLANK);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("g1")), Piece::kWhiteKing);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("f1")), Piece::kWhiteRook);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("h1")), Piece::kNone);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e1")), Piece::kNone);
 }
 
 TEST(GameCastlingTest, QueensideCastlingMovesTheRook) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1");
   ASSERT_TRUE(Play(game, "e8", "c8"));
-  EXPECT_EQ(game.getPieceAtPos(Sq("c8")), Piece::Type::BLACK_KING);
-  EXPECT_EQ(game.getPieceAtPos(Sq("d8")), Piece::Type::BLACK_ROOK);
-  EXPECT_EQ(game.getPieceAtPos(Sq("a8")), Piece::Type::BLANK);
-  EXPECT_EQ(game.getPieceAtPos(Sq("e8")), Piece::Type::BLANK);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("c8")), Piece::kBlackKing);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("d8")), Piece::kBlackRook);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("a8")), Piece::kNone);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e8")), Piece::kNone);
 }
 
 TEST(GameCastlingTest, KingMoveLosesBothRights) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
   ASSERT_TRUE(Play(game, "e1", "f1"));
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::WHITE));
-  EXPECT_FALSE(game.getCastlingQueenSide(Piece::Color::WHITE));
-  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kWhite));
+  EXPECT_FALSE(game.GetCastlingQueenSide(Color::kWhite));
+  EXPECT_TRUE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kBlack));
 }
 
 TEST(GameCastlingTest, QueensideRookMoveLosesOnlyQueensideRight) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
   ASSERT_TRUE(Play(game, "a1", "a2"));
-  EXPECT_FALSE(game.getCastlingQueenSide(Piece::Color::WHITE));
-  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::WHITE));
+  EXPECT_FALSE(game.GetCastlingQueenSide(Color::kWhite));
+  EXPECT_TRUE(game.GetCastlingKingSide(Color::kWhite));
 }
 
 TEST(GameCastlingTest, KingsideRookMoveLosesOnlyKingsideRight) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R b KQkq - 0 1");
   ASSERT_TRUE(Play(game, "h8", "h7"));
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kBlack));
 }
 
 TEST(GameCastlingTest, OtherRookOnTheSameFileKeepsTheRight) {
   // Only the rook on h1 matters for kingside castling, not one on h4.
   Game game("4k3/8/8/8/7R/8/8/R3K2R w KQ - 0 1");
   ASSERT_TRUE(Play(game, "h4", "g4"));
-  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::WHITE));
+  EXPECT_TRUE(game.GetCastlingKingSide(Color::kWhite));
 }
 
 TEST(GameCastlingTest, CapturePromotionOnRookSquareLosesThatRight) {
   Game game("r3k2r/6P1/8/8/8/8/8/4K3 w kq - 0 1");
-  ASSERT_TRUE(Play(game, "g7", "h8", Piece::Type::WHITE_QUEEN));
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
+  ASSERT_TRUE(Play(game, "g7", "h8", Piece::kWhiteQueen));
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kBlack));
 }
 
 TEST(GameCastlingTest, CapturedRookLosesThatRight) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
   ASSERT_TRUE(Play(game, "h1", "h8"));
-  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
-  EXPECT_FALSE(HasMove(game.getAllLegalMoves(), "e8", "g8"));
+  EXPECT_FALSE(game.GetCastlingKingSide(Color::kBlack));
+  EXPECT_TRUE(game.GetCastlingQueenSide(Color::kBlack));
+  EXPECT_FALSE(HasMove(game.GetAllLegalMoves(), "e8", "g8"));
 }
 
 // --- En passant -----------------------------------------------------------
@@ -243,21 +255,21 @@ TEST(GameCastlingTest, CapturedRookLosesThatRight) {
 TEST(GameEnPassantTest, WhiteCapturesEnPassantFromFen) {
   Game game("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1");
   ASSERT_TRUE(Play(game, "e5", "d6"));
-  EXPECT_EQ(game.getPieceAtPos(Sq("d6")), Piece::Type::WHITE_PAWN);
-  EXPECT_EQ(game.getPieceAtPos(Sq("d5")), Piece::Type::BLANK);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("d6")), Piece::kWhitePawn);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("d5")), Piece::kNone);
 }
 
 TEST(GameEnPassantTest, BlackCapturesEnPassantFromFen) {
   Game game("4k3/8/8/8/3pP3/8/8/4K3 b - e3 0 1");
   ASSERT_TRUE(Play(game, "d4", "e3"));
-  EXPECT_EQ(game.getPieceAtPos(Sq("e3")), Piece::Type::BLACK_PAWN);
-  EXPECT_EQ(game.getPieceAtPos(Sq("e4")), Piece::Type::BLANK);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e3")), Piece::kBlackPawn);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e4")), Piece::kNone);
 }
 
 TEST(GameEnPassantTest, AvailableRightAfterDoublePush) {
   Game game("4k3/3p4/8/4P3/8/8/8/4K3 b - - 0 1");
   ASSERT_TRUE(Play(game, "d7", "d5"));
-  EXPECT_EQ(game.getEnPassantPos(), Sq("d6"));
+  EXPECT_EQ(game.GetEnPassantPos(), Sq("d6"));
   EXPECT_TRUE(HasMove(MovesFrom(game, "e5"), "e5", "d6"));
 }
 
@@ -267,80 +279,81 @@ TEST(GameEnPassantTest, ExpiresAfterOneMove) {
   ASSERT_TRUE(Play(game, "e1", "e2"));
   ASSERT_TRUE(Play(game, "e8", "e7"));
   EXPECT_FALSE(HasMove(MovesFrom(game, "e5"), "e5", "d6"));
+  EXPECT_FALSE(game.GetEnPassantPos().has_value());
 }
 
 TEST(GameEnPassantTest, NotAllowedWithoutFenSquare) {
-  Game game("4k3/8/8/3pP3/8/8/8/4K3 w - - 0 1");
+  Game const game("4k3/8/8/3pP3/8/8/8/4K3 w - - 0 1");
   EXPECT_FALSE(HasMove(MovesFrom(game, "e5"), "e5", "d6"));
 }
 
 TEST(GameEnPassantTest, NoPhantomCaptureOntoA1WithoutFenSquare) {
   // "No en passant square" must not be stored as square 0 (a1), or the b2
   // pawn could capture "en passant" onto the empty a1.
-  Game game("4k3/8/8/8/8/8/1p6/4K3 b - - 0 1");
+  Game const game("4k3/8/8/8/8/8/1p6/4K3 b - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "b2");
   EXPECT_EQ(moves.size(), 4u);  // Only the four promotions on b1.
-  EXPECT_FALSE(HasMove(moves, "b2", "a1", Piece::Type::BLACK_QUEEN));
+  EXPECT_FALSE(HasMove(moves, "b2", "a1", Piece::kBlackQueen));
 }
 
 TEST(GameEnPassantTest, IllegalWhenItExposesTheKingOnTheRank) {
   // Both pawns leave the 5th rank, opening it between the h5 rook and a5 king.
-  Game game("8/8/8/K2pP2r/8/8/8/4k3 w - d6 0 1");
+  Game const game("8/8/8/K2pP2r/8/8/8/4k3 w - d6 0 1");
   EXPECT_FALSE(HasMove(MovesFrom(game, "e5"), "e5", "d6"));
 }
 
 // --- Promotion ------------------------------------------------------------
 
 TEST(GamePromotionTest, PushOffersAllFourPieces) {
-  Game game("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
+  Game const game("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e7");
   EXPECT_EQ(moves.size(), 4u);
-  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::Type::WHITE_QUEEN));
-  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::Type::WHITE_ROOK));
-  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::Type::WHITE_BISHOP));
-  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::Type::WHITE_KNIGHT));
+  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::kWhiteQueen));
+  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::kWhiteRook));
+  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::kWhiteBishop));
+  EXPECT_TRUE(HasMove(moves, "e7", "e8", Piece::kWhiteKnight));
 }
 
 TEST(GamePromotionTest, CapturesPromoteOnBothSides) {
-  Game game("k2r1r2/4P3/8/8/8/8/8/4K3 w - - 0 1");
+  Game const game("k2r1r2/4P3/8/8/8/8/8/4K3 w - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e7");
   EXPECT_EQ(moves.size(), 12u);
-  EXPECT_TRUE(HasMove(moves, "e7", "d8", Piece::Type::WHITE_QUEEN));
-  EXPECT_TRUE(HasMove(moves, "e7", "f8", Piece::Type::WHITE_KNIGHT));
+  EXPECT_TRUE(HasMove(moves, "e7", "d8", Piece::kWhiteQueen));
+  EXPECT_TRUE(HasMove(moves, "e7", "f8", Piece::kWhiteKnight));
 }
 
 TEST(GamePromotionTest, BlackPushOffersAllFourPieces) {
-  Game game("4k3/8/8/8/8/8/3p4/K7 b - - 0 1");
+  Game const game("4k3/8/8/8/8/8/3p4/K7 b - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "d2");
   EXPECT_EQ(moves.size(), 4u);
-  EXPECT_TRUE(HasMove(moves, "d2", "d1", Piece::Type::BLACK_QUEEN));
-  EXPECT_TRUE(HasMove(moves, "d2", "d1", Piece::Type::BLACK_KNIGHT));
+  EXPECT_TRUE(HasMove(moves, "d2", "d1", Piece::kBlackQueen));
+  EXPECT_TRUE(HasMove(moves, "d2", "d1", Piece::kBlackKnight));
 }
 
 TEST(GamePromotionTest, BlackCapturesPromoteOnBothSides) {
-  Game game("7k/8/8/8/8/8/3p4/K1R1R3 b - - 0 1");
+  Game const game("7k/8/8/8/8/8/3p4/K1R1R3 b - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "d2");
   EXPECT_EQ(moves.size(), 12u);
-  EXPECT_TRUE(HasMove(moves, "d2", "c1", Piece::Type::BLACK_QUEEN));
-  EXPECT_TRUE(HasMove(moves, "d2", "e1", Piece::Type::BLACK_ROOK));
+  EXPECT_TRUE(HasMove(moves, "d2", "c1", Piece::kBlackQueen));
+  EXPECT_TRUE(HasMove(moves, "d2", "e1", Piece::kBlackRook));
 }
 
 TEST(GamePromotionTest, PromotedPieceReplacesThePawn) {
   Game game("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
-  ASSERT_TRUE(Play(game, "e7", "e8", Piece::Type::WHITE_KNIGHT));
-  EXPECT_EQ(game.getPieceAtPos(Sq("e8")), Piece::Type::WHITE_KNIGHT);
-  EXPECT_EQ(game.getPieceAtPos(Sq("e7")), Piece::Type::BLANK);
+  ASSERT_TRUE(Play(game, "e7", "e8", Piece::kWhiteKnight));
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e8")), Piece::kWhiteKnight);
+  EXPECT_EQ(game.GetPieceAtPos(Sq("e7")), Piece::kNone);
 }
 
 // --- Pins and check -------------------------------------------------------
 
 TEST(GamePinTest, AbsolutelyPinnedBishopCannotMove) {
-  Game game("4k3/4r3/8/8/8/8/4B3/4K3 w - - 0 1");
+  Game const game("4k3/4r3/8/8/8/8/4B3/4K3 w - - 0 1");
   EXPECT_TRUE(MovesFrom(game, "e2").empty());
 }
 
 TEST(GamePinTest, PinnedRookMovesOnlyAlongThePin) {
-  Game game("4k3/4r3/8/8/8/8/4R3/4K3 w - - 0 1");
+  Game const game("4k3/4r3/8/8/8/8/4R3/4K3 w - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "e2");
   EXPECT_EQ(moves.size(), 5u);  // e3, e4, e5, e6 and capturing on e7.
   EXPECT_TRUE(HasMove(moves, "e2", "e7"));
@@ -348,15 +361,15 @@ TEST(GamePinTest, PinnedRookMovesOnlyAlongThePin) {
 }
 
 TEST(GameCheckTest, DetectsCheck) {
-  Game game("4k3/8/8/8/8/8/8/r3K3 w - - 0 1");
-  EXPECT_TRUE(game.isKingInCheck(Piece::Color::WHITE));
-  EXPECT_FALSE(game.isKingInCheck(Piece::Color::BLACK));
+  Game const game("4k3/8/8/8/8/8/8/r3K3 w - - 0 1");
+  EXPECT_TRUE(game.IsKingInCheck(Color::kWhite));
+  EXPECT_FALSE(game.IsKingInCheck(Color::kBlack));
 }
 
 TEST(GameCheckTest, KingCannotStepAlongTheCheckingLine) {
   // f1 is still attacked once the king leaves e1 (x-ray through the king).
-  Game game("4k3/8/8/8/8/8/8/r3K3 w - - 0 1");
-  const std::vector<Move> moves = game.getAllLegalMoves();
+  Game const game("4k3/8/8/8/8/8/8/r3K3 w - - 0 1");
+  const std::vector<Move> moves = game.GetAllLegalMoves();
   EXPECT_EQ(moves.size(), 3u);
   EXPECT_TRUE(HasMove(moves, "e1", "d2"));
   EXPECT_TRUE(HasMove(moves, "e1", "e2"));
@@ -366,9 +379,9 @@ TEST(GameCheckTest, KingCannotStepAlongTheCheckingLine) {
 TEST(GameCheckTest, KnightCheckLeavesOnlyKingMoves) {
   // The d3 knight checks e1 and can't be blocked or taken: the king must go
   // to d1, d2, e2 or f1 (f2 is covered by the knight).
-  Game game("4k3/8/8/8/8/3n4/8/R3K3 w - - 0 1");
-  EXPECT_TRUE(game.isKingInCheck(Piece::Color::WHITE));
-  const std::vector<Move> moves = game.getAllLegalMoves();
+  Game const game("4k3/8/8/8/8/3n4/8/R3K3 w - - 0 1");
+  EXPECT_TRUE(game.IsKingInCheck(Color::kWhite));
+  const std::vector<Move> moves = game.GetAllLegalMoves();
   EXPECT_EQ(moves.size(), 4u);
   EXPECT_FALSE(HasMove(moves, "e1", "f2"));
 }
@@ -388,8 +401,8 @@ struct CheckCase {
 class GameCheckDetectionTest : public testing::TestWithParam<CheckCase> {};
 
 TEST_P(GameCheckDetectionTest, WhiteKingIsInCheck) {
-  Game game{std::string(GetParam().fen)};
-  EXPECT_TRUE(game.isKingInCheck(Piece::Color::WHITE));
+  Game const game{GetParam().fen};
+  EXPECT_TRUE(game.IsKingInCheck(Color::kWhite));
 }
 
 const auto kCheckCases = std::to_array<CheckCase>({
@@ -409,22 +422,22 @@ INSTANTIATE_TEST_SUITE_P(EachPiece, GameCheckDetectionTest,
                          testing::ValuesIn(kCheckCases), CheckCaseName);
 
 TEST(GameCheckTest, PawnDoesNotGiveCheckStraightAhead) {
-  Game game("4k3/8/8/8/8/8/4p3/4K3 w - - 0 1");
-  EXPECT_FALSE(game.isKingInCheck(Piece::Color::WHITE));
+  Game const game("4k3/8/8/8/8/8/4p3/4K3 w - - 0 1");
+  EXPECT_FALSE(game.IsKingInCheck(Color::kWhite));
 }
 
 TEST(GameCheckTest, OnlyMovesThatResolveCheckAreLegal) {
   // Knight check from d3: the king must move or the knight must be taken.
-  Game game("4k3/8/8/8/8/3n4/8/R3K3 w - - 0 1");
-  for (const Move& move : game.getAllLegalMoves()) {
+  Game const game("4k3/8/8/8/8/3n4/8/R3K3 w - - 0 1");
+  for (const Move& move : game.GetAllLegalMoves()) {
     Game child(game);
-    child.makeMove(move);
-    EXPECT_FALSE(child.isKingInCheck(Piece::Color::WHITE)) << move;
+    child.MakeMove(move);
+    EXPECT_FALSE(child.IsKingInCheck(Color::kWhite)) << move;
   }
 }
 
 TEST(GameCheckTest, KingsCannotStandNextToEachOther) {
-  Game game("8/8/8/3k4/8/3K4/8/8 w - - 0 1");
+  Game const game("8/8/8/3k4/8/3K4/8/8 w - - 0 1");
   const std::vector<Move> moves = MovesFrom(game, "d3");
   EXPECT_FALSE(HasMove(moves, "d3", "d4"));
   EXPECT_FALSE(HasMove(moves, "d3", "c4"));
@@ -436,29 +449,29 @@ TEST(GameCheckTest, KingsCannotStandNextToEachOther) {
 
 TEST(GameEndTest, FoolsMateIsAWinForBlack) {
   Game game("rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3");
-  EXPECT_TRUE(game.getAllLegalMoves().empty());
-  EXPECT_TRUE(game.isGameOver());
-  EXPECT_EQ(game.getResult(), Result::BLACK_WIN);
+  EXPECT_TRUE(game.GetAllLegalMoves().empty());
+  EXPECT_TRUE(game.IsGameOver());
+  EXPECT_EQ(game.GetResult(), Result::kBlackWin);
 }
 
 TEST(GameEndTest, BackRankMateIsAWinForWhite) {
   Game game("R5k1/5ppp/8/8/8/8/8/6K1 b - - 0 1");
-  EXPECT_TRUE(game.isGameOver());
-  EXPECT_EQ(game.getResult(), Result::WHITE_WIN);
+  EXPECT_TRUE(game.IsGameOver());
+  EXPECT_EQ(game.GetResult(), Result::kWhiteWin);
 }
 
 TEST(GameEndTest, StalemateIsADraw) {
   Game game("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1");
-  EXPECT_FALSE(game.isKingInCheck(Piece::Color::BLACK));
-  EXPECT_TRUE(game.getAllLegalMoves().empty());
-  EXPECT_TRUE(game.isGameOver());
-  EXPECT_EQ(game.getResult(), Result::DRAW);
+  EXPECT_FALSE(game.IsKingInCheck(Color::kBlack));
+  EXPECT_TRUE(game.GetAllLegalMoves().empty());
+  EXPECT_TRUE(game.IsGameOver());
+  EXPECT_EQ(game.GetResult(), Result::kDraw);
 }
 
 TEST(GameEndTest, CheckWithAnEscapeIsNotGameOver) {
   Game game("4k3/8/8/8/8/8/8/r3K3 w - - 0 1");
-  EXPECT_FALSE(game.isGameOver());
-  EXPECT_EQ(game.getResult(), Result::ONGOING);
+  EXPECT_FALSE(game.IsGameOver());
+  EXPECT_EQ(game.GetResult(), Result::kOngoing);
 }
 
 struct MaterialCase {
@@ -478,9 +491,10 @@ struct MaterialCase {
 class GameMaterialTest : public testing::TestWithParam<MaterialCase> {};
 
 TEST_P(GameMaterialTest, DrawOnlyWhenNoMateIsPossible) {
-  Game game{std::string(GetParam().fen)};
-  EXPECT_EQ(game.isGameOver(), GetParam().draw);
-  EXPECT_EQ(game.getResult(), GetParam().draw ? Result::DRAW : Result::ONGOING);
+  Game game{GetParam().fen};
+  EXPECT_EQ(game.IsGameOver(), GetParam().draw);
+  EXPECT_EQ(game.GetResult(),
+            GetParam().draw ? Result::kDraw : Result::kOngoing);
 }
 
 const auto kMaterialCases = std::to_array<MaterialCase>({
@@ -527,3 +541,4 @@ INSTANTIATE_TEST_SUITE_P(InsufficientMaterial, GameMaterialTest,
                          testing::ValuesIn(kMaterialCases), MaterialCaseName);
 
 }  // namespace
+}  // namespace chess

@@ -1,36 +1,25 @@
 // Perft tests for move generation: count the leaf nodes of the legal move
-// tree to a fixed depth and compare against the published reference counts
-// (https://www.chessprogramming.org/Perft_Results).
+// tree to a fixed depth (Perft() from perft.h) and compare against the
+// published reference counts (https://www.chessprogramming.org/Perft_Results).
 // Deep cases only run in optimised builds (NDEBUG), since the debug
 // preset runs under ASan/UBSan.
+
+#include "core/perft.h"
 
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <ostream>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "game.h"
-#include "move.h"
+#include "core/game.h"
 
+namespace chess {
 namespace {
-
-// Number of leaf nodes reachable from `game` in exactly `depth` plies.
-// Recursion is the natural shape here and depth is at most 5 plies.
-uint64_t Perft(Game& game, int depth) {
-  const std::vector<Move> moves = game.getAllLegalMoves();
-  if (depth == 1) return moves.size();
-  uint64_t nodes = 0;
-  for (const Move& move : moves) {
-    Game child(game);
-    child.makeMove(move);
-    nodes += Perft(child, depth - 1);
-  }
-  return nodes;
-}
 
 struct PerftCase {
   std::string_view name;
@@ -98,7 +87,7 @@ class PerftTest : public testing::TestWithParam<PerftCase> {};
 
 TEST_P(PerftTest, MatchesReferenceNodeCount) {
   const PerftCase& c = GetParam();
-  Game game{std::string(c.fen)};
+  const Game game{c.fen};
   EXPECT_EQ(Perft(game, c.depth), c.nodes);
 }
 
@@ -115,4 +104,27 @@ INSTANTIATE_TEST_SUITE_P(Deep, PerftTest, testing::ValuesIn(kDeepCases),
                          CaseName);
 #endif
 
+TEST(PerftByDepthTest, MatchesStartPositionReferenceUpToDepthFour) {
+  // Depth 4 is the first depth with checkmates (8 of them).
+  const std::vector<PerftCounts> counts = PerftByDepth(Game(), 4);
+  ASSERT_EQ(counts.size(), 4u);
+  for (std::size_t i = 0; i < counts.size(); i++) {
+    EXPECT_EQ(counts[i], kStartPositionPerft[i]) << "depth " << i + 1;
+  }
+}
+
+TEST(PerftByDepthTest, AgreesWithPerftForKiwipete) {
+  const Game game{kKiwipeteFen};
+  const std::vector<PerftCounts> counts = PerftByDepth(game, 3);
+  ASSERT_EQ(counts.size(), 3u);
+  for (int depth = 1; depth <= 3; depth++) {
+    EXPECT_EQ(counts[static_cast<std::size_t>(depth - 1)].nodes,
+              Perft(game, depth))
+        << "depth " << depth;
+  }
+}
+
+TEST(PerftTest, DepthZeroIsOneNode) { EXPECT_EQ(Perft(Game(), 0), 1u); }
+
 }  // namespace
+}  // namespace chess
