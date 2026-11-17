@@ -79,6 +79,14 @@ Game::Game(std::string_view const fen) {
   }
 }
 
+std::optional<Game> Game::FromFen(std::string_view const fen) {
+  Game game;
+  if (!game.InitGameFromFen(fen)) {
+    return std::nullopt;
+  }
+  return game;
+}
+
 void Game::PassTurn(std::optional<Position> const new_en_passant_pos) {
   if (turn_ == Color::kBlack) {
     move_counter_++;
@@ -126,6 +134,16 @@ std::vector<Move> Game::GetAllLegalMoves() const {
                            legal_moves.end());
   }
   return all_legal_moves;
+}
+
+std::vector<Move> Game::GetAllLegalMovesFor(Color const color) const {
+  if (color == turn_) {
+    return GetAllLegalMoves();
+  }
+  Game game_copy(*this);
+  game_copy.turn_ = color;
+  game_copy.en_passant_pos_.reset();  // Only valid for the side to move.
+  return game_copy.GetAllLegalMoves();
 }
 
 bool Game::IsSquareAttacked(Position const square, Color const by) const {

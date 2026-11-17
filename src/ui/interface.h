@@ -26,10 +26,10 @@ class Interface {
  public:
   Interface();
 
-  Interface(const Interface &) = delete;
-  Interface &operator=(const Interface &) = delete;
-  Interface(Interface &&) = delete;
-  Interface &operator=(Interface &&) = delete;
+  Interface(const Interface&) = delete;
+  Interface& operator=(const Interface&) = delete;
+  Interface(Interface&&) = delete;
+  Interface& operator=(Interface&&) = delete;
 
   // Destroys the window, renderer and textures, and shuts down SDL.
   ~Interface();
@@ -45,7 +45,7 @@ class Interface {
   // Lets the engine play if it is an engine's turn, and detects game over.
   void HandlePlayerTurn();
 
-  void EventHandler(const SDL_Event &event);
+  void EventHandler(const SDL_Event& event);
 
   void Render();
 
@@ -54,10 +54,10 @@ class Interface {
   std::array<std::unique_ptr<Player>, 2> players_;
   std::unique_ptr<Game> game_;
 
-  SDL_Window *window_ = nullptr;
-  SDL_Renderer *renderer_ = nullptr;
+  SDL_Window* window_ = nullptr;
+  SDL_Renderer* renderer_ = nullptr;
 
-  std::unordered_map<Piece, SDL_Texture *> texture_pieces_;
+  std::unordered_map<Piece, SDL_Texture*> texture_pieces_;
 
   int screen_width_;
   int screen_height_;
@@ -80,7 +80,7 @@ class Interface {
   Position drag_piece_pos_ = kNoPosition;
   std::vector<Move> drag_piece_legal_moves_;
 
-  [[nodiscard]] Player &PlayerFor(Color const color) {
+  [[nodiscard]] Player& PlayerFor(Color const color) {
     return *players_[ColorIndex(color)];
   }
 
@@ -91,6 +91,7 @@ class Interface {
 
   void MenuGamemode(Color color);
 
+  // Asks for a FEN and sets up the game from it.
   void MenuFen();
 
   // Returns false if the user chose to quit.
@@ -102,7 +103,7 @@ class Interface {
   void LoadTexturePieces();
 
   // Throws std::invalid_argument if there is no texture for `piece`.
-  SDL_Texture *GetTexturePiece(Piece piece);
+  SDL_Texture* GetTexturePiece(Piece piece);
 
   void RenderBoard();
 

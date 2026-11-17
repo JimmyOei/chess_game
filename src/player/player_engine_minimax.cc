@@ -1,11 +1,17 @@
 /**
  * This file contains the PlayerEngineMiniMax implementation: the evaluation
  * terms and the minimax search with alpha-beta pruning.
+ *
+ * Piece values and piece-square tables are from Tomasz Michniewski's
+ * "Simplified Evaluation Function"
+ * (https://www.chessprogramming.org/Simplified_Evaluation_Function).
  */
 
 #include "player/player_engine_minimax.h"
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <limits>
 #include <stdexcept>
 #include <utility>
@@ -19,49 +25,27 @@
 #include "util/logger.h"
 
 namespace chess {
-
-std::vector<Move> PlayerEngineMiniMax::GetAllLegalMoves(const Game &game) {
-  std::vector<Move> all_legal_moves = game.GetAllLegalMoves();
-  if (all_legal_moves.empty()) {
-    CHESS_LOG(LogLevel::kError) << "Engine has no legal moves to make";
-    throw std::runtime_error("Engine has no legal moves to make");
-  }
-  return all_legal_moves;
-}
-
-Move PlayerEngineMiniMax::GetMove(const Game &game) {
-  CHESS_LOG(LogLevel::kInfo) << "Player Engine MiniMax is calculating a move";
-  CHESS_LOG(LogLevel::kInfo)
-      << "Current score: " << EvaluateGame(game) << " turn: " << game.GetTurn();
-  const std::pair<Move, int> best_move =
-      MiniMax(game, 0, std::numeric_limits<int>::min(),
-              std::numeric_limits<int>::max(), game.GetTurn() == Color::kWhite);
-  if (best_move.first.from == kNoPosition) {
-    CHESS_LOG(LogLevel::kError) << "Engine has no legal moves to make";
-    throw std::runtime_error("Engine has no legal moves to make");
-  }
-  CHESS_LOG(LogLevel::kInfo)
-      << "Player Engine MiniMax made move " << best_move.first
-      << " with eval score " << best_move.second;
-
-  return best_move.first;
-}
-
 namespace {
 
-// Material value of a piece type, in tenths of a pawn. The king has no value:
-// it can't be captured.
+// Centipawns per legal move of difference in mobility.
+constexpr int kMobilityWeight = 2;
+
+// Centipawns lost for each extra pawn of a colour on the same file.
+constexpr int kDoubledPawnPenalty = 20;
+
+// Material value of a piece type. The king has none: it is never captured.
 constexpr int PieceValue(PieceType const type) {
   switch (type) {
     case PieceType::kPawn:
-      return 10;
+      return 100;
     case PieceType::kKnight:
+      return 320;
     case PieceType::kBishop:
-      return 30;
+      return 330;
     case PieceType::kRook:
-      return 50;
+      return 500;
     case PieceType::kQueen:
-      return 90;
+      return 900;
     case PieceType::kKing:
     case PieceType::kNone:
       return 0;
@@ -74,9 +58,123 @@ constexpr int Sign(Color const color) {
   return color == Color::kWhite ? 1 : -1;
 }
 
+using SquareTable = std::array<int, kBoardSize>;
+
+// Piece-square tables for white, written as the board is seen from white's
+// side: the first row is rank 8 and the last is rank 1. Black uses them
+// mirrored (see PlacementBonus()). The king table is for the middlegame.
+constexpr SquareTable kPawnTable = {
+    0,  0,  0,   0,   0,   0,   0,  0,   //
+    50, 50, 50,  50,  50,  50,  50, 50,  //
+    10, 10, 20,  30,  30,  20,  10, 10,  //
+    5,  5,  10,  25,  25,  10,  5,  5,   //
+    0,  0,  0,   20,  20,  0,   0,  0,   //
+    5,  -5, -10, 0,   0,   -10, -5, 5,   //
+    5,  10, 10,  -20, -20, 10,  10, 5,   //
+    0,  0,  0,   0,   0,   0,   0,  0,
+};
+constexpr SquareTable kKnightTable = {
+    -50, -40, -30, -30, -30, -30, -40, -50,  //
+    -40, -20, 0,   0,   0,   0,   -20, -40,  //
+    -30, 0,   10,  15,  15,  10,  0,   -30,  //
+    -30, 5,   15,  20,  20,  15,  5,   -30,  //
+    -30, 0,   15,  20,  20,  15,  0,   -30,  //
+    -30, 5,   10,  15,  15,  10,  5,   -30,  //
+    -40, -20, 0,   5,   5,   0,   -20, -40,  //
+    -50, -40, -30, -30, -30, -30, -40, -50,
+};
+constexpr SquareTable kBishopTable = {
+    -20, -10, -10, -10, -10, -10, -10, -20,  //
+    -10, 0,   0,   0,   0,   0,   0,   -10,  //
+    -10, 0,   5,   10,  10,  5,   0,   -10,  //
+    -10, 5,   5,   10,  10,  5,   5,   -10,  //
+    -10, 0,   10,  10,  10,  10,  0,   -10,  //
+    -10, 10,  10,  10,  10,  10,  10,  -10,  //
+    -10, 5,   0,   0,   0,   0,   5,   -10,  //
+    -20, -10, -10, -10, -10, -10, -10, -20,
+};
+constexpr SquareTable kRookTable = {
+    0,  0,  0,  0,  0,  0,  0,  0,   //
+    5,  10, 10, 10, 10, 10, 10, 5,   //
+    -5, 0,  0,  0,  0,  0,  0,  -5,  //
+    -5, 0,  0,  0,  0,  0,  0,  -5,  //
+    -5, 0,  0,  0,  0,  0,  0,  -5,  //
+    -5, 0,  0,  0,  0,  0,  0,  -5,  //
+    -5, 0,  0,  0,  0,  0,  0,  -5,  //
+    0,  0,  0,  5,  5,  0,  0,  0,
+};
+constexpr SquareTable kQueenTable = {
+    -20, -10, -10, -5, -5, -10, -10, -20,  //
+    -10, 0,   0,   0,  0,  0,   0,   -10,  //
+    -10, 0,   5,   5,  5,  5,   0,   -10,  //
+    -5,  0,   5,   5,  5,  5,   0,   -5,   //
+    0,   0,   5,   5,  5,  5,   0,   -5,   //
+    -10, 5,   5,   5,  5,  5,   0,   -10,  //
+    -10, 0,   5,   0,  0,  0,   0,   -10,  //
+    -20, -10, -10, -5, -5, -10, -10, -20,
+};
+constexpr SquareTable kKingTable = {
+    -30, -40, -40, -50, -50, -40, -40, -30,  //
+    -30, -40, -40, -50, -50, -40, -40, -30,  //
+    -30, -40, -40, -50, -50, -40, -40, -30,  //
+    -30, -40, -40, -50, -50, -40, -40, -30,  //
+    -20, -30, -30, -40, -40, -30, -30, -20,  //
+    -10, -20, -20, -20, -20, -20, -20, -10,  //
+    20,  20,  0,   0,   0,   0,   20,  20,   //
+    20,  30,  10,  0,   0,   10,  30,  20,
+};
+
+constexpr const SquareTable& TableFor(PieceType const type) {
+  switch (type) {
+    case PieceType::kPawn:
+      return kPawnTable;
+    case PieceType::kKnight:
+      return kKnightTable;
+    case PieceType::kBishop:
+      return kBishopTable;
+    case PieceType::kRook:
+      return kRookTable;
+    case PieceType::kQueen:
+      return kQueenTable;
+    case PieceType::kKing:
+    case PieceType::kNone:
+      break;
+  }
+  return kKingTable;
+}
+
+// Bonus for `piece` standing on `pos`, from that piece's own point of view.
+int PlacementBonus(Piece const piece, Position const pos) {
+  // Rank as seen from the piece's own side: 1 is its home rank.
+  int const own_row = ColorOf(piece) == Color::kWhite
+                          ? pos.GetRow()
+                          : kBoardLength + 1 - pos.GetRow();
+  int const index =
+      (kBoardLength - own_row) * kBoardLength + (pos.GetColumn() - 1);
+  return TableFor(TypeOf(piece))[static_cast<std::size_t>(index)];
+}
+
 }  // namespace
 
-int PlayerEngineMiniMax::EvaluatePieceValue(const Game &game) {
+Move PlayerEngineMiniMax::GetMove(const Game& game) {
+  CHESS_LOG(LogLevel::kInfo) << "Player Engine MiniMax is calculating a move";
+  CHESS_LOG(LogLevel::kInfo)
+      << "Current score: " << Evaluate(game) << " turn: " << game.GetTurn();
+  const std::pair<Move, int> best_move =
+      MiniMax(game, 0, std::numeric_limits<int>::min(),
+              std::numeric_limits<int>::max());
+  if (best_move.first.from == kNoPosition) {
+    CHESS_LOG(LogLevel::kError) << "Engine has no legal moves to make";
+    throw std::runtime_error("Engine has no legal moves to make");
+  }
+  CHESS_LOG(LogLevel::kInfo)
+      << "Player Engine MiniMax made move " << best_move.first
+      << " with eval score " << best_move.second;
+
+  return best_move.first;
+}
+
+int PlayerEngineMiniMax::EvaluatePieceValue(const Game& game) {
   int score = 0;
   for (int i = 0; i < kBoardSize; i++) {
     Piece const piece = game.GetPieceAtPos(Position(i));
@@ -87,34 +185,29 @@ int PlayerEngineMiniMax::EvaluatePieceValue(const Game &game) {
   return score;
 }
 
-int PlayerEngineMiniMax::EvaluatePieceMobility(const Game &game) {
-  // TODO(Jimmy): this term is always 0. It only adds the move count of
-  // pieces that have no legal moves, and it should add white's mobility and
-  // subtract black's. Fix together with tests for the engine.
+int PlayerEngineMiniMax::EvaluatePiecePlacement(const Game& game) {
   int score = 0;
   for (int i = 0; i < kBoardSize; i++) {
-    if (game.GetPieceAtPos(Position(i)) == Piece::kNone) {
-      continue;
-    }
-
-    const std::vector<Move> legal_moves = game.GetLegalMovesForPos(Position(i));
-    if (legal_moves.empty()) {
-      score += static_cast<int>(legal_moves.size());
+    Position const pos(i);
+    Piece const piece = game.GetPieceAtPos(pos);
+    if (piece != Piece::kNone) {
+      score += Sign(ColorOf(piece)) * PlacementBonus(piece, pos);
     }
   }
-
   return score;
 }
 
-int PlayerEngineMiniMax::EvaluatePiecePlacement(const Game & /*game*/) {
-  // TODO(Jimmy): score piece placement (e.g. piece-square tables).
-  return 0;
+int PlayerEngineMiniMax::EvaluatePieceMobility(const Game& game) {
+  int score = 0;
+  for (Color const color : {Color::kWhite, Color::kBlack}) {
+    score += Sign(color) * kMobilityWeight *
+             static_cast<int>(game.GetAllLegalMovesFor(color).size());
+  }
+  return score;
 }
 
-int PlayerEngineMiniMax::EvaluatePawnStructure(const Game &game) {
+int PlayerEngineMiniMax::EvaluatePawnStructure(const Game& game) {
   int score = 0;
-
-  // Doubled pawns: each extra pawn of a colour on the same file costs 5.
   for (int column = 1; column <= kBoardLength; column++) {
     for (Color const color : {Color::kWhite, Color::kBlack}) {
       int pawns = 0;
@@ -125,50 +218,53 @@ int PlayerEngineMiniMax::EvaluatePawnStructure(const Game &game) {
         }
       }
       if (pawns > 1) {
-        score -= Sign(color) * 5 * (pawns - 1);
+        score -= Sign(color) * kDoubledPawnPenalty * (pawns - 1);
       }
     }
   }
-
   return score;
 }
 
-int PlayerEngineMiniMax::EvaluateGame(const Game &game) {
-  int score = 0;
-
-  score += EvaluatePieceValue(game);
-  score += EvaluatePieceMobility(game);
-  score += EvaluatePiecePlacement(game);
-  score += EvaluatePawnStructure(game);
-
-  // TODO(Jimmy): a draw (stalemate, insufficient material) is scored as a
-  // loss for the side to move here. Fix together with tests for the engine.
-  Game game_copy(game);  // IsGameOver() records the result.
+int PlayerEngineMiniMax::Evaluate(const Game& game) {
+  Game game_copy(game);
   if (game_copy.IsGameOver()) {
-    score -= Sign(game_copy.GetTurn()) * 1000;
+    switch (game_copy.GetResult()) {
+      case Result::kWhiteWin:
+        return kMateScore;
+      case Result::kBlackWin:
+        return -kMateScore;
+      case Result::kDraw:
+      case Result::kOngoing:
+        return 0;
+    }
   }
-  return score;
+  return EvaluatePieceValue(game) + EvaluatePiecePlacement(game) +
+         EvaluatePieceMobility(game) + EvaluatePawnStructure(game);
 }
 
-std::pair<Move, int> PlayerEngineMiniMax::MiniMax(
-    const Game &game, int const depth, int alpha, int beta,
-    bool const is_maximizing_player) const {
-  Game game_copy(game);  // IsGameOver() records the result.
-  if (depth == max_depth_ || game_copy.IsGameOver()) {
-    return std::make_pair(Move(), EvaluateGame(game));
+std::pair<Move, int> PlayerEngineMiniMax::MiniMax(const Game& game,
+                                                  int const depth, int alpha,
+                                                  int beta) const {
+  Game game_copy(game);
+  if (game_copy.IsGameOver()) {
+    // Mates closer to the root score further from zero, so the engine
+    // mates as fast as it can and delays being mated.
+    int const score = Evaluate(game_copy);
+    return {Move(), score > 0 ? score - depth : score < 0 ? score + depth : 0};
   }
-
-  const std::vector<Move> all_legal_moves = GetAllLegalMoves(game);
+  if (depth == max_depth_) {
+    return {Move(), Evaluate(game)};
+  }
 
   // White maximises the score and black minimises it.
+  bool const is_maximizing_player = game.GetTurn() == Color::kWhite;
   int best_eval = is_maximizing_player ? std::numeric_limits<int>::min()
                                        : std::numeric_limits<int>::max();
   Move best_move;
-  for (const Move &move : all_legal_moves) {
+  for (const Move& move : game.GetAllLegalMoves()) {
     Game child(game);
     child.MakeMove(move);
-    int const eval =
-        MiniMax(child, depth + 1, alpha, beta, !is_maximizing_player).second;
+    int const eval = MiniMax(child, depth + 1, alpha, beta).second;
     if (is_maximizing_player ? eval > best_eval : eval < best_eval) {
       best_eval = eval;
       best_move = move;
@@ -179,7 +275,7 @@ std::pair<Move, int> PlayerEngineMiniMax::MiniMax(
       beta = std::min(beta, eval);
     }
     if (beta <= alpha) {
-      break;  // The opponent won't allow this line.
+      break;
     }
   }
   return {best_move, best_eval};

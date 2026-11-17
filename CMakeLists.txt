@@ -103,6 +103,10 @@ add_executable(position_test tests/position_test.cc)
 target_link_libraries(position_test PRIVATE chess_options chess_core GTest::gtest_main)
 gtest_discover_tests(position_test)
 
+add_executable(player_engine_minimax_test tests/player_engine_minimax_test.cc)
+target_link_libraries(player_engine_minimax_test PRIVATE chess_options chess_core GTest::gtest_main)
+gtest_discover_tests(player_engine_minimax_test PROPERTIES TIMEOUT 120)
+
 add_executable(perft_test tests/perft_test.cc)
 target_link_libraries(perft_test PRIVATE chess_options chess_core GTest::gtest_main)
 gtest_discover_tests(perft_test PROPERTIES TIMEOUT 300)

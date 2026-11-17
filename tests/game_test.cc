@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <array>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <string_view>
@@ -61,6 +62,15 @@ TEST(GameTest, StartPositionHasTwentyLegalMoves) {
   EXPECT_EQ(game.GetAllLegalMoves().size(), 20u);
 }
 
+TEST(GameTest, MovesForTheSideNotToMove) {
+  Game game;
+  EXPECT_EQ(game.GetAllLegalMovesFor(Color::kBlack).size(), 20u);
+  ASSERT_TRUE(Play(game, "e2", "e4"));
+  EXPECT_EQ(game.GetAllLegalMovesFor(Color::kWhite).size(), 30u);
+  EXPECT_EQ(game.GetAllLegalMovesFor(Color::kBlack).size(), 20u);
+  EXPECT_EQ(game.GetTurn(), Color::kBlack);  // Unchanged.
+}
+
 TEST(GameTest, StartPositionFromFenHasTwentyLegalMoves) {
   Game const game(kStandardOpeningFen);
   EXPECT_EQ(game.GetAllLegalMoves().size(), 20u);
@@ -81,6 +91,32 @@ TEST(GameFenTest, ParsesPiecePlacement) {
   EXPECT_EQ(game.GetPieceAtPos(Sq("e8")), Piece::kBlackKing);
   EXPECT_EQ(game.GetKingPos(Color::kWhite), Sq("e1"));
   EXPECT_EQ(game.GetKingPos(Color::kBlack), Sq("e8"));
+}
+
+TEST(GameFenTest, FromFenReturnsTheGameForAValidFen) {
+  const std::optional<Game> game =
+      Game::FromFen("4k3/8/8/8/8/8/8/R3K2R b K - 0 1");
+  ASSERT_TRUE(game.has_value());
+  const Game loaded = game.value_or(Game());
+  EXPECT_EQ(loaded.GetTurn(), Color::kBlack);
+  EXPECT_EQ(loaded.GetPieceAtPos(Sq("h1")), Piece::kWhiteRook);
+  EXPECT_TRUE(loaded.GetCastlingKingSide(Color::kWhite));
+  EXPECT_FALSE(loaded.GetCastlingQueenSide(Color::kWhite));
+}
+
+TEST(GameFenTest, FromFenRejectsInvalidFens) {
+  for (std::string_view const fen : {
+           "", "not a fen",
+           "8/8/8/8/8/8/8/R7 w - - 0 1",      // No kings.
+           "4k3/8/8/8/8/8/8/4K3",             // No side to move.
+           "4k3/8/8/8/8/8/8/4K3 x - - 0 1",   // Bad side to move.
+           "4k3/8/8/8/8/8/8/4K3 w KX - 0 1",  // Bad castling field.
+           "4k3/8/8/8/8/8/8/4K3 w - e4 0 1",  // Bad en passant rank.
+           "4k3/8/8/8/8/8/4K3 w - - 0 1",     // Seven ranks.
+           "4k3/8/8/8/8/8/8/4K4 w - - 0 1",   // Nine files.
+       }) {
+    EXPECT_FALSE(Game::FromFen(fen).has_value()) << '"' << fen << '"';
+  }
 }
 
 TEST(GameFenTest, RejectsFenWithoutKings) {

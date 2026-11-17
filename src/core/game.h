@@ -33,8 +33,11 @@ class Game {
   Game();
 
   // The position given in FEN notation. If the FEN is not valid, the game is
-  // set to an empty board.
+  // set to an empty board. Use FromFen() to detect an invalid FEN.
   explicit Game(std::string_view fen);
+
+  // The position given in FEN notation, or nullopt if the FEN is not valid.
+  [[nodiscard]] static std::optional<Game> FromFen(std::string_view fen);
 
   [[nodiscard]] Color GetTurn() const { return turn_; }
 
@@ -61,6 +64,10 @@ class Game {
 
   // All legal moves for the side to move.
   [[nodiscard]] std::vector<Move> GetAllLegalMoves() const;
+
+  // All legal moves `color` would have if it were its turn (for the side not
+  // to move, without the opponent's en passant square). For evaluation.
+  [[nodiscard]] std::vector<Move> GetAllLegalMovesFor(Color color) const;
 
   [[nodiscard]] bool IsKingInCheck(Color color) const;
 

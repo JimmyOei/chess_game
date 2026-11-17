@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -118,30 +119,27 @@ void Interface::MenuGamemode(Color const color) {
 }
 
 void Interface::MenuFen() {
-  // while (true)
-  // {
-  //     std::string FEN;
-  //     std::cout << ">> Input a FEN-notation for the game or \"default\" for
-  //     the standard opening position" << std::endl
-  //               << ">> Example of expected input:
-  //               \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3\""
-  //               << std::endl
-  //               << std::endl;
-  //     getline(std::cin, FEN);
-  //     std::cout << std::endl;
-  //     if (FEN == "default")
-  //     {
-  //         FEN = kStandardOpeningFen;
-  //     }
-  //     if (game->state->setStateFromFEN(FEN))
-  //     {
-  //         return;
-  //     } // correct FEN notation
-  //     std::cerr << ">> The given FEN-notation is invalid: " << FEN <<
-  //     std::endl
-  //               << ">> Please try again " << std::endl
-  //               << std::endl;
-  // }
+  while (true) {
+    std::cout << ">> Input a position in FEN notation, or \"default\" for the "
+                 "standard starting position\n"
+              << ">> Example: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b "
+                 "KQkq e3 0 1\n\n";
+    std::string fen;
+    if (!std::getline(std::cin, fen)) {
+      return;  // No input left: keep the current position.
+    }
+    std::cout << '\n';
+    if (fen == "default") {
+      fen = kStandardOpeningFen;
+    }
+    if (std::optional<Game> const game = Game::FromFen(fen)) {
+      *game_ = *game;
+      std::cout << "The game will start from this position.\n\n";
+      return;
+    }
+    std::cerr << ">> The given FEN notation is invalid: " << fen << '\n'
+              << ">> Please try again\n\n";
+  }
 }
 
 bool Interface::Menu() {
@@ -150,6 +148,7 @@ bool Interface::Menu() {
     std::cout << ">> What would you like to do? (Input a letter)" << '\n'
               << "\"S\": Start the Chess game" << '\n'
               << "\"P\": Change the Player types" << '\n'
+              << "\"F\": Start from a position in FEN notation" << '\n'
               << "\"T\": Open the Test menu" << '\n'
               << "\"Q\": Quit program" << '\n'
               << '\n';
@@ -168,10 +167,9 @@ bool Interface::Menu() {
           MenuGamemode(Color::kWhite);
           MenuGamemode(Color::kBlack);
           break;
-        case 'C':
-        case 'c':
+        case 'F':
+        case 'f':
           MenuFen();
-          Render();
           break;
         case 'T':
         case 't':
