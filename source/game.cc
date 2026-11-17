@@ -2,13 +2,26 @@
 
 #include <iostream>
 
+namespace {
+
+// True if the king on `from` would be in check on `through`, the square it
+// crosses while castling. A king may not castle across an attacked square.
+bool CrossesAttackedSquare(Game game, Position const from,
+                           Position const through) {
+  Piece::Type const king = game.getPieceAtPos(from);
+  game.makeMove(Move(from, through, king));
+  return game.isKingInCheck(Piece::getColorOfPiece(king));
+}
+
+}  // namespace
+
 void Game::initGame() {
   turn = Piece::Color::WHITE;
-  enPassantPos = 0;
-  whiteCastlingQueenside = true;
-  whiteCastlingKingside = true;
-  blackCastlingQueenside = true;
-  blackCastlingKingside = true;
+  enPassantPos = -1;
+  whiteCastlingQueenside = false;
+  whiteCastlingKingside = false;
+  blackCastlingQueenside = false;
+  blackCastlingKingside = false;
   whiteKingPos = 0;
   blackKingPos = 0;
   result = Result::ONGOING;
@@ -35,7 +48,7 @@ Game::Game(std::string FENString) {
   }
 }
 
-Game::Game(Game const &game)
+Game::Game(Game const& game)
     : turn(game.turn),
       enPassantPos(game.enPassantPos),
       whiteCastlingQueenside(game.whiteCastlingQueenside),
@@ -73,7 +86,7 @@ bool Game::getCastlingKingSide(Piece::Color const color) {
 }
 
 bool Game::getCastlingQueenSide(Piece::Color const color) {
-  return color == Piece::Color::BLACK ? whiteCastlingQueenside
+  return color == Piece::Color::WHITE ? whiteCastlingQueenside
                                       : blackCastlingQueenside;
 }
 
@@ -302,7 +315,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
            tmpPos == enPassantPos)) {
         /* Capture is a promotion */
-        if (tmpPos + Direction::Cardinal::NORTH >= BOARD_SIZE) {
+        if (tmpPos.getRow() == BOARD_LENGTH) {
           moves.push_back(Move(pos, tmpPos, piece, Piece::Type::WHITE_QUEEN));
           moves.push_back(Move(pos, tmpPos, piece, Piece::Type::WHITE_ROOK));
           moves.push_back(Move(pos, tmpPos, piece, Piece::Type::WHITE_BISHOP));
@@ -364,7 +377,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
             Piece::getColorOfPiece(getPieceAtPos(tmpPos)) != color) ||
            tmpPos == enPassantPos)) {
         /* Capture is a promotion */
-        if (tmpPos + Direction::Cardinal::SOUTH >= BOARD_SIZE) {
+        if (tmpPos.getRow() == 1) {
           moves.push_back(Move(pos, tmpPos, piece, Piece::Type::BLACK_QUEEN));
           moves.push_back(Move(pos, tmpPos, piece, Piece::Type::BLACK_ROOK));
           moves.push_back(Move(pos, tmpPos, piece, Piece::Type::BLACK_BISHOP));
@@ -377,7 +390,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
     }
     case Piece::Type::WHITE_KNIGHT:
     case Piece::Type::BLACK_KNIGHT: {
-      for (auto &knightMove : Direction::KnightMoves) {
+      for (auto& knightMove : Direction::KnightMoves) {
         const Position toPos = pos + knightMove;
         if (toPos.isValid() && abs(toPos.getColumn() - pos.getColumn()) <= 2 &&
             abs(toPos.getRow() - pos.getRow()) <= 2 &&
@@ -393,7 +406,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
     /* Queen is the same as Bishop + Rook */
     case Piece::Type::WHITE_BISHOP:
     case Piece::Type::BLACK_BISHOP: {
-      for (auto &diagonal : Direction::Diagonals) {
+      for (auto& diagonal : Direction::Diagonals) {
         Position tmpPos = pos + diagonal;
         if (abs(tmpPos.getColumn() - pos.getColumn()) !=
             abs(tmpPos.getRow() - pos.getRow())) {
@@ -420,7 +433,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
     }
     case Piece::Type::WHITE_ROOK:
     case Piece::Type::BLACK_ROOK: {
-      for (auto &cardinal : Direction::Cardinals) {
+      for (auto& cardinal : Direction::Cardinals) {
         Position tmpPos = pos + cardinal;
         if ((tmpPos.getRow() != pos.getRow() &&
              tmpPos.getColumn() != pos.getColumn())) {
@@ -449,7 +462,8 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
         if (whiteCastlingKingside &&
             getPieceAtPos(pos + 1) == Piece::Type::BLANK &&
             getPieceAtPos(pos + 2) == Piece::Type::BLANK &&
-            getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK) {
+            getPieceAtPos(pos + 3) == Piece::Type::WHITE_ROOK &&
+            !CrossesAttackedSquare(*this, pos, pos + 1)) {
           moves.push_back(Move(pos, pos + 2, piece));
         }
 
@@ -458,13 +472,14 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
             getPieceAtPos(pos - 1) == Piece::Type::BLANK &&
             getPieceAtPos(pos - 2) == Piece::Type::BLANK &&
             getPieceAtPos(pos - 3) == Piece::Type::BLANK &&
-            getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK) {
+            getPieceAtPos(pos - 4) == Piece::Type::WHITE_ROOK &&
+            !CrossesAttackedSquare(*this, pos, pos - 1)) {
           moves.push_back(Move(pos, pos - 2, piece));
         }
       }
     }
     case Piece::Type::BLACK_KING: {
-      for (auto &cardinal : Direction::Cardinals) {
+      for (auto& cardinal : Direction::Cardinals) {
         Position tmpPos = pos + cardinal;
         if (tmpPos.isValid() &&
             (tmpPos.getRow() == pos.getRow() ||
@@ -475,7 +490,7 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
         }
       }
 
-      for (auto &diagonal : Direction::Diagonals) {
+      for (auto& diagonal : Direction::Diagonals) {
         Position tmpPos = pos + diagonal;
         if (tmpPos.isValid() &&
             abs(tmpPos.getColumn() - pos.getColumn()) ==
@@ -494,7 +509,9 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
             getPieceAtPos(pos + 2 * Direction::Cardinal::EAST) ==
                 Piece::Type::BLANK &&
             getPieceAtPos(pos + 3 * Direction::Cardinal::EAST) ==
-                Piece::Type::BLACK_ROOK) {
+                Piece::Type::BLACK_ROOK &&
+            !CrossesAttackedSquare(*this, pos,
+                                   pos + Direction::Cardinal::EAST)) {
           moves.push_back(
               Move(pos, pos + 2 * Direction::Cardinal::EAST, piece));
         }
@@ -508,7 +525,9 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
             getPieceAtPos(pos + 3 * Direction::Cardinal::WEST) ==
                 Piece::Type::BLANK &&
             getPieceAtPos(pos + 4 * Direction::Cardinal::WEST) ==
-                Piece::Type::BLACK_ROOK) {
+                Piece::Type::BLACK_ROOK &&
+            !CrossesAttackedSquare(*this, pos,
+                                   pos + Direction::Cardinal::WEST)) {
           moves.push_back(
               Move(pos, pos + 2 * Direction::Cardinal::WEST, piece));
         }
@@ -534,6 +553,21 @@ std::vector<Move> Game::getLegalMovesForPos(Position const pos) {
 
 void Game::makeMove(Move const move) {
   Position newEnPassantPos = -1;
+
+  // A move from or onto a rook's home square ends that castling right: the
+  // rook has either moved away or been captured there.
+  for (Position const square : {move.from, move.to}) {
+    if (square == 0) {  // a1
+      whiteCastlingQueenside = false;
+    } else if (square == BOARD_LENGTH - 1) {  // h1
+      whiteCastlingKingside = false;
+    } else if (square == BOARD_SIZE - BOARD_LENGTH) {  // a8
+      blackCastlingQueenside = false;
+    } else if (square == BOARD_SIZE - 1) {  // h8
+      blackCastlingKingside = false;
+    }
+  }
+
   switch (move.piece) {
     case Piece::Type::WHITE_KING:
       if (whiteCastlingKingside || whiteCastlingQueenside) {
@@ -566,20 +600,6 @@ void Game::makeMove(Move const move) {
         blackCastlingQueenside = false;
       }
       blackKingPos = move.to;
-      break;
-    case Piece::Type::WHITE_ROOK:
-      if (move.from.getColumn() == 0) {
-        whiteCastlingQueenside = false;
-      } else if (move.from.getColumn() == BOARD_LENGTH) {
-        whiteCastlingKingside = false;
-      }
-      break;
-    case Piece::Type::BLACK_ROOK:
-      if (move.from.getColumn() == 0) {
-        blackCastlingQueenside = false;
-      } else if (move.from.getColumn() == BOARD_LENGTH) {
-        blackCastlingKingside = false;
-      }
       break;
     case Piece::Type::WHITE_PAWN:
       /* Promotion */
@@ -628,59 +648,56 @@ bool Game::isGameOver() {
     return true;
   }
 
-  bool isCheck = isKingInCheck(turn);
-  if (isKingInCheck(turn)) {
-    std::vector<Move> legalMoves;
-    for (int i = 0; i < BOARD_SIZE; i++) {
-      if (Piece::getColorOfPiece(board[i]) == turn &&
-          board[i] != Piece::Type::BLANK) {
-        std::vector<Move> moves = getLegalMovesForPos(Position(i));
-        if (!moves.empty()) {
-          return false;
-        }
-      }
+  // No legal moves: checkmate if in check, otherwise stalemate (a draw).
+  bool has_legal_move = false;
+  for (int i = 0; i < BOARD_SIZE && !has_legal_move; i++) {
+    if (board[i] != Piece::Type::BLANK &&
+        Piece::getColorOfPiece(board[i]) == turn) {
+      has_legal_move = !getLegalMovesForPos(Position(i)).empty();
     }
-    result =
-        turn == Piece::Color::WHITE ? Result::BLACK_WIN : Result::WHITE_WIN;
+  }
+  if (!has_legal_move) {
+    if (isKingInCheck(turn)) {
+      result =
+          turn == Piece::Color::WHITE ? Result::BLACK_WIN : Result::WHITE_WIN;
+    } else {
+      result = Result::DRAW;
+    }
     return true;
   }
 
-  /* Draws */
-  std::vector<std::pair<Piece::Type, Position>> whitePieces =
-      getAllPiecesForColor(Piece::Color::WHITE);
-  std::vector<std::pair<Piece::Type, Position>> blackPieces =
-      getAllPiecesForColor(Piece::Color::BLACK);
-  if (whitePieces.size() == 1 && blackPieces.size() == 1) {
+  // Draw by insufficient material, when no sequence of moves can mate:
+  // K vs K, K + one minor piece v K, and K + B vs K + B with both bishops on
+  // the same square colour.
+  std::vector<std::pair<Piece::Type, Position>> non_kings;
+  for (Piece::Color const color : {Piece::Color::WHITE, Piece::Color::BLACK}) {
+    for (auto const& [piece, pos] : getAllPiecesForColor(color)) {
+      if (Piece::getPieceTypeWithoutColor(piece) != Piece::Type::KING) {
+        non_kings.emplace_back(piece, pos);
+      }
+    }
+  }
+  auto const is_minor = [](Piece::Type const piece) {
+    Piece::Type const type = Piece::getPieceTypeWithoutColor(piece);
+    return type == Piece::Type::KNIGHT || type == Piece::Type::BISHOP;
+  };
+  auto const is_bishop = [](Piece::Type const piece) {
+    return Piece::getPieceTypeWithoutColor(piece) == Piece::Type::BISHOP;
+  };
+  auto const square_color = [](Position const pos) {
+    return (pos.getRow() + pos.getColumn()) % 2;
+  };
+  bool const insufficient_material =
+      non_kings.empty() ||
+      (non_kings.size() == 1 && is_minor(non_kings[0].first)) ||
+      (non_kings.size() == 2 && is_bishop(non_kings[0].first) &&
+       is_bishop(non_kings[1].first) &&
+       Piece::getColorOfPiece(non_kings[0].first) !=
+           Piece::getColorOfPiece(non_kings[1].first) &&
+       square_color(non_kings[0].second) == square_color(non_kings[1].second));
+  if (insufficient_material) {
     result = Result::DRAW;
     return true;
-  } else if (whitePieces.size() == 1 && blackPieces.size() == 2) {
-    if (blackPieces[0].first == Piece::Type::BLACK_KNIGHT ||
-        blackPieces[1].first == Piece::Type::BLACK_KNIGHT ||
-        blackPieces[0].first == Piece::Type::BLACK_BISHOP ||
-        blackPieces[1].first == Piece::Type::BLACK_BISHOP) {
-      result = Result::DRAW;
-      return true;
-    }
-  } else if (whitePieces.size() == 2 && blackPieces.size() == 1) {
-    if (whitePieces[0].first == Piece::Type::WHITE_KNIGHT ||
-        whitePieces[1].first == Piece::Type::WHITE_KNIGHT ||
-        whitePieces[0].first == Piece::Type::WHITE_BISHOP ||
-        whitePieces[1].first == Piece::Type::WHITE_BISHOP) {
-      result = Result::DRAW;
-      return true;
-    }
-  } else if (whitePieces.size() == 2 && blackPieces.size() == 2) {
-    if (((whitePieces[0].first == Piece::Type::WHITE_BISHOP ||
-          blackPieces[1].first == Piece::Type::BLACK_BISHOP) ||
-         (whitePieces[0].first == Piece::Type::WHITE_KNIGHT ||
-          blackPieces[1].first == Piece::Type::BLACK_KNIGHT)) &&
-        ((blackPieces[0].first == Piece::Type::BLACK_BISHOP ||
-          blackPieces[1].first == Piece::Type::BLACK_BISHOP) ||
-         (blackPieces[0].first == Piece::Type::BLACK_KNIGHT ||
-          blackPieces[1].first == Piece::Type::BLACK_KNIGHT))) {
-      result = Result::DRAW;
-      return true;
-    }
   }
 
   return false;
@@ -779,36 +796,50 @@ bool Game::initGameFromFENString(std::string FENString) {
 
   i += 2;
   if (i < lengthFENString && FENString[i - 1] == ' ') {
-    if (FENString[i] == 'K' || FENString[i] == 'Q' || FENString[i] == 'k' ||
-        FENString[i] == 'q') {
-      if (FENString[i++] == 'K') {
-        whiteCastlingKingside = true;
+    if (FENString[i] == '-') {
+      i++;
+    } else {
+      int const field_start = i;
+      while (i < lengthFENString && FENString[i] != ' ') {
+        switch (FENString[i]) {
+          case 'K':
+            whiteCastlingKingside = true;
+            break;
+          case 'Q':
+            whiteCastlingQueenside = true;
+            break;
+          case 'k':
+            blackCastlingKingside = true;
+            break;
+          case 'q':
+            blackCastlingQueenside = true;
+            break;
+          default:
+            return false;
+        }
+        i++;
       }
-      if (i < lengthFENString && FENString[i++] == 'Q') {
-        whiteCastlingQueenside = true;
+      if (i == field_start) {
+        return false;
       }
-      if (i < lengthFENString && FENString[i++] == 'k') {
-        blackCastlingKingside = true;
-      }
-      if (i < lengthFENString && FENString[i++] == 'q') {
-        blackCastlingQueenside = true;
-      }
-    } else if (FENString[i++] != '-') {
-      return false;
     }
     if (FENString[i++] != ' ') {
       return false;
     }
 
-    if (FENString[i++] != '-') {
-      if (i < lengthFENString - 1) enPassantPos = FENString[i++] - 'a';
-      if (enPassantPos >= BOARD_LENGTH && i >= lengthFENString) {
+    if (FENString[i] == '-') {
+      i++;
+    } else {
+      if (i + 1 >= lengthFENString) {
         return false;
       }
-      enPassantPos += (FENString[i++] - '0') * BOARD_LENGTH;
-      if (enPassantPos >= BOARD_SIZE) {
+      int const file = FENString[i] - 'a';
+      int const rank = FENString[i + 1] - '1';
+      if (file < 0 || file >= BOARD_LENGTH || (rank != 2 && rank != 5)) {
         return false;
       }
+      enPassantPos = rank * BOARD_LENGTH + file;
+      i += 2;
     }
   } else {
     return false;

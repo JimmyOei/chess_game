@@ -156,6 +156,14 @@ TEST(GameCastlingTest, NoCastlingThroughAttackedSquare) {
   EXPECT_TRUE(HasMove(moves, "e1", "c1"));
 }
 
+TEST(GameCastlingTest, BlackNoCastlingThroughAttackedSquare) {
+  // The white rook on d1 attacks d8, which the black king passes over.
+  Game game("r3k2r/8/8/8/8/8/8/3RK3 b kq - 0 1");
+  const std::vector<Move> moves = MovesFrom(game, "e8");
+  EXPECT_FALSE(HasMove(moves, "e8", "c8"));
+  EXPECT_TRUE(HasMove(moves, "e8", "g8"));
+}
+
 TEST(GameCastlingTest, NoCastlingIntoCheck) {
   Game game("4k1r1/8/8/8/8/8/8/R3K2R w KQ - 0 1");
   EXPECT_FALSE(HasMove(MovesFrom(game, "e1"), "e1", "g1"));
@@ -208,6 +216,20 @@ TEST(GameCastlingTest, KingsideRookMoveLosesOnlyKingsideRight) {
   EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
 }
 
+TEST(GameCastlingTest, OtherRookOnTheSameFileKeepsTheRight) {
+  // Only the rook on h1 matters for kingside castling, not one on h4.
+  Game game("4k3/8/8/8/7R/8/8/R3K2R w KQ - 0 1");
+  ASSERT_TRUE(Play(game, "h4", "g4"));
+  EXPECT_TRUE(game.getCastlingKingSide(Piece::Color::WHITE));
+}
+
+TEST(GameCastlingTest, CapturePromotionOnRookSquareLosesThatRight) {
+  Game game("r3k2r/6P1/8/8/8/8/8/4K3 w kq - 0 1");
+  ASSERT_TRUE(Play(game, "g7", "h8", Piece::Type::WHITE_QUEEN));
+  EXPECT_FALSE(game.getCastlingKingSide(Piece::Color::BLACK));
+  EXPECT_TRUE(game.getCastlingQueenSide(Piece::Color::BLACK));
+}
+
 TEST(GameCastlingTest, CapturedRookLosesThatRight) {
   Game game("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
   ASSERT_TRUE(Play(game, "h1", "h8"));
@@ -250,6 +272,15 @@ TEST(GameEnPassantTest, ExpiresAfterOneMove) {
 TEST(GameEnPassantTest, NotAllowedWithoutFenSquare) {
   Game game("4k3/8/8/3pP3/8/8/8/4K3 w - - 0 1");
   EXPECT_FALSE(HasMove(MovesFrom(game, "e5"), "e5", "d6"));
+}
+
+TEST(GameEnPassantTest, NoPhantomCaptureOntoA1WithoutFenSquare) {
+  // "No en passant square" must not be stored as square 0 (a1), or the b2
+  // pawn could capture "en passant" onto the empty a1.
+  Game game("4k3/8/8/8/8/8/1p6/4K3 b - - 0 1");
+  const std::vector<Move> moves = MovesFrom(game, "b2");
+  EXPECT_EQ(moves.size(), 4u);  // Only the four promotions on b1.
+  EXPECT_FALSE(HasMove(moves, "b2", "a1", Piece::Type::BLACK_QUEEN));
 }
 
 TEST(GameEnPassantTest, IllegalWhenItExposesTheKingOnTheRank) {
@@ -466,6 +497,13 @@ const auto kMaterialCases = std::to_array<MaterialCase>({
     {.name = "SameColourBishops",
      .fen = "4kb2/8/8/8/8/8/8/2B1K3 w - - 0 1",
      .draw = true},
+    // g8 is light and c1 is dark: mate is still possible.
+    {.name = "OppositeColourBishops",
+     .fen = "4k1b1/8/8/8/8/8/8/2B1K3 w - - 0 1",
+     .draw = false},
+    {.name = "TwoKnightsVsKing",
+     .fen = "4k3/8/8/8/8/8/8/1N2K1N1 w - - 0 1",
+     .draw = false},
     {.name = "KingRookVsKing",
      .fen = "4k3/8/8/8/8/8/8/R3K3 w - - 0 1",
      .draw = false},

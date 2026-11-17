@@ -20,7 +20,7 @@ namespace {
 
 // Number of leaf nodes reachable from `game` in exactly `depth` plies.
 // Recursion is the natural shape here and depth is at most 5 plies.
-uint64_t Perft(Game& game, int depth) {  // NOLINT(misc-no-recursion)
+uint64_t Perft(Game& game, int depth) {
   const std::vector<Move> moves = game.getAllLegalMoves();
   if (depth == 1) return moves.size();
   uint64_t nodes = 0;
