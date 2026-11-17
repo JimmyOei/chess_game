@@ -136,14 +136,13 @@ std::vector<Move> Game::GetAllLegalMoves() const {
   return all_legal_moves;
 }
 
-std::vector<Move> Game::GetAllLegalMovesFor(Color const color) const {
-  if (color == turn_) {
-    return GetAllLegalMoves();
+int Game::CountPseudoLegalMoves(Color const color) const {
+  std::vector<Move> moves;
+  moves.reserve(128);
+  for (auto const& [piece, pos] : GetAllPiecesForColor(color)) {
+    AddPseudoLegalMoves(pos, /*include_castling=*/false, moves);
   }
-  Game game_copy(*this);
-  game_copy.turn_ = color;
-  game_copy.en_passant_pos_.reset();  // Only valid for the side to move.
-  return game_copy.GetAllLegalMoves();
+  return static_cast<int>(moves.size());
 }
 
 bool Game::IsSquareAttacked(Position const square, Color const by) const {
@@ -240,8 +239,9 @@ void Game::AddPawnMoves(Position const pos, std::vector<Move>& moves) const {
       continue;
     }
     Piece const captured = SquareAt(*target);
+    // The en passant square only belongs to the side to move.
     if ((captured != Piece::kNone && ColorOf(captured) != color) ||
-        *target == en_passant_pos_) {
+        (color == turn_ && *target == en_passant_pos_)) {
       add(*target);
     }
   }
@@ -304,20 +304,9 @@ void Game::AddCastlingMoves(Position const pos,
   }
 }
 
-std::vector<Move> Game::GetLegalMovesForPos(Position const pos) const {
-  if (!pos.IsValid()) {
-    return {};
-  }
-  Piece const piece = SquareAt(pos);
-  if (piece == Piece::kNone || ColorOf(piece) != turn_) {
-    return {};
-  }
-
-  CHESS_LOG(LogLevel::kDebug)
-      << "Getting legal moves for position " << pos << " " << piece;
-
-  std::vector<Move> moves;
-  switch (TypeOf(piece)) {
+void Game::AddPseudoLegalMoves(Position const pos, bool const include_castling,
+                               std::vector<Move>& moves) const {
+  switch (TypeOf(SquareAt(pos))) {
     case PieceType::kPawn:
       AddPawnMoves(pos, moves);
       break;
@@ -337,11 +326,29 @@ std::vector<Move> Game::GetLegalMovesForPos(Position const pos) const {
     case PieceType::kKing:
       AddStepMoves(pos, direction::kCardinals, moves);
       AddStepMoves(pos, direction::kDiagonals, moves);
-      AddCastlingMoves(pos, moves);
+      if (include_castling) {
+        AddCastlingMoves(pos, moves);
+      }
       break;
     case PieceType::kNone:
       break;
   }
+}
+
+std::vector<Move> Game::GetLegalMovesForPos(Position const pos) const {
+  if (!pos.IsValid()) {
+    return {};
+  }
+  Piece const piece = SquareAt(pos);
+  if (piece == Piece::kNone || ColorOf(piece) != turn_) {
+    return {};
+  }
+
+  CHESS_LOG(LogLevel::kDebug)
+      << "Getting legal moves for position " << pos << " " << piece;
+
+  std::vector<Move> moves;
+  AddPseudoLegalMoves(pos, /*include_castling=*/true, moves);
 
   // Keep only the moves that don't leave the own king in check.
   std::vector<Move> legal_moves;
@@ -431,9 +438,15 @@ bool Game::IsGameOver() {
     return true;
   }
 
-  // Draw by insufficient material, when no sequence of moves can mate:
-  // K vs K, K + one minor piece v K, and K + B vs K + B with both bishops on
-  // the same square colour.
+  if (IsInsufficientMaterial()) {
+    result_ = Result::kDraw;
+    return true;
+  }
+
+  return false;
+}
+
+bool Game::IsInsufficientMaterial() const {
   std::vector<std::pair<Piece, Position>> non_kings;
   for (Color const color : {Color::kWhite, Color::kBlack}) {
     for (auto const& [piece, pos] : GetAllPiecesForColor(color)) {
@@ -452,19 +465,13 @@ bool Game::IsGameOver() {
   auto const square_color = [](Position const pos) {
     return (pos.GetRow() + pos.GetColumn()) % 2;
   };
-  bool const insufficient_material =
-      non_kings.empty() ||
-      (non_kings.size() == 1 && is_minor(non_kings[0].first)) ||
-      (non_kings.size() == 2 && is_bishop(non_kings[0].first) &&
-       is_bishop(non_kings[1].first) &&
-       ColorOf(non_kings[0].first) != ColorOf(non_kings[1].first) &&
-       square_color(non_kings[0].second) == square_color(non_kings[1].second));
-  if (insufficient_material) {
-    result_ = Result::kDraw;
-    return true;
-  }
-
-  return false;
+  return non_kings.empty() ||
+         (non_kings.size() == 1 && is_minor(non_kings[0].first)) ||
+         (non_kings.size() == 2 && is_bishop(non_kings[0].first) &&
+          is_bishop(non_kings[1].first) &&
+          ColorOf(non_kings[0].first) != ColorOf(non_kings[1].first) &&
+          square_color(non_kings[0].second) ==
+              square_color(non_kings[1].second));
 }
 
 bool Game::InitGameFromFen(std::string_view const fen) {

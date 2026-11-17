@@ -65,9 +65,10 @@ class Game {
   // All legal moves for the side to move.
   [[nodiscard]] std::vector<Move> GetAllLegalMoves() const;
 
-  // All legal moves `color` would have if it were its turn (for the side not
-  // to move, without the opponent's en passant square). For evaluation.
-  [[nodiscard]] std::vector<Move> GetAllLegalMovesFor(Color color) const;
+  // Number of pseudo-legal moves of `color`: moves its pieces can make,
+  // without checking whether they leave its own king in check, and without
+  // castling. Much cheaper than counting legal moves; for evaluation.
+  [[nodiscard]] int CountPseudoLegalMoves(Color color) const;
 
   [[nodiscard]] bool IsKingInCheck(Color color) const;
 
@@ -82,6 +83,10 @@ class Game {
 
   // True if the game has ended. Also sets the result (see GetResult()).
   [[nodiscard]] bool IsGameOver();
+
+  // True if neither side can ever checkmate (a draw): K v K, K + one minor
+  // piece v K, and K + B v K + B with both bishops on the same square colour.
+  [[nodiscard]] bool IsInsufficientMaterial() const;
 
  private:
   struct CastlingRights {
@@ -113,6 +118,9 @@ class Game {
   void AddStepMoves(Position pos, std::span<const int> offsets,
                     std::vector<Move>& moves) const;
   void AddCastlingMoves(Position pos, std::vector<Move>& moves) const;
+  // All of the above for the piece on `pos`.
+  void AddPseudoLegalMoves(Position pos, bool include_castling,
+                           std::vector<Move>& moves) const;
 
   [[nodiscard]] Piece& SquareAt(Position const pos) {
     return board_[pos.ArrayIndex()];

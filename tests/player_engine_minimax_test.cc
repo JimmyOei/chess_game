@@ -5,9 +5,12 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "core/game.h"
 #include "core/move.h"
@@ -144,6 +147,40 @@ TEST(PlayerEngineMiniMaxTest, DoesNotStalemateWhenWinning) {
     EXPECT_NE(after.GetPieceAtPos(Sq("b6")), Piece::kWhiteQueen)
         << "depth " << depth;
   }
+}
+
+TEST(PlayerEngineMiniMaxTest, ReportsWhatTheLastSearchDid) {
+  PlayerEngineMiniMax engine(2);
+  EXPECT_EQ(engine.GetLastSearchStats().nodes, 0u);  // Nothing searched yet.
+  (void)engine.GetMove(Game());
+  const PlayerEngineMiniMax::SearchStats& stats = engine.GetLastSearchStats();
+  EXPECT_EQ(stats.depth, 2);
+  // Iterative deepening visits the root and its 20 children for depth 1,
+  // then at least the root, 20 children and 20 grandchildren for depth 2.
+  EXPECT_GE(stats.nodes, 21u + 41u);
+}
+
+TEST(PlayerEngineMiniMaxTest, TimeLimitedEngineAnswersInTime) {
+  using std::chrono::milliseconds;
+  const Game game(
+      "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+  PlayerEngineMiniMax engine(milliseconds(300));
+  auto const start = std::chrono::steady_clock::now();
+  const Move move = engine.GetMove(game);
+  auto const elapsed = std::chrono::steady_clock::now() - start;
+  // Generous margin: the debug build runs under sanitizers, and the clock is
+  // only checked every so many nodes.
+  EXPECT_LT(elapsed, milliseconds(3000));
+  const std::vector<Move> legal_moves = game.GetAllLegalMoves();
+  EXPECT_NE(std::ranges::find(legal_moves, move), legal_moves.end());
+}
+
+TEST(PlayerEngineMiniMaxTest, TimeLimitedEngineFindsMateInOne) {
+  PlayerEngineMiniMax engine(std::chrono::milliseconds(300));
+  Game game("6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1");
+  game.MakeMove(engine.GetMove(game));
+  EXPECT_TRUE(game.IsGameOver());
+  EXPECT_EQ(game.GetResult(), Result::kWhiteWin);
 }
 
 }  // namespace

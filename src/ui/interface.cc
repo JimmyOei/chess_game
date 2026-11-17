@@ -9,7 +9,9 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -37,6 +39,9 @@ constexpr int kMinScreenHeight = 500;
 
 constexpr int kStartingScreenWidth = 600;
 constexpr int kStartingScreenHeight = 600;
+
+// Shortest time between two moves before an engine starts its search.
+constexpr uint32_t kMinEngineMoveDelayMs = 1000;
 
 // Piece images, relative to the working directory (see the README).
 constexpr std::array<std::pair<Piece, const char *>, 12> kPieceImages = {{
@@ -249,6 +254,7 @@ void Interface::Initiate() {
 
   LoadTexturePieces();
 
+  last_move_ticks_ = SDL_GetTicks();
   running_ = true;
 }
 
@@ -362,8 +368,26 @@ void Interface::HandlePlayerTurn() {
   if (player.IsHuman()) {
     return;  // Humans move through the mouse events.
   }
-  Move const move = player.GetMove(*game_);
+
+  if (!pending_engine_move_.valid()) {
+    // Pause between moves, so that engine-vs-engine games can be followed.
+    if (SDL_GetTicks() - last_move_ticks_ >= kMinEngineMoveDelayMs) {
+      // The search gets its own copy of the game, so the window can keep
+      // rendering game_ meanwhile.
+      pending_engine_move_ =
+          std::async(std::launch::async,
+                     [&player, game = *game_] { return player.GetMove(game); });
+    }
+    return;
+  }
+  if (pending_engine_move_.wait_for(std::chrono::seconds(0)) !=
+      std::future_status::ready) {
+    return;  // Still thinking.
+  }
+
+  Move const move = pending_engine_move_.get();
   game_->MakeMove(move);
+  last_move_ticks_ = SDL_GetTicks();
   if (move.promotion_piece != Piece::kNone) {
     CHESS_LOG(LogLevel::kInfo)
         << "Player Engine " << color << " made move " << move
@@ -522,6 +546,7 @@ void Interface::ReleaseDragPiece(int const mouse_x, int const mouse_y) {
         const Move promotion_move(legal_move.from, legal_move.to,
                                   legal_move.piece, MenuPawnPromotion());
         game_->MakeMove(promotion_move);
+        last_move_ticks_ = SDL_GetTicks();
         CHESS_LOG(LogLevel::kInfo)
             << "Player Human " << ColorOf(legal_move.piece) << " made move "
             << promotion_move << " with promotion to "
@@ -530,6 +555,7 @@ void Interface::ReleaseDragPiece(int const mouse_x, int const mouse_y) {
       }
 
       game_->MakeMove(legal_move);
+      last_move_ticks_ = SDL_GetTicks();
       CHESS_LOG(LogLevel::kInfo) << "Player Human " << ColorOf(legal_move.piece)
                                  << " made move " << legal_move;
       break;

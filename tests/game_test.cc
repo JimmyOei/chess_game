@@ -62,13 +62,20 @@ TEST(GameTest, StartPositionHasTwentyLegalMoves) {
   EXPECT_EQ(game.GetAllLegalMoves().size(), 20u);
 }
 
-TEST(GameTest, MovesForTheSideNotToMove) {
+TEST(GameTest, CountsPseudoLegalMovesForEitherSide) {
   Game game;
-  EXPECT_EQ(game.GetAllLegalMovesFor(Color::kBlack).size(), 20u);
+  EXPECT_EQ(game.CountPseudoLegalMoves(Color::kWhite), 20);
+  EXPECT_EQ(game.CountPseudoLegalMoves(Color::kBlack), 20);
   ASSERT_TRUE(Play(game, "e2", "e4"));
-  EXPECT_EQ(game.GetAllLegalMovesFor(Color::kWhite).size(), 30u);
-  EXPECT_EQ(game.GetAllLegalMovesFor(Color::kBlack).size(), 20u);
-  EXPECT_EQ(game.GetTurn(), Color::kBlack);  // Unchanged.
+  EXPECT_EQ(game.CountPseudoLegalMoves(Color::kWhite), 30);
+  EXPECT_EQ(game.CountPseudoLegalMoves(Color::kBlack), 20);
+}
+
+TEST(GameTest, PseudoLegalCountIncludesMovesIntoCheck) {
+  // The pinned bishop's 3 moves would expose the king, but they count.
+  const Game game("4k3/8/8/8/4r3/8/4B3/4K3 w - - 0 1");
+  EXPECT_EQ(game.GetAllLegalMoves().size(), 4u);  // Only king moves.
+  EXPECT_EQ(game.CountPseudoLegalMoves(Color::kWhite), 4 + 5 + 4);
 }
 
 TEST(GameTest, StartPositionFromFenHasTwentyLegalMoves) {

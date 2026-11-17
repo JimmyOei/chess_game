@@ -44,6 +44,7 @@ target_compile_options(chess_options INTERFACE
 # SDL2 + SDL2_image (apt: libsdl2-dev libsdl2-image-dev).
 # Wrapped in a SYSTEM target so -Werror ignores warnings in SDL's headers.
 # ---------------------------------------------------------------------------
+find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SDL2 REQUIRED IMPORTED_TARGET sdl2 SDL2_image)
 set_target_properties(PkgConfig::SDL2 PROPERTIES SYSTEM ON)
@@ -70,12 +71,17 @@ add_executable(chess_game
     src/ui/interface.cc
     src/ui/perft_menu.cc
 )
-target_link_libraries(chess_game PRIVATE chess_options chess_core PkgConfig::SDL2)
+target_link_libraries(chess_game PRIVATE chess_options chess_core PkgConfig::SDL2 Threads::Threads)
 set_target_properties(chess_game PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 add_custom_command(TARGET chess_game POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_SOURCE_DIR}/pieces ${CMAKE_BINARY_DIR}/pieces)
+
+# Benchmark for the engine and move generation. Run the release build:
+#   build/release/chess_bench [--depth N] [--time MS] [--repeat R]
+add_executable(chess_bench src/tools/bench.cc)
+target_link_libraries(chess_bench PRIVATE chess_options chess_core)
 
 enable_testing()
 

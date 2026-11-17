@@ -10,6 +10,8 @@
 #include <SDL2/SDL.h>
 
 #include <array>
+#include <cstdint>
+#include <future>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -42,7 +44,9 @@ class Interface {
   // the user quits from the menu.
   void Initiate();
 
-  // Lets the engine play if it is an engine's turn, and detects game over.
+  // Call every frame. Detects game over, and on an engine's turn starts its
+  // search on a background thread (at least kMinEngineMoveDelayMs after the
+  // previous move), then plays the move once the search is done.
   void HandlePlayerTurn();
 
   void EventHandler(const SDL_Event& event);
@@ -53,6 +57,11 @@ class Interface {
   // Indexed by ColorIndex().
   std::array<std::unique_ptr<Player>, 2> players_;
   std::unique_ptr<Game> game_;
+  // The engine move being searched, if any. Declared after players_ so it is
+  // destroyed first: destroying it waits for the search to finish.
+  std::future<Move> pending_engine_move_;
+  // SDL_GetTicks() when the last move was made.
+  uint32_t last_move_ticks_ = 0;
 
   SDL_Window* window_ = nullptr;
   SDL_Renderer* renderer_ = nullptr;
